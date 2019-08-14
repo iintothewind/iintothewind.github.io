@@ -1337,12 +1337,12 @@ pre .javascript .function {
 }
 @media (min-width: 992px) {
   .posts-expand .post-body {
-    text-align: justify;
+    text-align: start;
   }
 }
 @media (max-width: 991px) {
   .posts-expand .post-body {
-    text-align: justify;
+    text-align: start;
   }
 }
 .posts-expand .post-body h2,
@@ -1808,7 +1808,7 @@ pre .javascript .function {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #d0dffa;
+  background: #ff93ff;
 }
 .feed-link,
 .chat {
