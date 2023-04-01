@@ -280,7 +280,8 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=public --add-port=80/tcp --permanent </span><br><span class="line">firewall-cmd --zone=FedoraServer --add-port=80/tcp --permanent </span><br><span class="line">firewall-cmd --zone=FedoraServer --add-port=5060-5061/udp</span><br></pre></td></tr></table></figure>
 
 <p>删除一个端口：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=public --remove-port=80/tcp --permanent </span><br><span class="line">firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent </span><br><span class="line">firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">firewall-cmd --zone=public --remove-port=80/tcp --permanent </span><br><span class="line">firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent </span><br><span class="line">firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent </span><br></pre></td></tr></table></figure>
+
 
 
     </div>

@@ -271,18 +271,15 @@
 
 <p><code>%%/*</code> 表示从右边开始，删除最后（最左边）一个 <code>/</code> 号及右边的字符<br>结果是<code>http:</code></p>
 <h2 id="从左边第几个字符开始，一直到结束"><a href="#从左边第几个字符开始，一直到结束" class="headerlink" title="从左边第几个字符开始，一直到结束"></a>从左边第几个字符开始，一直到结束</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$&#123;var:7&#125;</span></span><br></pre></td></tr></table></figure>
-
 <p>其中的 7 表示左边第8个字符开始，一直到结束。<br>结果是<code>www.aaa.com/123.htm</code></p>
 <h2 id="从右边第几个字符开始，及字符的个数"><a href="#从右边第几个字符开始，及字符的个数" class="headerlink" title="从右边第几个字符开始，及字符的个数"></a>从右边第几个字符开始，及字符的个数</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$&#123;var:0-7:3&#125;</span></span><br></pre></td></tr></table></figure>
-
 <p>其中的 0-7 表示右边算起第七个字符开始，3 表示字符的个数。<br>结果是<code>123</code></p>
 <h2 id="从右边第几个字符开始，一直到结束"><a href="#从右边第几个字符开始，一直到结束" class="headerlink" title="从右边第几个字符开始，一直到结束"></a>从右边第几个字符开始，一直到结束</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$&#123;var:0-7&#125;</span></span><br></pre></td></tr></table></figure>
-
 <p>表示从右边第七个字符开始，一直到结束。<br>结果是<code>123.htm</code></p>
 <p>注：（左边的第一个字符是用 0 表示，右边的第一个字符用 0-1 表示）</p>
-<h2 id="使用cut"><a href="#使用cut" class="headerlink" title="使用cut"></a>使用<code>cut</code></h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$var</span> | cut -nb 1-7 <span class="comment"># http://</span></span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$var</span> | cut -nc -7  <span class="comment"># http://</span></span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$var</span> | cut -nc 8-  <span class="comment"># www.aaa.com</span></span><br></pre></td></tr></table></figure>
+<h2 id="使用cut"><a href="#使用cut" class="headerlink" title="使用cut"></a>使用<code>cut</code></h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$var</span> | <span class="built_in">cut</span> -nb 1-7 <span class="comment"># http://</span></span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$var</span> | <span class="built_in">cut</span> -nc -7  <span class="comment"># http://</span></span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$var</span> | <span class="built_in">cut</span> -nc 8-  <span class="comment"># www.aaa.com</span></span><br></pre></td></tr></table></figure>
 
-<h2 id="references"><a href="#references" class="headerlink" title="references"></a>references</h2><p><a href="https://www.jb51.net/article/56563.htm" target="_blank" rel="noopener">Shell脚本8种字符串截取方法总结</a></p>
+<h2 id="references"><a href="#references" class="headerlink" title="references"></a>references</h2><p><a target="_blank" rel="noopener" href="https://www.jb51.net/article/56563.htm">Shell脚本8种字符串截取方法总结</a></p>
 
     </div>
 
