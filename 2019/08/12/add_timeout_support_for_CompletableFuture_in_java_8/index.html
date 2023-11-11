@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.3.0">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -13,16 +13,13 @@
 <link rel="stylesheet" href="/css/main.css">
 
 
-<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
-  
-  <link rel="stylesheet" href="/lib/animate-css/animate.min.css">
 
-<script class="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"iintothewind.github.io","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false};
-  </script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
 
-  <meta name="description" content="reasonCompletableFuture is a useful tool introduced since java 8.It provides many convenient methods for concurrency handling.Yet it did not support timeout in java 8 version. Two new methods were add">
+<script class="next-config" data-name="main" type="application/json">{"hostname":"iintothewind.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="reasonCompletableFuture is a useful tool introduced since java 8.It provides many convenient methods for concurrency handling.Yet it did not support timeout in java 8 version. Two new methods were add">
 <meta property="og:type" content="article">
 <meta property="og:title" content="add timeout support for CompletableFuture in java 8">
 <meta property="og:url" content="https://iintothewind.github.io/2019/08/12/add_timeout_support_for_CompletableFuture_in_java_8/index.html">
@@ -35,21 +32,18 @@
 <meta property="article:tag" content="java">
 <meta name="twitter:card" content="summary">
 
+
 <link rel="canonical" href="https://iintothewind.github.io/2019/08/12/add_timeout_support_for_CompletableFuture_in_java_8/">
 
 
-<script class="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
 
-  <title>add timeout support for CompletableFuture in java 8 | iIntothewind</title>
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://iintothewind.github.io/2019/08/12/add_timeout_support_for_CompletableFuture_in_java_8/","path":"2019/08/12/add_timeout_support_for_CompletableFuture_in_java_8/","title":"add timeout support for CompletableFuture in java 8"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>add timeout support for CompletableFuture in java 8 | iIntothewind</title>
   
+
+
 
 
 
@@ -57,51 +51,21 @@
 
 
   <noscript>
-  <style>
-  body { margin-top: 2rem; }
-
-  .use-motion .menu-item,
-  .use-motion .sidebar,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header {
-    visibility: visible;
-  }
-
-  .use-motion .header,
-  .use-motion .site-brand-container .toggle,
-  .use-motion .footer { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle,
-  .use-motion .custom-logo-image {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line {
-    transform: scaleX(1);
-  }
-
-  .search-pop-overlay, .sidebar-nav { display: none; }
-  .sidebar-panel { display: block; }
-  </style>
-</noscript>
-
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container use-motion">
-    <div class="headband"></div>
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
 
-    <main class="main">
-      <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-        <div class="header-inner"><div class="site-brand-container">
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
   <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
     </div>
   </div>
 
@@ -109,32 +73,30 @@
 
     <a href="/" class="brand" rel="start">
       <i class="logo-line"></i>
-      <h1 class="site-title">iIntothewind</h1>
+      <p class="site-title">iIntothewind</p>
       <i class="logo-line"></i>
     </a>
   </div>
 
   <div class="site-nav-right">
-    <div class="toggle popup-trigger">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
     </div>
   </div>
 </div>
 
 
 
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
 
 
 
 
-</div>
-          
+</header>
+        
   
-  <div class="toggle sidebar-toggle">
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-    <span class="toggle-line"></span>
-  </div>
-
   <aside class="sidebar">
 
     <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
@@ -147,106 +109,95 @@
         </li>
       </ul>
 
-      <!--noindex-->
-      <section class="post-toc-wrap sidebar-panel">
-          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#reason"><span class="nav-number">1.</span> <span class="nav-text">reason</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CompletableFuture-orTimeout-in-java-9"><span class="nav-number">1.1.</span> <span class="nav-text">CompletableFuture.orTimeout() in java 9</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#solution-in-java-8"><span class="nav-number">2.</span> <span class="nav-text">solution in java 8</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sample-code"><span class="nav-number">3.</span> <span class="nav-text">sample code</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#implementation-for-TimeoutSupportFuture"><span class="nav-number">4.</span> <span class="nav-text">implementation for TimeoutSupportFuture</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">5.</span> <span class="nav-text">summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reference"><span class="nav-number">6.</span> <span class="nav-text">reference</span></a></li></ol></div>
-      </section>
-      <!--/noindex-->
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#reason"><span class="nav-number">1.</span> <span class="nav-text">reason</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CompletableFuture-orTimeout-in-java-9"><span class="nav-number">1.1.</span> <span class="nav-text">CompletableFuture.orTimeout() in java 9</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#solution-in-java-8"><span class="nav-number">2.</span> <span class="nav-text">solution in java 8</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sample-code"><span class="nav-number">3.</span> <span class="nav-text">sample code</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#implementation-for-TimeoutSupportFuture"><span class="nav-number">4.</span> <span class="nav-text">implementation for TimeoutSupportFuture</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#summary"><span class="nav-number">5.</span> <span class="nav-text">summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reference"><span class="nav-number">6.</span> <span class="nav-text">reference</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
 
-      <section class="site-overview-wrap sidebar-panel">
-        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <p class="site-author-name" itemprop="name">Chen Yinghua</p>
   <div class="site-description" itemprop="description"></div>
 </div>
 <div class="site-state-wrap animated">
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
-          <a href="/archives">
-          <span class="site-state-item-count">20</span>
+        <a href="/archives/">
+          <span class="site-state-item-count">22</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
 </div>
-  <div class="links-of-author animated">
-      <span class="links-of-author-item">
-        <a href="https://github.com/iintothewind" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;iintothewind" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
-      </span>
-  </div>
 
-
-
-      </section>
+        </div>
+      </div>
     </div>
-  </aside>
-  <div id="sidebar-dimmer"></div>
-
-
-      </header>
-
-      
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
-  </div>
-
-  <a href="https://github.com/iintothewind" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
-
-<noscript>
-  <div id="noscript-warning">Theme NexT works best with JavaScript enabled</div>
-</noscript>
-
-
-      <div class="main-inner">
-        
-
-        <div class="content post posts-expand">
-          
 
     
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://iintothewind.github.io/2019/08/12/add_timeout_support_for_CompletableFuture_in_java_8/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
       <meta itemprop="name" content="Chen Yinghua">
-      <meta itemprop="description" content="">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="iIntothewind">
+      <meta itemprop="description" content="">
     </span>
 
-    
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="add timeout support for CompletableFuture in java 8 | iIntothewind">
+      <meta itemprop="description" content="">
+    </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
           add timeout support for CompletableFuture in java 8
         </h1>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2019-08-13 14:42:50" itemprop="dateCreated datePublished" datetime="2019-08-13T14:42:50+08:00">2019-08-13</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-08-14 08:15:51" itemprop="dateModified" datetime="2019-08-14T08:15:51+08:00">2019-08-14</time>
-              </span>
+      <time title="创建时间：2019-08-13 14:42:50" itemprop="dateCreated datePublished" datetime="2019-08-13T14:42:50+08:00">2019-08-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2019-08-14 08:15:51" itemprop="dateModified" datetime="2019-08-14T08:15:51+08:00">2019-08-14</time>
+    </span>
 
-          
+  
+</div>
 
         </div>
       </header>
@@ -254,36 +205,137 @@
     
     
     
-    <div class="post-body" itemprop="articleBody">
-        <h2 id="reason"><a href="#reason" class="headerlink" title="reason"></a>reason</h2><p><code>CompletableFuture</code> is a useful tool introduced since java 8.<br>It provides many convenient methods for concurrency handling.<br>Yet it did not support timeout in java 8 version.</p>
+    <div class="post-body" itemprop="articleBody"><h2 id="reason"><a href="#reason" class="headerlink" title="reason"></a>reason</h2><p><code>CompletableFuture</code> is a useful tool introduced since java 8.<br>It provides many convenient methods for concurrency handling.<br>Yet it did not support timeout in java 8 version.</p>
 <p>Two new methods were added to <code>CompletableFuture</code> since java 9 to support timeout:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> CompletableFuture&lt;T&gt; <span class="title function_">orTimeout</span><span class="params">(<span class="type">long</span> timeout, TimeUnit unit)</span></span><br><span class="line"><span class="keyword">public</span> CompletableFuture&lt;T&gt; <span class="title function_">completeOnTimeout</span><span class="params">(T value, <span class="type">long</span> timeout, TimeUnit unit)</span></span><br></pre></td></tr></table></figure>
-
-
+<pre><code class="java">public CompletableFuture&lt;T&gt; orTimeout(long timeout, TimeUnit unit)
+public CompletableFuture&lt;T&gt; completeOnTimeout(T value, long timeout, TimeUnit unit)
+</code></pre>
 <h3 id="CompletableFuture-orTimeout-in-java-9"><a href="#CompletableFuture-orTimeout-in-java-9" class="headerlink" title="CompletableFuture.orTimeout() in java 9"></a>CompletableFuture.orTimeout() in java 9</h3><p>A <code>CompletableFuture</code> would be completed exceptionally with <code>TimeoutException</code> if it did not complete with a <code>result</code> within given timeout.<br>The timeout feature was implemented by using two static final classes <code>Delayer</code> and <code>Timeout</code>.</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> CompletableFuture&lt;T&gt; <span class="title function_">orTimeout</span><span class="params">(<span class="type">long</span> timeout, TimeUnit unit)</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (unit == <span class="literal">null</span>)</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NullPointerException</span>();</span><br><span class="line">  <span class="keyword">if</span> (result == <span class="literal">null</span>)</span><br><span class="line">      whenComplete(<span class="keyword">new</span> <span class="title class_">Canceller</span>(Delayer.delay(<span class="keyword">new</span> <span class="title class_">Timeout</span>(<span class="built_in">this</span>), timeout, unit)));</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">public CompletableFuture&lt;T&gt; orTimeout(long timeout, TimeUnit unit) &#123;
+  if (unit == null)
+      throw new NullPointerException();
+  if (result == null)
+      whenComplete(new Canceller(Delayer.delay(new Timeout(this), timeout, unit)));
+  return this;
+&#125;
+</code></pre>
 <p>If <code>result</code> is not given, The <code>CompletableFuture.completeExceptionally()</code> for current instance will be called in a scheduled task created by <code>Delayer.delay()</code> after the given timeout.</p>
 <h2 id="solution-in-java-8"><a href="#solution-in-java-8" class="headerlink" title="solution in java 8"></a>solution in java 8</h2><p>First we need to create a <code>CompletableFuture</code> named <code>promise</code> which always fails with <code>TimeoutException</code> after given timeout.<br>We can reuse the code implementation of <code>Delayer</code> and <code>Timeout</code> in java 9 to fail the created <code>promise</code>.</p>
 <p>The always-fail <code>CompletableFuture</code> can be implemented as:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> CompletableFuture&lt;T&gt; promise = <span class="keyword">new</span> <span class="title class_">CompletableFuture</span>&lt;&gt;();</span><br><span class="line">Delayer.delay(<span class="keyword">new</span> <span class="title class_">Timeout</span>(promise), duration.toMillis(), TimeUnit.MILLISECONDS);</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">final CompletableFuture&lt;T&gt; promise = new CompletableFuture&lt;&gt;();
+Delayer.delay(new Timeout(promise), duration.toMillis(), TimeUnit.MILLISECONDS);
+</code></pre>
 <p>Then we can use <code>CompletableFuture.applyToEither()</code> to combine the results:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">within</span><span class="params">(CompletableFuture&lt;T&gt; completableFuture, Duration duration)</span> &#123;</span><br><span class="line">  Objects.requireNonNull(completableFuture, <span class="string">&quot;completableFuture is required&quot;</span>);</span><br><span class="line">  Objects.requireNonNull(duration, <span class="string">&quot;duration is required&quot;</span>);</span><br><span class="line">  <span class="keyword">final</span> CompletableFuture&lt;T&gt; promise = <span class="keyword">new</span> <span class="title class_">CompletableFuture</span>&lt;&gt;();</span><br><span class="line">  Delayer.delay(<span class="keyword">new</span> <span class="title class_">Timeout</span>(promise), duration.toMillis(), TimeUnit.MILLISECONDS);</span><br><span class="line">  <span class="keyword">return</span> completableFuture.applyToEither(promise, Function.identity());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
+<pre><code class="java">static &lt;T&gt; CompletableFuture&lt;T&gt; within(CompletableFuture&lt;T&gt; completableFuture, Duration duration) &#123;
+  Objects.requireNonNull(completableFuture, &quot;completableFuture is required&quot;);
+  Objects.requireNonNull(duration, &quot;duration is required&quot;);
+  final CompletableFuture&lt;T&gt; promise = new CompletableFuture&lt;&gt;();
+  Delayer.delay(new Timeout(promise), duration.toMillis(), TimeUnit.MILLISECONDS);
+  return completableFuture.applyToEither(promise, Function.identity());
+&#125;
+</code></pre>
 <p>For <code>within()</code> method, it takes a <code>completableFuture</code> and returns a <code>CompletableFuture</code> instance when the input <code>completableFuture</code> is completed. However if it takes too long to completed the input <code>completableFuture</code>, <code>promise</code> will be returned as output after the given <code>duration</code>,<br><code>TimeoutException</code> will be thrown in its completed result.</p>
-<h2 id="sample-code"><a href="#sample-code" class="headerlink" title="sample code"></a>sample code</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">testTimeoutSupportFuture</span><span class="params">()</span> &#123;</span><br><span class="line">  CompletableFuture&lt;String&gt; future = CompletableFuture.supplyAsync(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">100</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">      Throwables.throwIfUnchecked(e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;this is a message&quot;</span>;</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">final</span> CompletableFuture&lt;String&gt; future1 = TimeoutSupportFuture.within(future, Duration.ofMillis(<span class="number">50</span>));</span><br><span class="line">  <span class="keyword">final</span> CompletableFuture&lt;String&gt; future2 = TimeoutSupportFuture.within(future, Duration.ofMillis(<span class="number">200</span>));</span><br><span class="line">  future1.whenComplete((s, throwable) -&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> (s != <span class="literal">null</span>) &#123;</span><br><span class="line">      log.info(<span class="string">&quot;s == &#123;&#125;&quot;</span>, s);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      log.info(throwable.getMessage());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">  future2.whenComplete((s, throwable) -&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> (s != <span class="literal">null</span>) &#123;</span><br><span class="line">      log.info(<span class="string">&quot;s == &#123;&#125;&quot;</span>, s);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      log.info(throwable.getMessage());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="sample-code"><a href="#sample-code" class="headerlink" title="sample code"></a>sample code</h2><pre><code class="java">@Test
+public void testTimeoutSupportFuture() &#123;
+  CompletableFuture&lt;String&gt; future = CompletableFuture.supplyAsync(() -&gt; &#123;
+    try &#123;
+      TimeUnit.MILLISECONDS.sleep(100);
+    &#125; catch (InterruptedException e) &#123;
+      Throwables.throwIfUnchecked(e);
+    &#125;
+    return &quot;this is a message&quot;;
+  &#125;);
 
+  final CompletableFuture&lt;String&gt; future1 = TimeoutSupportFuture.within(future, Duration.ofMillis(50));
+  final CompletableFuture&lt;String&gt; future2 = TimeoutSupportFuture.within(future, Duration.ofMillis(200));
+  future1.whenComplete((s, throwable) -&gt; &#123;
+    if (s != null) &#123;
+      log.info(&quot;s == &#123;&#125;&quot;, s);
+    &#125; else &#123;
+      log.info(throwable.getMessage());
+    &#125;
+  &#125;);
+  future2.whenComplete((s, throwable) -&gt; &#123;
+    if (s != null) &#123;
+      log.info(&quot;s == &#123;&#125;&quot;, s);
+    &#125; else &#123;
+      log.info(throwable.getMessage());
+    &#125;
+  &#125;);
+&#125;
+</code></pre>
 <p>output:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019-08-13 16:20:20.998 [CompletableFutureDelayScheduler] INFO  sample.concurrent.CompletableFutureSample - java.util.concurrent.TimeoutException</span><br><span class="line">2019-08-13 16:20:21.039 [ForkJoinPool.commonPool-worker-3] INFO  sample.concurrent.CompletableFutureSample - s == this is a message</span><br></pre></td></tr></table></figure>
+<pre><code>2019-08-13 16:20:20.998 [CompletableFutureDelayScheduler] INFO  sample.concurrent.CompletableFutureSample - java.util.concurrent.TimeoutException
+2019-08-13 16:20:21.039 [ForkJoinPool.commonPool-worker-3] INFO  sample.concurrent.CompletableFutureSample - s == this is a message
+</code></pre>
+<h2 id="implementation-for-TimeoutSupportFuture"><a href="#implementation-for-TimeoutSupportFuture" class="headerlink" title="implementation for TimeoutSupportFuture"></a>implementation for <code>TimeoutSupportFuture</code></h2><pre><code class="java">import java.time.Duration;
+import java.util.Objects;
+import java.util.concurrent.*;
+import java.util.function.Function;
 
+public interface TimeoutSupportFuture &#123;
 
+  static &lt;T&gt; CompletableFuture&lt;T&gt; within(CompletableFuture&lt;T&gt; completableFuture, Duration duration) &#123;
+    Objects.requireNonNull(completableFuture, &quot;completableFuture is required&quot;);
+    Objects.requireNonNull(duration, &quot;duration is required&quot;);
+    final CompletableFuture&lt;T&gt; promiseFailed = new CompletableFuture&lt;&gt;();
+    Delayer.delay(new Timeout(promiseFailed), duration.toMillis(), TimeUnit.MILLISECONDS);
+    return completableFuture.applyToEither(promiseFailed, Function.identity());
+  &#125;
 
-<h2 id="implementation-for-TimeoutSupportFuture"><a href="#implementation-for-TimeoutSupportFuture" class="headerlink" title="implementation for TimeoutSupportFuture"></a>implementation for <code>TimeoutSupportFuture</code></h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.time.Duration;</span><br><span class="line"><span class="keyword">import</span> java.util.Objects;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.*;</span><br><span class="line"><span class="keyword">import</span> java.util.function.Function;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">TimeoutSupportFuture</span> &#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">static</span> &lt;T&gt; CompletableFuture&lt;T&gt; <span class="title function_">within</span><span class="params">(CompletableFuture&lt;T&gt; completableFuture, Duration duration)</span> &#123;</span><br><span class="line">    Objects.requireNonNull(completableFuture, <span class="string">&quot;completableFuture is required&quot;</span>);</span><br><span class="line">    Objects.requireNonNull(duration, <span class="string">&quot;duration is required&quot;</span>);</span><br><span class="line">    <span class="keyword">final</span> CompletableFuture&lt;T&gt; promiseFailed = <span class="keyword">new</span> <span class="title class_">CompletableFuture</span>&lt;&gt;();</span><br><span class="line">    Delayer.delay(<span class="keyword">new</span> <span class="title class_">Timeout</span>(promiseFailed), duration.toMillis(), TimeUnit.MILLISECONDS);</span><br><span class="line">    <span class="keyword">return</span> completableFuture.applyToEither(promiseFailed, Function.identity());</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Action to completeExceptionally on timeout</span></span><br><span class="line"><span class="comment">   * copy from `java.util.concurrent.CompletableFuture.Timeout` in java 9 JDK</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Timeout</span> <span class="keyword">implements</span> <span class="title class_">Runnable</span> &#123;</span><br><span class="line">    <span class="keyword">final</span> CompletableFuture&lt;?&gt; future;</span><br><span class="line"></span><br><span class="line">    Timeout(CompletableFuture&lt;?&gt; f) &#123;</span><br><span class="line">      <span class="built_in">this</span>.future = f;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (future != <span class="literal">null</span> &amp;&amp; !future.isDone()) &#123;</span><br><span class="line">        future.completeExceptionally(<span class="keyword">new</span> <span class="title class_">TimeoutException</span>());</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Singleton delay scheduler, used only for starting and cancelling tasks.</span></span><br><span class="line"><span class="comment">   * copy from `java.util.concurrent.CompletableFuture.Delayer` in java 9 JDK</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Delayer</span> &#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> ScheduledThreadPoolExecutor delayer;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">      (delayer = <span class="keyword">new</span> <span class="title class_">ScheduledThreadPoolExecutor</span>(<span class="number">1</span>, <span class="keyword">new</span> <span class="title class_">DaemonThreadFactory</span>())).setRemoveOnCancelPolicy(<span class="literal">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">DaemonThreadFactory</span> <span class="keyword">implements</span> <span class="title class_">ThreadFactory</span> &#123;</span><br><span class="line">      <span class="meta">@Override</span></span><br><span class="line">      <span class="keyword">public</span> Thread <span class="title function_">newThread</span><span class="params">(Runnable runnable)</span> &#123;</span><br><span class="line">        <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(runnable);</span><br><span class="line">        t.setDaemon(<span class="literal">true</span>);</span><br><span class="line">        t.setName(<span class="string">&quot;CompletableFutureDelayScheduler&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> t;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> ScheduledFuture&lt;?&gt; delay(Runnable command, <span class="type">long</span> delay, TimeUnit unit) &#123;</span><br><span class="line">      <span class="keyword">return</span> delayer.schedule(command, delay, unit);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+  /**
+   * Action to completeExceptionally on timeout
+   * copy from `java.util.concurrent.CompletableFuture.Timeout` in java 9 JDK
+   */
+  final class Timeout implements Runnable &#123;
+    final CompletableFuture&lt;?&gt; future;
 
+    Timeout(CompletableFuture&lt;?&gt; f) &#123;
+      this.future = f;
+    &#125;
+
+    @Override
+    public void run() &#123;
+      if (future != null &amp;&amp; !future.isDone()) &#123;
+        future.completeExceptionally(new TimeoutException());
+      &#125;
+    &#125;
+  &#125;
+
+  /**
+   * Singleton delay scheduler, used only for starting and cancelling tasks.
+   * copy from `java.util.concurrent.CompletableFuture.Delayer` in java 9 JDK
+   */
+  final class Delayer &#123;
+    static final ScheduledThreadPoolExecutor delayer;
+
+    static &#123;
+      (delayer = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory())).setRemoveOnCancelPolicy(true);
+    &#125;
+
+    static final class DaemonThreadFactory implements ThreadFactory &#123;
+      @Override
+      public Thread newThread(Runnable runnable) &#123;
+        Thread t = new Thread(runnable);
+        t.setDaemon(true);
+        t.setName(&quot;CompletableFutureDelayScheduler&quot;);
+        return t;
+      &#125;
+    &#125;
+
+    static ScheduledFuture&lt;?&gt; delay(Runnable command, long delay, TimeUnit unit) &#123;
+      return delayer.schedule(command, delay, unit);
+    &#125;
+  &#125;
+&#125;
+</code></pre>
 <h2 id="summary"><a href="#summary" class="headerlink" title="summary"></a>summary</h2><p>A <code>CompletableFuture</code> instance can have timeout support with the help of <code>CompletableFuture.applyToEither()</code>.<br>But there is a significat difference between <strong>timeout</strong> and <strong>cancel</strong>.<br><strong>timeout</strong> means, A <code>CompletableFuture</code> instance will complete with <code>TimeoutException</code> if it does not complete its task within given time.<br><strong>cancel</strong> means, A <code>CompletableFuture</code> instance will cancel the task during its execution, and complete with <code>CancellationException</code> if it does not complete its task within given time.</p>
 <p>While <code>CompletableFuture</code> has a serius <strong>design flaw</strong> in its <code>cancel()</code> method:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> mayInterruptIfRunning – this value has no effect in this implementation because interrupts are not used to control processing</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">cancel</span><span class="params">(<span class="type">boolean</span> mayInterruptIfRunning)</span></span><br></pre></td></tr></table></figure>
+<pre><code class="java">/**
+ * @param mayInterruptIfRunning – this value has no effect in this implementation because interrupts are not used to control processing
+ */
+public boolean cancel(boolean mayInterruptIfRunning)
+</code></pre>
 <p>This <code>cancel()</code> method only returns a flag and assign <code>CancellationException</code> to result, thats all.</p>
 <p><strong>It never really cancels any executing tasks!</strong><br><strong>It never really cancels any executing tasks!</strong><br><strong>It never really cancels any executing tasks!</strong></p>
 <p>So you are on your own to make sure that any task executed in <code>CompletableFuture</code> should be quited properly.<br>If you have applied a task into <code>CompletableFuture</code> and its execution never ends, this task would be executed forever till JVM exists!<br>Unless this is what you want, don’t use <code>CompletableFuture</code> in this way.</p>
@@ -295,120 +347,84 @@
     
     
 
-      <footer class="post-footer">
+    <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/java/" rel="tag"># java</a>
           </div>
 
         
 
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item"></div>
-      <div class="post-nav-item">
-    <a href="/2019/10/15/use-update-alternatives-to-solve-python-no-such-file-or-directory-problem/" rel="next" title="use update-alternatives to solve python no such file or directory problem">
-      use update-alternatives to solve python no such file or directory problem <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-        </div>
-        
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-      </div>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        
-
-        
-
-<div class="copyright">
-  
-  &copy; 
-  <span itemprop="copyrightYear">2023</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Chen Yinghua</span>
-</div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
-  </div>
-
-        
-
-
-
-
-
-
-
-
-      </div>
+          <div class="post-nav">
+            <div class="post-nav-item">
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/10/15/use-update-alternatives-to-solve-python-no-such-file-or-directory-problem/" rel="next" title="use update-alternatives to solve python no such file or directory problem">
+                  use update-alternatives to solve python no such file or directory problem <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
     </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2023</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Yinghua</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
   </div>
 
-  
-  <script src="/lib/anime.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-<script src="/js/motion.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
+    </div>
+  </footer>
 
   
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
 
 
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
 
   
+
+
+
+
+
+
+  
+
+
+
+
 
 </body>
 </html>
