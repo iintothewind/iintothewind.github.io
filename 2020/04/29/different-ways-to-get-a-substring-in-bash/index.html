@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"iintothewind.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Linux 的字符串截取很有用,有八种方法。 假设有变量var&#x3D;http:&#x2F;&#x2F;www.aaa.com&#x2F;123.htm # 号截取，删除左边字符，保留右边字符echo $&amp;#123;var#*&#x2F;&#x2F;&amp;#125;  其中 var 是变量名，# 号是运算符，*&#x2F;&#x2F; 表示从左边开始删除第一个 &#x2F;&#x2F; 号及左边的所有字符即删除 http:&#x2F;&#x2F;结果是www.aaa.com&#x2F;123.htm ## 号截取，删除左边字">
+<meta property="og:type" content="article">
+<meta property="og:title" content="different ways to get a substring in bash">
+<meta property="og:url" content="https://iintothewind.github.io/2020/04/29/different-ways-to-get-a-substring-in-bash/index.html">
+<meta property="og:site_name" content="iIntothewind">
+<meta property="og:description" content="Linux 的字符串截取很有用,有八种方法。 假设有变量var&#x3D;http:&#x2F;&#x2F;www.aaa.com&#x2F;123.htm # 号截取，删除左边字符，保留右边字符echo $&amp;#123;var#*&#x2F;&#x2F;&amp;#125;  其中 var 是变量名，# 号是运算符，*&#x2F;&#x2F; 表示从左边开始删除第一个 &#x2F;&#x2F; 号及左边的所有字符即删除 http:&#x2F;&#x2F;结果是www.aaa.com&#x2F;123.htm ## 号截取，删除左边字">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-04-30T01:05:47.000Z">
+<meta property="article:modified_time" content="2024-04-16T03:05:23.183Z">
+<meta property="article:author" content="Chen Yinghua">
+<meta property="article:tag" content="linux">
+<meta property="article:tag" content="bash">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://iintothewind.github.io/2020/04/29/different-ways-to-get-a-substring-in-bash/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://iintothewind.github.io/2020/04/29/different-ways-to-get-a-substring-in-bash/","path":"2020/04/29/different-ways-to-get-a-substring-in-bash/","title":"different ways to get a substring in bash"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>different ways to get a substring in bash | iIntothewind</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">iIntothewind</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%B7%E6%88%AA%E5%8F%96%EF%BC%8C%E5%88%A0%E9%99%A4%E5%B7%A6%E8%BE%B9%E5%AD%97%E7%AC%A6%EF%BC%8C%E4%BF%9D%E7%95%99%E5%8F%B3%E8%BE%B9%E5%AD%97%E7%AC%A6"><span class="nav-number">1.</span> <span class="nav-text"># 号截取，删除左边字符，保留右边字符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%B7%E6%88%AA%E5%8F%96%EF%BC%8C%E5%88%A0%E9%99%A4%E5%B7%A6%E8%BE%B9%E5%AD%97%E7%AC%A6%EF%BC%8C%E4%BF%9D%E7%95%99%E5%8F%B3%E8%BE%B9%E5%AD%97%E7%AC%A6-1"><span class="nav-number">2.</span> <span class="nav-text">## 号截取，删除左边字符，保留右边字符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%B7%E6%88%AA%E5%8F%96%EF%BC%8C%E5%88%A0%E9%99%A4%E5%8F%B3%E8%BE%B9%E5%AD%97%E7%AC%A6%EF%BC%8C%E4%BF%9D%E7%95%99%E5%B7%A6%E8%BE%B9%E5%AD%97%E7%AC%A6"><span class="nav-number">3.</span> <span class="nav-text">%号截取，删除右边字符，保留左边字符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%B7%E6%88%AA%E5%8F%96%EF%BC%8C%E5%88%A0%E9%99%A4%E5%8F%B3%E8%BE%B9%E5%AD%97%E7%AC%A6%EF%BC%8C%E4%BF%9D%E7%95%99%E5%B7%A6%E8%BE%B9%E5%AD%97%E7%AC%A6-1"><span class="nav-number">4.</span> <span class="nav-text">%% 号截取，删除右边字符，保留左边字符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E5%B7%A6%E8%BE%B9%E7%AC%AC%E5%87%A0%E4%B8%AA%E5%AD%97%E7%AC%A6%E5%BC%80%E5%A7%8B%EF%BC%8C%E4%B8%80%E7%9B%B4%E5%88%B0%E7%BB%93%E6%9D%9F"><span class="nav-number">5.</span> <span class="nav-text">从左边第几个字符开始，一直到结束</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E5%8F%B3%E8%BE%B9%E7%AC%AC%E5%87%A0%E4%B8%AA%E5%AD%97%E7%AC%A6%E5%BC%80%E5%A7%8B%EF%BC%8C%E5%8F%8A%E5%AD%97%E7%AC%A6%E7%9A%84%E4%B8%AA%E6%95%B0"><span class="nav-number">6.</span> <span class="nav-text">从右边第几个字符开始，及字符的个数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E5%8F%B3%E8%BE%B9%E7%AC%AC%E5%87%A0%E4%B8%AA%E5%AD%97%E7%AC%A6%E5%BC%80%E5%A7%8B%EF%BC%8C%E4%B8%80%E7%9B%B4%E5%88%B0%E7%BB%93%E6%9D%9F"><span class="nav-number">7.</span> <span class="nav-text">从右边第几个字符开始，一直到结束</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8cut"><span class="nav-number">8.</span> <span class="nav-text">使用cut</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#references"><span class="nav-number">9.</span> <span class="nav-text">references</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Yinghua</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://iintothewind.github.io/2020/04/29/different-ways-to-get-a-substring-in-bash/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Yinghua">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="iIntothewind">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="different ways to get a substring in bash | iIntothewind">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          different ways to get a substring in bash
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-04-30 09:05:47" itemprop="dateCreated datePublished" datetime="2020-04-30T09:05:47+08:00">2020-04-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>Linux 的字符串截取很有用,有八种方法。</p>
+<p>假设有变量<code>var=http://www.aaa.com/123.htm</code></p>
+<h2 id="号截取，删除左边字符，保留右边字符"><a href="#号截取，删除左边字符，保留右边字符" class="headerlink" title="# 号截取，删除左边字符，保留右边字符"></a># 号截取，删除左边字符，保留右边字符</h2><pre><code class="bash">echo $&#123;var#*//&#125;
+</code></pre>
+<p>其中 var 是变量名，<code>#</code> 号是运算符，<code>*//</code> 表示从左边开始删除第一个 <code>//</code> 号及左边的所有字符<br>即删除 <code>http://</code><br>结果是<code>www.aaa.com/123.htm</code></p>
+<h2 id="号截取，删除左边字符，保留右边字符-1"><a href="#号截取，删除左边字符，保留右边字符-1" class="headerlink" title="## 号截取，删除左边字符，保留右边字符"></a>## 号截取，删除左边字符，保留右边字符</h2><pre><code class="bash">echo $&#123;var##*/&#125;
+</code></pre>
+<p><code>##*/</code> 表示从左边开始删除最后（最右边）一个 <code>/</code> 号及左边的所有字符<br>即删除 <code>http://www.aaa.com/</code><br>结果是<code>123.htm</code></p>
+<h2 id="号截取，删除右边字符，保留左边字符"><a href="#号截取，删除右边字符，保留左边字符" class="headerlink" title="%号截取，删除右边字符，保留左边字符"></a>%号截取，删除右边字符，保留左边字符</h2><pre><code class="bash">echo $&#123;var%/*&#125;
+</code></pre>
+<p><code>%/*</code> 表示从右边开始，删除第一个 <code>/</code> 号及右边的字符<br>结果是<code>http://www.aaa.com</code></p>
+<h2 id="号截取，删除右边字符，保留左边字符-1"><a href="#号截取，删除右边字符，保留左边字符-1" class="headerlink" title="%% 号截取，删除右边字符，保留左边字符"></a>%% 号截取，删除右边字符，保留左边字符</h2><pre><code class="bash">echo $&#123;var%%/*&#125;
+</code></pre>
+<p><code>%%/*</code> 表示从右边开始，删除最后（最左边）一个 <code>/</code> 号及右边的字符<br>结果是<code>http:</code></p>
+<h2 id="从左边第几个字符开始，一直到结束"><a href="#从左边第几个字符开始，一直到结束" class="headerlink" title="从左边第几个字符开始，一直到结束"></a>从左边第几个字符开始，一直到结束</h2><pre><code class="bash">echo $&#123;var:7&#125;
+</code></pre>
+<p>其中的 7 表示左边第8个字符开始，一直到结束。<br>结果是<code>www.aaa.com/123.htm</code></p>
+<h2 id="从右边第几个字符开始，及字符的个数"><a href="#从右边第几个字符开始，及字符的个数" class="headerlink" title="从右边第几个字符开始，及字符的个数"></a>从右边第几个字符开始，及字符的个数</h2><pre><code class="bash">echo $&#123;var:0-7:3&#125;
+</code></pre>
+<p>其中的 0-7 表示右边算起第七个字符开始，3 表示字符的个数。<br>结果是<code>123</code></p>
+<h2 id="从右边第几个字符开始，一直到结束"><a href="#从右边第几个字符开始，一直到结束" class="headerlink" title="从右边第几个字符开始，一直到结束"></a>从右边第几个字符开始，一直到结束</h2><pre><code class="bash">echo $&#123;var:0-7&#125;
+</code></pre>
+<p>表示从右边第七个字符开始，一直到结束。<br>结果是<code>123.htm</code></p>
+<p>注：（左边的第一个字符是用 0 表示，右边的第一个字符用 0-1 表示）</p>
+<h2 id="使用cut"><a href="#使用cut" class="headerlink" title="使用cut"></a>使用<code>cut</code></h2><pre><code class="bash">echo $var | cut -nb 1-7 # http://
+echo $var | cut -nc -7  # http://
+echo $var | cut -nc 8-  # www.aaa.com
+</code></pre>
+<h2 id="references"><a href="#references" class="headerlink" title="references"></a>references</h2><p><a target="_blank" rel="noopener" href="https://www.jb51.net/article/56563.htm">Shell脚本8种字符串截取方法总结</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/linux/" rel="tag"># linux</a>
+              <a href="/tags/bash/" rel="tag"># bash</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/12/11/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install/" rel="prev" title="fix self signed certificate in certificate chain error while executing npm install">
+                  <i class="fa fa-angle-left"></i> fix self signed certificate in certificate chain error while executing npm install
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/05/02/bash-command-cheet-sheet/" rel="next" title="bash command cheet sheet">
+                  bash command cheet sheet <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Yinghua</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>

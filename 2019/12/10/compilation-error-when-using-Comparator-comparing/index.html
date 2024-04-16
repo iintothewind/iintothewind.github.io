@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha256-CTSx/A06dm1B063156EVh15m6Y67pAjZZaQc89LLSrU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"iintothewind.github.io","root":"/","images":"/images","scheme":"Muse","darkmode":false,"version":"8.18.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="the problemFirst, lets take a look at the following code sample: Collections.sort(playlist, Comparator.comparing(s -&gt; s.getTitle())               .thenComparing(p1 -&gt; p1.getDuration())">
+<meta property="og:type" content="article">
+<meta property="og:title" content="compilation error when using Comparator.comparing()">
+<meta property="og:url" content="https://iintothewind.github.io/2019/12/10/compilation-error-when-using-Comparator-comparing/index.html">
+<meta property="og:site_name" content="iIntothewind">
+<meta property="og:description" content="the problemFirst, lets take a look at the following code sample: Collections.sort(playlist, Comparator.comparing(s -&gt; s.getTitle())               .thenComparing(p1 -&gt; p1.getDuration())">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-12-10T10:13:12.000Z">
+<meta property="article:modified_time" content="2024-04-16T03:05:23.183Z">
+<meta property="article:author" content="Chen Yinghua">
+<meta property="article:tag" content="java">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://iintothewind.github.io/2019/12/10/compilation-error-when-using-Comparator-comparing/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://iintothewind.github.io/2019/12/10/compilation-error-when-using-Comparator-comparing/","path":"2019/12/10/compilation-error-when-using-Comparator-comparing/","title":"compilation error when using Comparator.comparing()"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>compilation error when using Comparator.comparing() | iIntothewind</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">iIntothewind</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#the-problem"><span class="nav-number">1.</span> <span class="nav-text">the problem</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#the-solutions"><span class="nav-number">2.</span> <span class="nav-text">the solutions</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#use-static-lambda-expression"><span class="nav-number">2.1.</span> <span class="nav-text">use static lambda expression</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#use-explicitly-defined-lambda-with-a-temorary-variable"><span class="nav-number">2.2.</span> <span class="nav-text">use explicitly defined lambda with a temorary variable</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#add-explicity-type-parameter-before-the-Comparator-comparing-is-called"><span class="nav-number">2.3.</span> <span class="nav-text">add explicity type parameter before the Comparator.comparing() is called</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reference"><span class="nav-number">3.</span> <span class="nav-text">reference</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chen Yinghua</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://iintothewind.github.io/2019/12/10/compilation-error-when-using-Comparator-comparing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chen Yinghua">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="iIntothewind">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="compilation error when using Comparator.comparing() | iIntothewind">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          compilation error when using Comparator.comparing()
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-12-10 18:13:12" itemprop="dateCreated datePublished" datetime="2019-12-10T18:13:12+08:00">2019-12-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="the-problem"><a href="#the-problem" class="headerlink" title="the problem"></a>the problem</h2><p>First, lets take a look at the following code sample:</p>
+<pre><code class="java">Collections.sort(playlist, Comparator.comparing(s -&gt; s.getTitle())
+              .thenComparing(p1 -&gt; p1.getDuration())
+              .thenComparing(p1 -&gt; p1.getArtist())
+);
+</code></pre>
+<p>What we are trying to do is simple: sort the <code>playlist</code> order by three different properties.<br>Can this code snippet pass the compilation check?<br>The answer is: No, there would be some compilation error.</p>
+<pre><code class="java">Error:(43, 59) java: cannot find symbol
+  symbol:   method getTitle()
+  location: variable s of type java.lang.Object
+</code></pre>
+<p>But why?</p>
+<p>The reason for this compilation error is that the type inference for Java lanaguage is weak in this case.<br>It is expected that JVM knows the type of the elements in <code>playlist</code> when it is reading the first lambda <code>s-&gt;s.getTitle()</code>.<br>But actually, JVM is not able to figure it out.</p>
+<h2 id="the-solutions"><a href="#the-solutions" class="headerlink" title="the solutions"></a>the solutions</h2><p>There are three approaches to solve this problem.</p>
+<h3 id="use-static-lambda-expression"><a href="#use-static-lambda-expression" class="headerlink" title="use static lambda expression"></a>use static lambda expression</h3><pre><code class="java">Collections.sort(playlist, Comparator.comparing(Song::getTitle)
+              .thenComparing(Song::getDuration)
+              .thenComparing(Song::getArtist)
+);
+</code></pre>
+<h3 id="use-explicitly-defined-lambda-with-a-temorary-variable"><a href="#use-explicitly-defined-lambda-with-a-temorary-variable" class="headerlink" title="use explicitly defined lambda with a temorary variable"></a>use explicitly defined lambda with a temorary variable</h3><pre><code class="java">Comparator&lt;Song&gt; byName = (s1, s2) -&gt; s1.getArtist().compareTo(s2.getArtist());
+Comparator&lt;Song&gt; byDuration = (s1, s2) -&gt; Integer.compare(s1.getDuration(), s2.getDuration());
+Collections.sort(playlist, byName.thenComparing(byDuration));
+</code></pre>
+<h3 id="add-explicity-type-parameter-before-the-Comparator-comparing-is-called"><a href="#add-explicity-type-parameter-before-the-Comparator-comparing-is-called" class="headerlink" title="add explicity type parameter before the Comparator.comparing() is called"></a>add explicity type parameter before the Comparator.comparing() is called</h3><pre><code class="java">Collections.sort(playlist, Comparator.&lt;Song, String&gt;comparing((s) -&gt; s.getTitle())
+              .thenComparing(p1 -&gt; p1.getDuration())
+              .thenComparing(p1 -&gt; p1.getArtist())
+);
+</code></pre>
+<h2 id="reference"><a href="#reference" class="headerlink" title="reference"></a>reference</h2><p><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/24436871/very-confused-by-java-8-comparator-type-inference">Very confused by Java 8 Comparator type inference</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/java/" rel="tag"># java</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/12/10/find-those-plugins-which-are-making-vim-slow/" rel="prev" title="find those plugins which are making vim slow">
+                  <i class="fa fa-angle-left"></i> find those plugins which are making vim slow
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/12/11/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install/" rel="next" title="fix self signed certificate in certificate chain error while executing npm install">
+                  fix self signed certificate in certificate chain error while executing npm install <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2024</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chen Yinghua</span>
+  </div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/schemes/muse.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+</body>
+</html>
