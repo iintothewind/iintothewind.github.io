@@ -27,7 +27,7 @@
 <meta property="og:description" content="怒之铁拳 Streets Of Rage 2X Combo介绍怒之铁拳(Streets Of Rage)2X(以下简称SOR2X)是Kratus基于OpenBor引擎开发的横版卷轴过关游戏.SOR2XCombo是我基于SOR2X2.3.1基础上开发的MOD. 因为SOR2X原项目所有可操作人物, 招式硬直比较大, 大部分特殊技没有合理的硬直取消, 加上空连和崩地的限制都很难进行长连段的连击.为了增">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-10-26T06:11:00.000Z">
-<meta property="article:modified_time" content="2024-04-16T03:08:32.796Z">
+<meta property="article:modified_time" content="2024-04-21T07:54:29.987Z">
 <meta property="article:author" content="Chen Yinghua">
 <meta property="article:tag" content="OpenBor">
 <meta property="article:tag" content="Game">
@@ -194,7 +194,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:08:32" itemprop="dateModified" datetime="2024-04-16T11:08:32+08:00">2024-04-16</time>
+      <time title="修改时间：2024-04-21 15:54:29" itemprop="dateModified" datetime="2024-04-21T15:54:29+08:00">2024-04-21</time>
     </span>
 
   
@@ -300,7 +300,7 @@
 <li>Lives 每个币有几条命</li>
 <li>Last Chance Recover 一线生机(Last Chance)技能的生命回复量,当处于空血状态并且防御槽全满时,遭受到下一次致命攻击时会恢复少量生命值,可以控制回复生命的百分比</li>
 <li>Counter Attack Reward 弹反回报比率,设置弹返成功后恢复的能量值和无敌时间的百分比,默认100%,可以完全关闭则弹返成功不恢复多余能量并且完全没有无敌时间, 也可以设置为200%则弹返成功后恢复2倍能量和2倍无敌时间.</li>
-<li>Rush Heat 连击狂热(Rush Heat)技能,连击数超过9以后会进入无敌状态,只要保持连击不断就一直是无敌状态, 默认开启</li>
+<li>Rush Heat 连击狂热(Rush Heat)技能,连击数超过设定数以后会进入无敌状态,只要保持连击不断就一直是无敌状态, 默认为9</li>
 <li>Juggle System 设置敌人进入空连后的空连值. 每个敌人都有空连值, 敌人被空连之后这个值会一直减少, 当空连值为0时,敌人便无法被继续空连了.默认为100</li>
 <li>OTG System 设置敌人崩地的次数. 每个敌人在连招中都有崩地上限, 当敌人被连招击中时触地这个值都会减少1,当OTG为0时,触地的敌人都没办法被继续打起来了,默认为10</li>
 <li>Enemy Rush Limit 敌人的连击数上限,限制敌人的最高连击数,当Boss的连击数超过限制,Boss会被迫使用闪避或者防御,打断Boss的连击,默认为无上限(Unlimited). 如果你不能接受被Boss无限连,就给Boss设置连击上限吧.</li>
@@ -311,7 +311,7 @@
 <li>Screen Edge 默认All Types, 敌人被击飞到版边会被反弹</li>
 <li>Item Drop 物品掉落, Mix随机掉落所有物品,Food Only只掉落食物,Money Only只掉落钱,Weapon Only只掉落武器,或者其它组合</li>
 <li>Smarter Enemy 更加聪明的AI, 开启敌人的读按键技能,当玩家一直按下防御的时候,Boss不会无脑攻击,而是尝试快速靠近出投技</li>
-<li>Get Food 敌人主动去抢食物</li>
+<li>Block Cost 防御时防御槽消耗速度, 默认为2</li>
 </ul>
 <h3 id="Extra-Menu-gt-Controls-控制选项"><a href="#Extra-Menu-gt-Controls-控制选项" class="headerlink" title="Extra Menu -&gt; Controls 控制选项"></a>Extra Menu -&gt; Controls 控制选项</h3><ul>
 <li>Block Type 默认Hold,按住防御键以后会一直防御</li>
@@ -565,7 +565,7 @@
 <td align="left">剑气不可防御</td>
 </tr>
 </tbody></table>
-<h2 id="Blaze"><a href="#Blaze" class="headerlink" title="Blaze"></a>Blaze</h2><p>Blaze同样也是比较平衡的角色, 攻击力比Axel稍弱, 但是速度比Axel要稍快, 所以两个人平分秋色.<br>Blaze偏技巧型角色, 普通攻击同样很快, 打击能力没有Axel强, 不过她同时拥有地面冲刺投技和空中投技, 所以连段其实更加丰富多样.</p>
+<h2 id="Blaze"><a href="#Blaze" class="headerlink" title="Blaze"></a>Blaze</h2><p>Blaze同样也是比较平衡的角色, 攻击力比Axel稍弱, 但是速度比Axel要稍快, 所以两个人平分秋色.<br>Blaze偏技巧型角色, 普通攻击同样很快, 打击能力没有Axel强, 不过她同时拥有地面冲刺投技和空中投技, 所以连段其实更加丰富多样.<br>Blaze的大招其实严格来说不是消耗三颗星, 而是只消耗两颗, 所以要善于利用这一点能在连击中打出更多技能.</p>
 <table>
 <thead>
 <tr>
@@ -606,8 +606,13 @@
 </tr>
 <tr>
 <td align="left">连段中<strong>下加Special</strong></td>
-<td align="left">三星必杀千鸟,强力必杀技,攻击中会封印敌人的特殊技,打满整个连段附带雷电伤害</td>
+<td align="left">必杀技千鸟,只消耗两颗星,攻击中会封印敌人的特殊技,打满整个连段附带雷电伤害</td>
 <td align="left">也可<strong>下前Energy</strong>或者<strong>Energy</strong>连按两次直接出, 不过建议用在特殊技后取消连超必杀. 在连段中,假如敌人会瞬移闪避,被上一招击中时敌人处于地面状态,按<strong>下加Special</strong>连这招三星必杀时,疯狂难度的敌人有概率会瞬移闪避,导致超必杀打空. 破解办法就是连超必杀尽量晚一点,等上一招发完,比如出<strong>前Special</strong>波动拳时,需要打到最后一击,把Boss击飞到空中时恰好被释放超必杀,恰好能打中Boss,那Boss就会被从空中拉下来</td>
+</tr>
+<tr>
+<td align="left">连段中<strong>上加Special</strong></td>
+<td align="left">必杀技波动连拳,只消耗两颗星</td>
+<td align="left">波动拳连续击中敌人, 最后一击强力弹墙击飞</td>
 </tr>
 <tr>
 <td align="left">按住<strong>前</strong>抓住敌人连续按A</td>
@@ -1407,6 +1412,11 @@
 <td align="left">攻击版边浮空敌人,将敌人拉回屏幕中央</td>
 </tr>
 <tr>
+<td align="left"><strong>上Extra</strong></td>
+<td align="left">挥鞭投技</td>
+<td align="left">挥鞭抓住敌人, 拉到自己身边, 可以接各种投技</td>
+</tr>
+<tr>
 <td align="left"><strong>前前A</strong></td>
 <td align="left">升龙鞭</td>
 <td align="left"><strong>前加Special</strong>电鞭发射,<strong>下加Special</strong>可以出三星必杀电鞭连打, <strong>快速连按Energy</strong>斜小跳可以进行空中跳攻击空连</td>
@@ -1443,6 +1453,11 @@
 </tr>
 <tr>
 <td align="left">抓住敌人按<strong>后A</strong></td>
+<td align="left">转身膝撞连击</td>
+<td align="left">保持按<strong>方向键</strong>不变,因为距离敌人身位很近,打完又会将敌人抓住,可以将普通敌人无限连下去.</td>
+</tr>
+<tr>
+<td align="left">抓住敌人按<strong>上A</strong></td>
 <td align="left">18X投技,完事后恢复少量生命</td>
 <td align="left">硬直比较大,无法继续连其它招</td>
 </tr>
@@ -1960,7 +1975,25 @@
 <td>翼指龙</td>
 </tr>
 <tr>
-<td>4</td>
+<td>5</td>
+<td>SOR2</td>
+<td>Zan</td>
+<td>01:04:48</td>
+<td>55</td>
+<td>MANIA#1</td>
+<td>翼指龙</td>
+</tr>
+<tr>
+<td>5</td>
+<td>SOR2</td>
+<td>SOR3 Shiva</td>
+<td>01:06:44</td>
+<td>81</td>
+<td>MANIA#1</td>
+<td>霸气</td>
+</tr>
+<tr>
+<td>6</td>
 <td>SOR1</td>
 <td>Max</td>
 <td>00:42:22</td>
