@@ -186,7 +186,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2026-06-26 10:16:37" itemprop="dateModified" datetime="2026-06-26T10:16:37+08:00">2026-06-26</time>
+      <time title="修改时间：2026-07-05 02:46:05" itemprop="dateModified" datetime="2026-07-05T02:46:05+08:00">2026-07-05</time>
     </span>
 
   
@@ -5137,7 +5137,7 @@ sudo systemctl status docker.service
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:41:16" itemprop="dateModified" datetime="2026-07-05T02:41:16+08:00">2026-07-05</time>
     </span>
 
   
@@ -5155,25 +5155,21 @@ sudo systemctl status docker.service
 <p>Server (frps) is meant to run on an instance with public ip address.<br>Client (frpc) is meant to run on any instance that needs to expose ports for its services.</p>
 <p>Take SSH for example, if you have a VM instance that is running in your private network with ip address 192.168.0.55, you need to expose its SSH service to public.</p>
 <p>You need to deploy frpc on this VM instance. When frpc is running on this VM, it will talk with Server (frps) that is running on the instance with public ip address.</p>
-<p>Then when you need to SSH to this VM instance, you dont have to connect to its private address 192.168.0.55 directly, which will not work. Instead, you need to connect to the Server (frps) on specified port, then frps will reverse proxy the data to that VM instance.</p>
+<p>Then when you need to SSH to this VM instance, you don’t have to connect to its private address 192.168.0.55 directly, which will not work. Instead, you need to connect to the Server (frps) on the specified port, then frps will reverse proxy the data to that VM instance.</p>
 <h2 id="frps-setup"><a href="#frps-setup" class="headerlink" title="frps setup"></a>frps setup</h2><ul>
 <li>frps.yml</li>
 </ul>
 <pre><code class="yml">version: &quot;3.3&quot;
 services:
   frps:
-    #restart: always
     image: &quot;snowdreamtech/frps:latest&quot;
     container_name: frps
-    network_mode: &quot;host&quot; # linux only, windows does not support
+    network_mode: &quot;host&quot; # Linux only, Windows does not support
     volumes:
       - ./frps.ini:/etc/frp/frps.ini
 </code></pre>
-<p>here network_mode = host is used, which mean windows will not support this option.</p>
-<ul>
-<li>frps.ini</li>
-</ul>
-<pre><code class="ini">[common]
+<p>here <code>network_mode = host</code> is used, which means Windows will not support this option.</p>
+<h3 id="frps-ini"><a href="#frps-ini" class="headerlink" title="frps.ini"></a>frps.ini</h3><pre><code class="ini">[common]
 bind_port = 7000
 dashboard_port = 7500
 token = &lt;token&gt; # should be same as frpc
@@ -5185,12 +5181,11 @@ services:
   frpc:
     image: stilleshan/frpc
     container_name: frpc
-    #restart: always
-    network_mode: &quot;host&quot; # linux only, windows does not support
+    network_mode: &quot;host&quot; # Linux only, Windows does not support
     volumes:
       - ./etc/frp/frpc.ini:/frp/frpc.ini
 </code></pre>
-<p>here network_mode = host is used, which mean windows will not support this option.</p>
+<p>here <code>network_mode = host</code> is used, which means Windows will not support this option.</p>
 <pre><code class="ini">[common]
 server_addr = &lt;your public ip address&gt;
 server_port = 7000
@@ -5203,11 +5198,11 @@ remote_port = 8222
 local_ip = localhost
 local_port = 22
 </code></pre>
-<h2 id="use"><a href="#use" class="headerlink" title="use"></a>use</h2><ul>
-<li>start frps first on your instance that has public ip address</li>
-<li>then start frpc on your instance that has private ip address</li>
-<li>ssh yourname@<your public ip address> -p 8222 will actually ssh connected to your private VM instance.</li>
-</ul>
+<h2 id="Usage"><a href="#Usage" class="headerlink" title="Usage"></a>Usage</h2><ol>
+<li>Start frps first on your instance that has a public IP address</li>
+<li>Then start frpc on your instance that has a private IP address</li>
+<li>SSH to yourname@<your public ip address> -p 8222 will actually connect to your private VM instance</li>
+</ol>
 
       
     </div>
@@ -5355,7 +5350,7 @@ git config --global protocol.https.allow always
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:40:12" itemprop="dateModified" datetime="2026-07-05T02:40:12+08:00">2026-07-05</time>
     </span>
 
   
@@ -5368,20 +5363,12 @@ git config --global protocol.https.allow always
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>mp3 to ogg</p>
-<pre><code>ffmpeg -i input.mp3 -acodec libopus -b:a 64k -compression_level 10 -application voip output.ogg
-
-function cf_convert_mp3_to_ogg()  &#123;
-  local path=$1
-  if type ffmpeg &gt; /dev/null 2&gt;&amp;1 &amp;&amp; type parallel &gt; /dev/null 2&gt;&amp;1; then
-    if test -d $path; then
+          <h3 id="Convert-MP3-to-OGG"><a href="#Convert-MP3-to-OGG" class="headerlink" title="Convert MP3 to OGG"></a>Convert MP3 to OGG</h3><pre><code class="bash">ffmpeg -i input.mp3 -acodec libopus -b:a 64k -compression_level 10 -application voip output.ogg
+```function cf_convert_mp3_to_ogg()  &#123;
+  local path=$1iftype ffmpeg &gt; /dev/null 2&gt;&amp;1 &amp;&amp; type parallel &gt; /dev/null 2&gt;&amp;1; theniftest -d $path; then
       find $path -iname &quot;*.mp3&quot; -type f | sed -r &quot;s/\.mp3//&quot; | parallel -I% --max-args 1  \
-        &quot;ffmpeg -i %.mp3 -strict -2 -c:a opus -b:a 64K -map_metadata 0 -compression_level 10 -y %.ogg &gt; /dev/null 2&gt;&amp;1 &amp;&amp; echo &#39;converted %.mp3 to %.ogg&#39;&quot;
-    else
-      echo &quot;path $path is invalid&quot;
-    fi
-  else 
-    echo &quot;ffmpeg or parallel is not installed&quot;
+        &quot;ffmpeg -i %.mp3 -strict -2 -c:a opus -b:a 64K -map_metadata 0 -compression_level 10 -y %.ogg &gt; /dev/null 2&gt;&amp;1 &amp;&amp; echo &#39;converted %.mp3 to %.ogg&#39;&quot;elseecho &quot;path $path is invalid&quot;
+    fielseecho &quot;ffmpeg or parallel is not installed&quot;
   fi
 &#125;
 </code></pre>
@@ -5470,7 +5457,7 @@ ffmpeg -i output.mkv -an -vn -c:s copy -f rawvideo -map 0:s sub2.txt
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:39:16" itemprop="dateModified" datetime="2026-07-05T02:39:16+08:00">2026-07-05</time>
     </span>
 
   
@@ -5483,7 +5470,7 @@ ffmpeg -i output.mkv -an -vn -c:s copy -f rawvideo -map 0:s sub2.txt
     
     
     <div class="post-body" itemprop="articleBody">
-          <h2 id="step-1-add-user-entry-in-docker-compose-yml"><a href="#step-1-add-user-entry-in-docker-compose-yml" class="headerlink" title="step 1: add user entry in docker-compose.yml"></a>step 1: add user entry in docker-compose.yml</h2><pre><code class="yaml">version: &#39;3&#39;
+          <h2 id="Step-1-Add-user-entry-in-docker-compose-yml"><a href="#Step-1-Add-user-entry-in-docker-compose-yml" class="headerlink" title="Step 1: Add user entry in docker-compose.yml"></a>Step 1: Add user entry in docker-compose.yml</h2><pre><code class="yaml">version: &#39;3&#39;
 services:
     app:
         image: alpine

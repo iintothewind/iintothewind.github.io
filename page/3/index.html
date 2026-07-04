@@ -186,7 +186,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:33:19" itemprop="dateModified" datetime="2026-07-05T02:33:19+08:00">2026-07-05</time>
     </span>
 
   
@@ -211,15 +211,15 @@
   location: variable s of type java.lang.Object
 </code></pre>
 <p>But why?</p>
-<p>The reason for this compilation error is that the type inference for Java lanaguage is weak in this case.<br>It is expected that JVM knows the type of the elements in <code>playlist</code> when it is reading the first lambda <code>s-&gt;s.getTitle()</code>.<br>But actually, JVM is not able to figure it out.</p>
+<p>The reason for this compilation error is that the type inference for Java language is weak in this case.<br>It is expected that JVM knows what the type of the elements in <code>playlist</code> is when it is reading the first lambda <code>s-&gt;s.getTitle()</code>.<br>But actually, JVM is not able to figure it out.</p>
 <h2 id="the-solutions"><a href="#the-solutions" class="headerlink" title="the solutions"></a>the solutions</h2><p>There are three approaches to solve this problem.</p>
 <h3 id="use-static-lambda-expression"><a href="#use-static-lambda-expression" class="headerlink" title="use static lambda expression"></a>use static lambda expression</h3><pre><code class="java">Collections.sort(playlist, Comparator.comparing(Song::getTitle)
               .thenComparing(Song::getDuration)
               .thenComparing(Song::getArtist)
 );
 </code></pre>
-<h3 id="use-explicitly-defined-lambda-with-a-temorary-variable"><a href="#use-explicitly-defined-lambda-with-a-temorary-variable" class="headerlink" title="use explicitly defined lambda with a temorary variable"></a>use explicitly defined lambda with a temorary variable</h3><pre><code class="java">Comparator&lt;Song&gt; byName = (s1, s2) -&gt; s1.getArtist().compareTo(s2.getArtist());
-Comparator&lt;Song&gt; byDuration = (s1, s2) -&gt; Integer.compare(s1.getDuration(), s2.getDuration());
+<h3 id="use-explicitly-defined-lambda-with-a-temorary-variable"><a href="#use-explicitly-defined-lambda-with-a-temorary-variable" class="headerlink" title="use explicitly defined lambda with a temorary variable"></a>use explicitly defined lambda with a temorary variable</h3><pre><code class="java">Comparator&lt;Song&gt; byName = (song1, song2) -&gt; song1.getArtist().compareTo(song2.getArtist());
+Comparator&lt;Song&gt; byDuration = (song1, song2) -&gt; Integer.compare(song1.getDuration(), song2.getDuration());
 Collections.sort(playlist, byName.thenComparing(byDuration));
 </code></pre>
 <h3 id="add-explicity-type-parameter-before-the-Comparator-comparing-is-called"><a href="#add-explicity-type-parameter-before-the-Comparator-comparing-is-called" class="headerlink" title="add explicity type parameter before the Comparator.comparing() is called"></a>add explicity type parameter before the Comparator.comparing() is called</h3><pre><code class="java">Collections.sort(playlist, Comparator.&lt;Song, String&gt;comparing((s) -&gt; s.getTitle())
@@ -529,7 +529,7 @@ sudo dnf install glibc-langpack-zh
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:22:51" itemprop="dateModified" datetime="2026-07-05T02:22:51+08:00">2026-07-05</time>
     </span>
 
   
@@ -542,14 +542,14 @@ sudo dnf install glibc-langpack-zh
     
     
     <div class="post-body" itemprop="articleBody">
-          <h2 id="the-problem"><a href="#the-problem" class="headerlink" title="the problem"></a>the problem</h2><p>Recently I am trying to use the centos 8 stream.<br>When I was trying to install pthon as a dependency for vim plugin <code>YouCompleteMe</code>.<br>The <code>install.py</code> was stopped by such a problem:</p>
+          <h2 id="the-problem"><a href="#the-problem" class="headerlink" title="the problem"></a>the problem</h2><p>Recently I am trying to use the centos 8 stream.<br>When I was trying to install python as a dependency for vim plugin <code>YouCompleteMe</code>.<br>The <code>install.py</code> was stopped by such a problem:</p>
 <pre><code>[vagrant@centos8 YouCompleteMe]$ ./install.py
 /usr/bin/env: ‘python’: No such file or directory
 </code></pre>
 <p>I guess it is probably I installed the <code>python3</code>. The executable file mapped to <code>/usr/bin/python3</code> but not <code>/usr/bin/python</code>.<br>Therefore there is no executable mapped to <code>/usr/bin/python</code></p>
-<h2 id="the-solution"><a href="#the-solution" class="headerlink" title="the solution"></a>the solution</h2><p>The easy way to fix this is pretty straight forward,<br>I can just use <code>ln</code> to create a soft reference for the real <code>python3</code> executable file and let it map to <code>/usr/bin/python</code> then everything seems to be fine.</p>
+<h2 id="the-solution"><a href="#the-solution" class="headerlink" title="the solution"></a>the solution</h2><p>The easy way to fix this is pretty straightforward,<br>I can just use <code>ln</code> to create a symbolic link for the real <code>python3</code> executable file and let it map to <code>/usr/bin/python</code> then everything seems to be fine.</p>
 <p>But my gut feeling tells me there could be an elegant way to fix this problem.<br>By searching from internet, I found this command <code>update-alternatives</code>.</p>
-<p>By runing this command:</p>
+<p>By running this command:</p>
 <pre><code>[vagrant@centos8 YouCompleteMe]$ sudo update-alternatives --config python
 
 There are 2 programs which provide &#39;python&#39;.
@@ -562,7 +562,7 @@ There are 2 programs which provide &#39;python&#39;.
 Enter to keep the current selection[+], or type selection number: 2
 </code></pre>
 <p>We could see that there are currently two programs which provide <code>python</code>, and the second one is the right version we want.<br>So just simply type <code>2</code> as our selection, the <code>python</code> version would be changed to <code>python3</code>.</p>
-<p>Now the probelm is really solved.</p>
+<p>Now the problem is really solved.</p>
 <p>P.S: BTW, I saw <code>neovim</code> is still not included in <code>epel</code> for centos8, and I am still waiting for it.</p>
 
       
@@ -626,7 +626,7 @@ Enter to keep the current selection[+], or type selection number: 2
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:31:30" itemprop="dateModified" datetime="2026-07-05T02:31:30+08:00">2026-07-05</time>
     </span>
 
   
@@ -763,7 +763,7 @@ public interface TimeoutSupportFuture &#123;
   &#125;
 &#125;
 </code></pre>
-<h2 id="summary"><a href="#summary" class="headerlink" title="summary"></a>summary</h2><p>A <code>CompletableFuture</code> instance can have timeout support with the help of <code>CompletableFuture.applyToEither()</code>.<br>But there is a significat difference between <strong>timeout</strong> and <strong>cancel</strong>.<br><strong>timeout</strong> means, A <code>CompletableFuture</code> instance will complete with <code>TimeoutException</code> if it does not complete its task within given time.<br><strong>cancel</strong> means, A <code>CompletableFuture</code> instance will cancel the task during its execution, and complete with <code>CancellationException</code> if it does not complete its task within given time.</p>
+<h2 id="summary"><a href="#summary" class="headerlink" title="summary"></a>summary</h2><p>A <code>CompletableFuture</code> instance can have timeout support with the help of <code>CompletableFuture.applyToEither()</code>.<br>But there is a significant difference between <strong>timeout</strong> and <strong>cancel</strong>.<br><strong>timeout</strong> means, A <code>CompletableFuture</code> instance will complete with <code>TimeoutException</code> if it does not complete its task within given time.<br><strong>cancel</strong> means, A <code>CompletableFuture</code> instance will cancel the task during its execution, and complete with <code>CancellationException</code> if it does not complete its task within given time.</p>
 <p>While <code>CompletableFuture</code> has a serius <strong>design flaw</strong> in its <code>cancel()</code> method:</p>
 <pre><code class="java">/**
  * @param mayInterruptIfRunning – this value has no effect in this implementation because interrupts are not used to control processing
@@ -771,8 +771,8 @@ public interface TimeoutSupportFuture &#123;
 public boolean cancel(boolean mayInterruptIfRunning)
 </code></pre>
 <p>This <code>cancel()</code> method only returns a flag and assign <code>CancellationException</code> to result, thats all.</p>
-<p><strong>It never really cancels any executing tasks!</strong><br><strong>It never really cancels any executing tasks!</strong><br><strong>It never really cancels any executing tasks!</strong></p>
-<p>So you are on your own to make sure that any task executed in <code>CompletableFuture</code> should be quited properly.<br>If you have applied a task into <code>CompletableFuture</code> and its execution never ends, this task would be executed forever till JVM exists!<br>Unless this is what you want, don’t use <code>CompletableFuture</code> in this way.</p>
+<p><strong>It never really cancels any executing tasks!</strong></p>
+<p>So you are on your own to make sure that any task executed in <code>CompletableFuture</code> should be quit properly.<br>If you have applied a task into <code>CompletableFuture</code> and its execution never ends, this task would be executed forever till JVM exists!<br>Unless this is what you want, don’t use <code>CompletableFuture</code> in this way.</p>
 <h2 id="reference"><a href="#reference" class="headerlink" title="reference"></a>reference</h2><p><a target="_blank" rel="noopener" href="https://dzone.com/articles/asynchronous-timeouts">Asynchronous Timeouts with CompletableFuture</a></p>
 
       

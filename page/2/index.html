@@ -459,7 +459,7 @@ fi
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:33:37" itemprop="dateModified" datetime="2026-07-05T02:33:37+08:00">2026-07-05</time>
     </span>
 
   
@@ -472,14 +472,14 @@ fi
     
     
     <div class="post-body" itemprop="articleBody">
-          <h2 id="problem"><a href="#problem" class="headerlink" title="problem"></a>problem</h2><p>Recently some team members reported that some instance of our application occsionally failed to serve an upload request becasue it constantly threw the same error:</p>
+          <h2 id="problem"><a href="#problem" class="headerlink" title="problem"></a>problem</h2><p>Recently some team members reported that some instances of our application occasionally failed to serve an upload request because it constantly threw the same error:</p>
 <pre><code class="Java">st=java.lang.NoClassDefFoundError: Could not initialize class xxx.SomeUtil
 at xxxImpl.upload(xxx.Java:xxx)
 at sun.reflect.GeneratedMethodAccessor106.invoke(Unknown Source) at
 ..........
 ..........
 </code></pre>
-<h2 id="code-with-issues"><a href="#code-with-issues" class="headerlink" title="code with issues"></a>code with issues</h2><p>While this <code>SomeUtil</code> has been implemented like as blow:</p>
+<h2 id="code-with-issues"><a href="#code-with-issues" class="headerlink" title="code with issues"></a>code with issues</h2><p>While this <code>SomeUtil</code> has been implemented like as below:</p>
 <pre><code class="Java">public class SomeUtil &#123;
   private static Map&lt;String, String&gt; entries = ImmutableMap.of();
 
@@ -498,9 +498,9 @@ at sun.reflect.GeneratedMethodAccessor106.invoke(Unknown Source) at
 
   public static String getEntry(@NonNull String key) &#123;
     // .....
-    entries.getOrDefault(key, &quot;&quot;);
+    String result = entries.getOrDefault(key, &quot;&quot;);
     // .....
-    return entry;
+    return result;
   &#125;
 &#125;
 </code></pre>
@@ -543,9 +543,9 @@ public void testStaticBlock() &#123;
 <p>And ran the test then finally I can reproduce the same error as reported:</p>
 <pre><code class="java">java.lang.NoClassDefFoundError: Could not initialize class test.SomeUtil
 </code></pre>
-<h2 id="root-cause"><a href="#root-cause" class="headerlink" title="root cause"></a>root cause</h2><p>So now we can confirm that method <code>loadEntries()</code> really is the root cause.<br>Since the first time when this method is called in static block, some how there was a database access error.<br>Due to this db error, the initialization of the <code>SomeUtil</code> class failed.<br>Since static block can only be ran once.<br>Then after this failure, when more upload request calls came, more <code>NoClassDefFoundError</code> would be produced.</p>
-<h2 id="solution"><a href="#solution" class="headerlink" title="solution"></a>solution</h2><p>We can either remove the static block, and change the load logic to when <code>getEntry()</code> is called in this method, check the size of <code>entries</code>. When size of <code>entries</code> is empty, call <code>loadEntries()</code> to update the state of <code>entries</code></p>
-<p>Or we can keep the static block, but in this static block we should make sure no <code>Throwable</code> will be thrown out.<br>And let <code>getEntry()</code> handle the state when <code>entries</code> is empty.</p>
+<h2 id="root-cause"><a href="#root-cause" class="headerlink" title="root cause"></a>root cause</h2><p>So now we can confirm that method <code>loadEntries()</code> really is the root cause.<br>Since the first time when this method is called in static block, some how there was a database access error.<br>Due to this db error, the initialization of the <code>SomeUtil</code> class failed.<br>Since static block can only be run once.<br>Then after this failure, when more upload request calls come, more <code>NoClassDefFoundError</code> will be produced.</p>
+<h2 id="solution"><a href="#solution" class="headerlink" title="solution"></a>solution</h2><p>We can either remove the static block, and change the load logic to call <code>loadEntries()</code> when <code>getEntry()</code> is called in this method. We should check the size of <code>entries</code>. When size of <code>entries</code> is empty, call <code>loadEntries()</code> to update the state of <code>entries</code>.</p>
+<p>Alternatively, we can keep the static block, but ensure no <code>Throwable</code> is thrown in this static block.<br>Let <code>getEntry()</code> handle the state when <code>entries</code> is empty.</p>
 <h2 id="conclusion"><a href="#conclusion" class="headerlink" title="conclusion"></a>conclusion</h2><ul>
 <li><p>Getting <code>NoClassDefFoundError</code> does NOT mean that you class is missing (in that case you’d get a <code>ClassNotFoundException</code>). <code>NoClassDefFoundError</code> means class loader ran into an error while reading the class definition when trying to read the class.</p>
 </li>
@@ -890,7 +890,7 @@ firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent
     </span>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/05/02/bash-command-cheet-sheet/" class="post-title-link" itemprop="url">bash command cheet sheet</a>
+          <a href="/2020/05/02/bash-command-cheet-sheet/" class="post-title-link" itemprop="url">bash command cheat sheet</a>
         </h2>
 
         <div class="post-meta-container">
@@ -901,14 +901,14 @@ firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent
       </span>
       <span class="post-meta-item-text">发表于</span>
 
-      <time title="创建时间：2020-05-03 11:53:32" itemprop="dateCreated datePublished" datetime="2020-05-03T11:53:32+08:00">2020-05-03</time>
+      <time title="创建时间：2020-05-03 11:53:30" itemprop="dateCreated datePublished" datetime="2020-05-03T11:53:30+08:00">2020-05-03</time>
     </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:32:45" itemprop="dateModified" datetime="2026-07-05T02:32:45+08:00">2026-07-05</time>
     </span>
 
   
@@ -921,7 +921,7 @@ firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent
     
     
     <div class="post-body" itemprop="articleBody">
-          <p>My WizNote service has been expired.<br>I did not pay to renew the service.<br>It is good and convenient though.<br>So I decided to move all my previous learning notes to here.<br>Most of them are not oringinally created by me.<br>I would try to include the source.<br>Please remind me to delete them if you are the author and you feel it is a violation of your IP.</p>
+          <p>My WizNote service has been expired.<br>I did not pay to renew the service.<br>It is good and convenient though.<br>So I decided to move all my previous learning notes to here.<br>Most of them are not originally created by me.<br>I would try to include the source.<br>Please remind me to delete them if you are the author and you feel it is a violation of your copyright.</p>
 <pre><code class="bash">
 # last parameter
 $_
@@ -944,7 +944,7 @@ alias ll=&quot;ls -lthF&quot;
 alias la=&quot;ls -lthFA&quot;
 alias md=&quot;mkdir &quot;
 alias rm=&quot;rm -i&quot;
-alias mdate=&quot;date \&quot;+%Y-%m-%d %H:%M:%S\&quot;&quot;
+alias mdate=&quot;date &quot;+%Y-%m-%d %H:%M:%S&quot;&quot;
 
 # fedora
 alias vim=&quot;gvim -v&quot;
@@ -952,7 +952,7 @@ alias xcp=&quot;xclip -selection clipboard&quot;
 alias xcv=&quot;xclip -o&quot;
 alias rmrtlan=&quot;sudo route del default enp0s31f6&quot;
 alias scrnoff=&quot;xset dpms force off &quot;
-alias printpath=&quot;echo $PATH | tr : \\\\n&quot;
+alias printpath=&quot;echo $PATH | tr : \\n&quot;
 alias lstcp=&quot;lsof -i -n -P | grep TCP&quot;
 
 # list top 5 files/ folders
@@ -968,13 +968,13 @@ find . -type d |sed &#39;s:[^-][^/]*/:--:g; s:^-: |:&#39;
 find / -name file1  # 从 &#39;/&#39; 开始进入根文件系统搜索文件和目录
 find / -user user1  # 搜索属于用户 &#39;user1&#39; 的文件和目录
 find /home/user1 -name \*.bin    # 在目录 &#39;/ home/user1&#39; 中搜索带有&#39;.bin&#39; 结尾的文件
-find /usr/bin -type f -atime +100   # 搜索在过去100天内未被使用过的执行文件
-find /usr/bin -type f -mtime -10   #    搜索在10天内被创建或者修改过的文件
+find /usr/bin -type f -atime +100   # 搜索在过去 100 天内未被使用过的执行文件
+find /usr/bin -type f -mtime -10   #    搜索在 10 天内被创建或者修改过的文件
 find / -name *.rpm -exec chmod 755 &#39;&#123;&#125;&#39; \;  # 搜索以 &#39;.rpm&#39; 结尾的文件并定义其权限
 find / -xdev -name \*.rpm   # 搜索以 &#39;.rpm&#39; 结尾的文件，忽略光驱、捷盘等可移动设备
-find ./code -name &quot;*.c&quot; |xargs grep -in &quot;hello&quot; # 在~/code目录搜索并显示文件名后缀为.c并且包含字符串hello的文件和行数
-find . -type f -exec chmod 644 &#123;&#125; \;  #文件加644
-find . -type d -exec chmod 755 &#123;&#125; \; ＃目录加755
+find ./code -name &quot;*.c&quot; |xargs grep -in &quot;hello&quot; # 在~/code 目录搜索并显示文件名后缀为.c 并且包含字符串 hello 的文件和行数
+find . -type f -exec chmod 644 &#123;&#125; \;  # 文件加 644
+find . -type d -exec chmod 755 &#123;&#125; \; # 目录加 755
 find ./ -type f | xargs sudo chmod 644
 
 # display thread
@@ -1006,43 +1006,6 @@ systemctl start service
 systemctl stop service
 # disable service
 systemctl disable service
-
-# copy .ttf font file to .fonts
-$ fc-cache -vf
-
-synclient TouchpadOff=1
-
-# download a file, rename as amm, grant x permission, and run it.
-$ curl -L -o amm https://git.io/vro0u &amp;&amp; chmod +x amm &amp;&amp; ./amm
-
-$ watch --interval 1 date
-# watch file size
-$ watch -n60 du -h /var/log/messages
-
-cut -d\    -f 1 ~/.bash_history | sort | uniq -c | sort -rn | head -n 10 | sed &#39;s/.*/    &amp;/g&#39;
-sudo -u apache find . -not -readable
-
-# open connections
-lsof -i | grep -E &quot;(LISTEN|ESTABLISHED)&quot;
-# Displaying a Active Network Connections
-lsof -i|grep -E &quot;(LISTEN|ESTABLISHED)&quot; |awk &#39;&#123;print $1, $8, $9&#125;&#39;
-alias lsac=&quot;lsof -i | grep -E &#39;(LISTEN|ESTABLISHED)&#39;&quot;
-
-echo &quot;Hello, world&quot; | xclip
-echo &quot;Hello, world&quot; | xclip -selection clipboard
-xclip -sel clip &lt; file
-cat README.TXT | xsel
-cat README.TXT | xsel -b # 如有问题可以试试-b选项
-# 将readme.txt的文本放入剪贴板
-xsel &lt; README.TXT
-# 清空剪贴板
-xsel -c
-
-sudo mkntfs -f -L udisk /dev/sdb1 -F
-
-sudo dnf install fuse-exfat exfat-utils
-
-docker images | tail -n +5 | head -n -1 | awk &#39;&#123;print $3&#125;&#39; | xargs docker rmi
 </code></pre>
 
       
@@ -1210,7 +1173,7 @@ echo $var | cut -nc 8-  # www.aaa.com
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:21:37" itemprop="dateModified" datetime="2026-07-05T02:21:37+08:00">2026-07-05</time>
     </span>
 
   
@@ -1223,7 +1186,7 @@ echo $var | cut -nc 8-  # www.aaa.com
     
     
     <div class="post-body" itemprop="articleBody">
-          <h2 id="the-problem"><a href="#the-problem" class="headerlink" title="the problem"></a>the problem</h2><p>The error occured while executing “npm clean-install”:</p>
+          <h2 id="the-problem"><a href="#the-problem" class="headerlink" title="the problem"></a>the problem</h2><p>The error occurred while executing “npm clean-install”:</p>
 <pre><code>gyp ERR! configure error
 gyp ERR! stack Error: self signed certificate in certificate chain
 gyp ERR! stack     at TLSSocket.onConnectSecure (_tls_wrap.js:1349:34)

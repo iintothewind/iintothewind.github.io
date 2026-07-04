@@ -27,7 +27,7 @@
 <meta property="og:description" content="the problemFirst, lets take a look at the following code sample: Collections.sort(playlist, Comparator.comparing(s -&gt; s.getTitle())               .thenComparing(p1 -&gt; p1.getDuration())">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-12-10T10:13:12.000Z">
-<meta property="article:modified_time" content="2024-04-16T03:05:23.183Z">
+<meta property="article:modified_time" content="2026-07-04T18:33:19.009Z">
 <meta property="article:author" content="Chen Yinghua">
 <meta property="article:tag" content="java">
 <meta name="twitter:card" content="summary">
@@ -193,7 +193,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2024-04-16 11:05:23" itemprop="dateModified" datetime="2024-04-16T11:05:23+08:00">2024-04-16</time>
+      <time title="修改时间：2026-07-05 02:33:19" itemprop="dateModified" datetime="2026-07-05T02:33:19+08:00">2026-07-05</time>
     </span>
 
   
@@ -217,15 +217,15 @@
   location: variable s of type java.lang.Object
 </code></pre>
 <p>But why?</p>
-<p>The reason for this compilation error is that the type inference for Java lanaguage is weak in this case.<br>It is expected that JVM knows the type of the elements in <code>playlist</code> when it is reading the first lambda <code>s-&gt;s.getTitle()</code>.<br>But actually, JVM is not able to figure it out.</p>
+<p>The reason for this compilation error is that the type inference for Java language is weak in this case.<br>It is expected that JVM knows what the type of the elements in <code>playlist</code> is when it is reading the first lambda <code>s-&gt;s.getTitle()</code>.<br>But actually, JVM is not able to figure it out.</p>
 <h2 id="the-solutions"><a href="#the-solutions" class="headerlink" title="the solutions"></a>the solutions</h2><p>There are three approaches to solve this problem.</p>
 <h3 id="use-static-lambda-expression"><a href="#use-static-lambda-expression" class="headerlink" title="use static lambda expression"></a>use static lambda expression</h3><pre><code class="java">Collections.sort(playlist, Comparator.comparing(Song::getTitle)
               .thenComparing(Song::getDuration)
               .thenComparing(Song::getArtist)
 );
 </code></pre>
-<h3 id="use-explicitly-defined-lambda-with-a-temorary-variable"><a href="#use-explicitly-defined-lambda-with-a-temorary-variable" class="headerlink" title="use explicitly defined lambda with a temorary variable"></a>use explicitly defined lambda with a temorary variable</h3><pre><code class="java">Comparator&lt;Song&gt; byName = (s1, s2) -&gt; s1.getArtist().compareTo(s2.getArtist());
-Comparator&lt;Song&gt; byDuration = (s1, s2) -&gt; Integer.compare(s1.getDuration(), s2.getDuration());
+<h3 id="use-explicitly-defined-lambda-with-a-temorary-variable"><a href="#use-explicitly-defined-lambda-with-a-temorary-variable" class="headerlink" title="use explicitly defined lambda with a temorary variable"></a>use explicitly defined lambda with a temorary variable</h3><pre><code class="java">Comparator&lt;Song&gt; byName = (song1, song2) -&gt; song1.getArtist().compareTo(song2.getArtist());
+Comparator&lt;Song&gt; byDuration = (song1, song2) -&gt; Integer.compare(song1.getDuration(), song2.getDuration());
 Collections.sort(playlist, byName.thenComparing(byDuration));
 </code></pre>
 <h3 id="add-explicity-type-parameter-before-the-Comparator-comparing-is-called"><a href="#add-explicity-type-parameter-before-the-Comparator-comparing-is-called" class="headerlink" title="add explicity type parameter before the Comparator.comparing() is called"></a>add explicity type parameter before the Comparator.comparing() is called</h3><pre><code class="java">Collections.sort(playlist, Comparator.&lt;Song, String&gt;comparing((s) -&gt; s.getTitle())
