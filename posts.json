@@ -1,41 +1,5 @@
 [
   {
-    "title": "语法高亮演示",
-    "date": "2026-07-04T23:00:00.000Z",
-    "formattedDate": "2026-07-04",
-    "tags": [
-      "demo"
-    ],
-    "categories": [],
-    "slug": "2026-07-04-syntax-demo",
-    "url": "posts/2026-07-04-syntax-demo.html",
-    "excerpt": "代码高亮 function sayHello(name) {} .box { color: blue; }"
-  },
-  {
-    "title": "语法高亮演示",
-    "date": "2026-07-04T23:00:00.000Z",
-    "formattedDate": "2026-07-04",
-    "tags": [
-      "demo"
-    ],
-    "categories": [],
-    "slug": "2026-07-04-syntax-test",
-    "url": "posts/2026-07-04-syntax-test.html",
-    "excerpt": "代码高亮 javascript function sayHello(name) { console.log(Hello, !); } sayHello('World'); python import "
-  },
-  {
-    "title": "测试语法高亮",
-    "date": "2026-07-04T12:00:00.000Z",
-    "formattedDate": "2026-07-04",
-    "tags": [
-      "test"
-    ],
-    "categories": [],
-    "slug": "SOR2XCombo_cn",
-    "url": "posts/SOR2XCombo_cn.html",
-    "excerpt": "测试代码高亮 这里是普通段落。 下面是 JavaScript 代码： function greet(name) { console.log(`Hello, ${name}!`); } greet(&q"
-  },
-  {
     "title": "Streets of Rage SOR2XCombo EN",
     "date": "2026-06-20T19:21:34.000Z",
     "formattedDate": "2026-06-20",
@@ -46,6 +10,18 @@
     "slug": "SOR2XCombo_en",
     "url": "posts/SOR2XCombo_en.html",
     "excerpt": "Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up "
+  },
+  {
+    "title": "怒之铁拳 SOR2XCombo CN",
+    "date": "2026-06-20T19:21:34.000Z",
+    "formattedDate": "2026-06-20",
+    "tags": [
+      "game"
+    ],
+    "categories": [],
+    "slug": "SOR2XCombo_cn",
+    "url": "posts/SOR2XCombo_cn.html",
+    "excerpt": "怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大"
   },
   {
     "title": "fixed CORS problem caused by shiro",
