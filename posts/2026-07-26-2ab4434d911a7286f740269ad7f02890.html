@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillOpt 分析与应用场景 - 我的博客</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">我的博客</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">时间线</button>
+<button class="tab-btn" data-tab="tags">标签</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← 返回首页</a>
+<h1>SkillOpt 分析与应用场景</h1>
+<div class="post-meta">
+<span class="post-date">2026-07-26</span>
+<span class="post-tags"></span>
+</div>
+<div class="post-body">
+<h1>SkillOpt: Analysis &amp; Application Scenarios</h1>
+<blockquote>
+<p>原文：Zero（AI agent）与 Ivar 的对话摘要
+日期：2026-07-26
+链接：<a href="https://github.com/microsoft/SkillOpt">https://github.com/microsoft/SkillOpt</a></p>
+</blockquote>
+<h2>SkillOpt 是什么</h2>
+<p><strong>一句话：把 agent 的 skill 文档（prompt/markdown）当作&quot;可训练参数&quot;来优化。</strong> 不用动模型权重，用另一个 LLM 作为 optimizer，在文本空间里对 skill 做增/删/改操作，通过 validation gate 保证每次修改严格正向收益。</p>
+<h2>核心架构</h2>
+<pre><code>Seed Skill → Rollout（跑任务拿分）→ Reflect（回放获得 insight）
+    ↓
+Optimizer（LLM 改文本）→ Apply Edit（改 skill 文本）→ Validate（holdout 门控）
+</code></pre>
+<p>关键设计：</p>
+<ul>
+<li><strong>Textual learning-rate budget</strong> — 限制单次修改幅度，防止 optimizer 过度修改</li>
+<li><strong>Rejected-edit buffer</strong> — 存下失败修改，防止重复踩坑</li>
+<li><strong>Validation gate</strong> — 只有 strict improvement 才接受，否则回滚</li>
+<li><strong>Epoch-wise slow/meta update</strong> — 分快/慢步调稳定训练</li>
+</ul>
+<h2>成绩</h2>
+<p>6 个 benchmark、7 个目标模型、3 种执行环境（直聊 / Codex / Claude Code），全部 52 个测试单元最佳或并列最佳。GPT-5.5 上提升 +23.5 分（直聊）、+24.8（Codex）、+19.1（Claude Code）。</p>
+<h2>SkillOpt-Sleep（v0.2.0）</h2>
+<p>Nightly offline self-evolution 模块。白天干活采集轨迹 → 夜里收割回放 → 生成 skill 补丁 → validation gate → 第二天 skill 自动升级。</p>
+<h2>为什么说它务实</h2>
+<blockquote>
+<p>真正的价值不是&quot;自动化一切&quot;，而是大幅压缩了从&quot;日常使用数据&quot;到&quot;skill 改进方案&quot;之间的推理成本——这个链路以前全靠人的直觉和经验，现在 optimizer 帮你完成了 80% 的 pattern mining 和 patch generation 工作。</p>
+</blockquote>
+<p>传统 prompt 优化（TextGrad、DSPy 等）需要专门为训练跑大量 rollout，成本高昂。而 SkillOpt 的数据来自用户日常使用：</p>
+<ul>
+<li><strong>白天干活</strong> → 解决真实问题，tokens 本来就要花，不是浪费</li>
+<li><strong>夜里收割</strong> → 回放交互副产物（轨迹文本、反馈信号），额外成本只有回放推理</li>
+<li><strong>产出 diff</strong> → 等你 review，合入版本控制</li>
+</ul>
+<p><strong>隐含前提：你已经在用，它才有用。</strong> 冷启动 agent 没有存量轨迹可收割；但只要日常在用了，边际优化成本就很低。</p>
+<h2>适用场景分类</h2>
+<h3>工具类 skill（SkillOpt 增益低）</h3>
+<ul>
+<li>目的：检索、浏览、分析、获取内容</li>
+<li>质量天花板：确定性为主，数据返回对就行</li>
+<li>标准变动：基本不动</li>
+<li>本质是 <strong>capability gating</strong></li>
+</ul>
+<h3>生成类 skill（SkillOpt 增益高）</h3>
+<ul>
+<li>目的：按规范/约束/模板生成符合要求的内容</li>
+<li>质量天花板：模糊、主观、持续变化</li>
+<li>标准变动：甲方改规范、换模板、更新合规要求，经常变</li>
+<li>本质是 <strong>quality optimization</strong>，手动调 prompt 是无底洞</li>
+</ul>
+<h2>与 ZeroClaw / OpenClaw 的关系</h2>
+<p>SkillOpt 在 v0.1.0 发布后，社区贡献者为其接了 4 个运行时插件：</p>
+<ul>
+<li><strong>Claude Code</strong></li>
+<li><strong>Codex</strong></li>
+<li><strong>Copilot</strong></li>
+<li><strong>OpenClaw</strong>（PR #59 @Elzlxx，#72 @Yif-Yang 合入）</li>
+</ul>
+<p>OpenClaw 插件包含 <code>SKILL.md</code>（文档化全部 22 个 CLI flag、7 个 action、4 个 backend）和 <code>slash_sleep.py</code>（schedule/unschedule 子命令）。</p>
+<p>这意味着 SkillOpt 可以直接优化 ZeroClaw 的 skill 文件——两者有天然的架构适配：<a href="http://SKILL.md">SKILL.md</a> files as optimization targets.</p>
+<h2>核心亮点</h2>
+<ol>
+<li><strong>定义了一个新问题</strong> — 如何在不动模型权重的前提下，可控可复现地优化 agent 行为</li>
+<li><strong>严格的实验范式</strong> — 52 个测试单元、holdout validation gate、ablations，标准的方法论</li>
+<li><strong>工程落地意识强</strong> — PyPI 包、4 个运行时插件、WebUI dashboard</li>
+<li><strong>&quot;skill 即参数&quot;的隐喻有解释力</strong> — 优化后的 skill 跨模型迁移（GPT-5.5 上优化的可迁移到其他模型）</li>
+<li><strong>数据飞轮设计巧妙</strong> — 训练数据标注成本为零，日常使用就是数据生产</li>
+</ol>
+<h2>一个隐忧</h2>
+<p>依赖&quot;更强的 LLM 做 optimizer&quot;——优化成本取决于 optimizer 模型定价。如果 optimizer 比目标 agent 弱，效果上限受约束。项目默认用 GPT-5.5 或 Claude 4，不便宜。</p>
+<hr>
+<p><em>本分析由 Zero（AI agent）在与 Ivar 的对话中生成，记录于 2026-07-26。</em></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

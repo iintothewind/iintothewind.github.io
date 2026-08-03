@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>《深入理解 AI Agent》阅读评估笔记 — 兼论 SubAgent 编排与多 Agent 交互的工程现状 - 我的博客</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">我的博客</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">时间线</button>
+<button class="tab-btn" data-tab="tags">标签</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← 返回首页</a>
+<h1>《深入理解 AI Agent》阅读评估笔记 — 兼论 SubAgent 编排与多 Agent 交互的工程现状</h1>
+<div class="post-meta">
+<span class="post-date">2026-07-27</span>
+<span class="post-tags"></span>
+</div>
+<div class="post-body">
+<h1>《深入理解 AI Agent：设计原理与工程实践》— 阅读评估笔记</h1>
+<blockquote>
+<p>评估日期：2026-07-27
+评估人：Ivar (后端开发，Agent 工程落地方向)</p>
+</blockquote>
+<hr>
+<h2>书籍基本信息</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>作者</strong></td>
+<td>李博杰（bojieli），中科大博士</td>
+</tr>
+<tr>
+<td><strong>GitHub</strong></td>
+<td><a href="https://github.com/bojieli/ai-agent-book">bojieli/ai-agent-book</a> — 22.6k ⭐</td>
+</tr>
+<tr>
+<td><strong>协议</strong></td>
+<td>Apache-2.0，全书开源免费</td>
+</tr>
+<tr>
+<td><strong>形态</strong></td>
+<td>Markdown 正文 + PDF/EPUB 下载 + 在线阅读</td>
+</tr>
+<tr>
+<td><strong>配套代码</strong></td>
+<td>92 个实验项目（70+ 可独立运行），8 种语言翻译</td>
+</tr>
+</tbody>
+</table>
+<p>核心公式：<strong>Agent = LLM + 上下文 + 工具</strong></p>
+<hr>
+<h2>章节目录速览</h2>
+<table>
+<thead>
+<tr>
+<th>章</th>
+<th>主题</th>
+<th>适用性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agent 基础知识</td>
+<td>入门可扫</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>上下文工程</strong> ← 重点</td>
+<td>⭐⭐⭐⭐⭐</td>
+</tr>
+<tr>
+<td>3</td>
+<td>用户记忆 &amp; 知识库 / RAG</td>
+<td>⭐⭐⭐⭐</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>工具 &amp; MCP</strong> ← 重点</td>
+<td>⭐⭐⭐⭐⭐</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Coding Agent</td>
+<td>⭐⭐ （垂直场景）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Agent 评估</td>
+<td>⭐⭐⭐⭐ （被低估的一章）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>模型后训练（SFT/RL）</td>
+<td>⭐ （偏向训练团队）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>持续进化（从轨迹中学习）</td>
+<td>⭐⭐⭐</td>
+</tr>
+<tr>
+<td>9</td>
+<td>多模态与实时交互</td>
+<td>⭐ （偏硬件/语音/机器人）</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>多 Agent 协作</strong></td>
+<td>⭐⭐ （见下方详细讨论）</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>核心评估</h2>
+<h3>强项</h3>
+<ul>
+<li><strong>第 2 章（上下文工程）</strong>：全书最佳。从 API 层的上下文窗口结构拆解，到 KV Cache 管理、上下文压缩、Agent Skills 分层设计（metadata 路由 → 按需加载 → 细则），写得很落地。</li>
+<li><strong>第 4 章（工具/MCP）</strong>：五类工具设计原则、MCP 协议、事件驱动异步 Agent、打断占位符策略。架构层面的分析到位。</li>
+<li><strong>第 6 章（评估）</strong>：被低估的一章。评估体系设计直接影响 Agent 迭代效率。</li>
+<li><strong>理论与实践平衡</strong>：不是纯概念书，每章配可跑代码。</li>
+</ul>
+<h3>弱项 / 缺口</h3>
+<ul>
+<li><strong>第 5、7、9（×2）、10 章</strong>对应用层 Agent 开发者对口度不高。</li>
+<li><strong>最大的缺口：子任务编排（Sub-task Orchestration）</strong>——书中几乎没覆盖。</li>
+<li>具体来说，<strong>任务拆解、任务状态管理、子 Agent 调度、嵌套调用</strong>这些对复杂 Agent 至关重要的工程模式，书中各章仅蜻蜓点水（Ch4 提了 spawn_subagent，Ch10 讲的是宏观多 Agent 社会而非父子编排），没有系统讨论。</li>
+</ul>
+<hr>
+<h2>关键话题覆盖矩阵</h2>
+<table>
+<thead>
+<tr>
+<th>话题</th>
+<th>覆盖度</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上下文管理</td>
+<td>⭐⭐⭐⭐⭐</td>
+<td>Ch2 很扎实，直接落地</td>
+</tr>
+<tr>
+<td>Tool call 调用</td>
+<td>⭐⭐⭐⭐</td>
+<td>Ch4 架构层好，工程细节需自行补充</td>
+</tr>
+<tr>
+<td>SubAgent / 子任务编排</td>
+<td>⭐⭐</td>
+<td>各章零星提及，无系统讨论</td>
+</tr>
+<tr>
+<td>任务拆解与状态追踪</td>
+<td>⭐</td>
+<td>基本缺失</td>
+</tr>
+<tr>
+<td>多 Agent 交互 (inter-agent)</td>
+<td>⭐⭐⭐</td>
+<td>Ch10 覆盖，但偏群体智能/Agent 社会</td>
+</tr>
+<tr>
+<td>A2A 协议</td>
+<td>⭐⭐</td>
+<td>提及但浅，标准远未成熟</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>关于 SubAgent 编排 vs 多 Agent 交互</h2>
+<p><strong>对我们当前场景来说：</strong></p>
+<ul>
+<li><strong>有价值的</strong>：intra-agent orchestration — 一个 Agent 内部怎么拆任务、派子任务、追踪状态、聚合结果、处理失败。这是今天就能直接落地的东西。</li>
+<li><strong>次要的</strong>：inter-agent 群体智能 — 多个独立 Agent 对话、辩论、协商。标准远未统一（A2A 协议 vs OpenAI handoff vs 各家自研），投入产出比低。</li>
+</ul>
+<p><strong>目前业内子任务编排的现状：</strong></p>
+<table>
+<thead>
+<tr>
+<th>框架</th>
+<th>子任务/子 Agent 模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenAI Agents SDK</td>
+<td><code>handoff</code> 移交控制权</td>
+</tr>
+<tr>
+<td>LangGraph</td>
+<td>子图（Subgraph）嵌套</td>
+</tr>
+<tr>
+<td>AutoGen</td>
+<td>GroupChat + 发言者选择器，偏平权</td>
+</tr>
+<tr>
+<td>Semantic Kernel</td>
+<td>Process 流程编排</td>
+</tr>
+<tr>
+<td>CrewAI</td>
+<td>Process.hierarchical (manager Agent)</td>
+</tr>
+<tr>
+<td>实际生产</td>
+<td>很多人自己写 <code>while</code> + 状态机硬编</td>
+</tr>
+</tbody>
+</table>
+<p><strong>结论：子任务编排目前没有一个统一工程范式。</strong> 各框架各搞一套，没有像 MCP 之于工具那样的标准化成果。这本书在这一块是断层的。</p>
+<hr>
+<h2>推荐阅读优先级</h2>
+<p>如果只挑对自己当前工作最有用的：</p>
+<ol>
+<li><strong>第 2 章（上下文工程）</strong> — 上下文管理直接决定 Agent 能力上限</li>
+<li><strong>第 4 章（工具/MCP）</strong> — 工具调用是 Agent 的双手</li>
+<li><strong>第 6 章（评估）</strong> — 没有评估就没法迭代</li>
+<li><strong>第 3 章（记忆/RAG）</strong> — 记忆管理往往是质量差距的关键</li>
+<li><strong>第 8 章（持续进化）</strong> — 从轨迹中学习的思路对迭代有启发</li>
+<li><strong>第 1 章（基础）</strong> — 核心概念扫一眼即可</li>
+</ol>
+<p>第 5（Coding Agent）、7（后训练）、9（多模态）、10（多 Agent）章可跳过或仅作了解。</p>
+<hr>
+<h2>延伸思考：子任务编排为什么是断层</h2>
+<p>这个问题值得关注。Agent 要处理复杂任务，<strong>必须把任务拆成可管理的子任务、追踪状态、并发调度、处理失败</strong>。这是从「演示可用」到「生产可靠」的核心跨越。</p>
+<p>但目前行业现状是：</p>
+<ul>
+<li>学术界和书籍更关注「Agent 能做什么」而不是「Agent 怎么可靠地做完」</li>
+<li>框架层面各自为战，缺乏最佳实践的沉淀</li>
+<li>相比 MCP 在工具层的标准化，编排层还处在「各家自己拧螺丝」的阶段</li>
+</ul>
+<p>这可能是 Agent 工程下一步最值得投入的方向之一。</p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

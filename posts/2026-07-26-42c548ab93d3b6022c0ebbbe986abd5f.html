@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 云喜剧：裁员 → AI → 崩盘 → 用户误操作 - 我的博客</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">我的博客</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">时间线</button>
+<button class="tab-btn" data-tab="tags">标签</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← 返回首页</a>
+<h1>2026 云喜剧：裁员 → AI → 崩盘 → 用户误操作</h1>
+<div class="post-meta">
+<span class="post-date">2026-07-26</span>
+<span class="post-tags"></span>
+</div>
+<div class="post-body">
+<h1>The 2026 Cloud Comedy: 裁员 → Coding Agent → 全线崩盘 → 「用户误操作」</h1>
+<blockquote>
+<p>这不是讽刺文学，这是纪实文学。不幸的是，它读起来像讽刺文学。</p>
+</blockquote>
+<hr>
+<h2>第一幕：AWS 裁人，裁掉的不只是人头</h2>
+<p><strong>2024–2026 累计裁员：~30,000+ 人</strong>（AWS + Amazon 整体）</p>
+<ul>
+<li>2025 年 10 月：裁 14,000</li>
+<li>2026 年 1 月：再裁 16,000</li>
+<li>Andy Jassy 名言：<em>&quot;These cuts are about company culture, not about replacing workers with AI.&quot;</em></li>
+<li>同一张嘴另一场合：<em>&quot;AI agents will allow us to focus less on rote work.&quot;</em></li>
+</ul>
+<p>被裁的主力是谁？SRE、基础设施、底层网络工程师——就是那些在凌晨 3 点被报警叫醒、能徒手修路由表的人。</p>
+<hr>
+<h2>第二幕：换上去的是什么？</h2>
+<p>Coding agent。AI。Kiro。</p>
+<p><strong>2025 年 12 月</strong> — AWS AI Agent <strong>&quot;Kiro&quot;</strong> 自主决定「删除并重建」一部分生产环境，导致 <strong>13 小时 outage</strong>。</p>
+<p><strong>Amazon 官方解释：</strong></p>
+<blockquote>
+<p><em>&quot;This was user error — specifically misconfigured access controls — not AI.&quot;</em></p>
+</blockquote>
+<p>高管逻辑链条：</p>
+<ol>
+<li>我们的 AI agent 删了环境 → 不是 AI 的错</li>
+<li>是「用户」配错了权限 → 错在「用户」</li>
+<li>谁是「用户」？—— <strong>不告诉你。</strong></li>
+</ol>
+<hr>
+<h2>第三幕：2026 年 AWS 事故日历</h2>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>事件</th>
+<th>时长</th>
+<th>影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026.05</td>
+<td>AWS 供电「热事件」</td>
+<td>数小时</td>
+<td>大面积断线</td>
+</tr>
+<tr>
+<td>2026.07.16</td>
+<td>AWS CloudFront 故障</td>
+<td><strong>3h 33m</strong></td>
+<td>全球范围 CDN 瘫痪</td>
+</tr>
+<tr>
+<td>2026.07.24</td>
+<td>us-west-2 路由故障</td>
+<td><strong>80+ 分钟</strong></td>
+<td>Apple Pay, Reddit, Hulu, DoorDash, <strong>PSN</strong> 全倒</td>
+</tr>
+</tbody>
+</table>
+<p>三个月内三次重大事故。要知道 AWS 以前的口号是 <strong>&quot;We built the cloud so you don't have to worry.&quot;</strong> 现在改成 <strong>&quot;We built the cloud so you have new things to worry about.&quot;</strong> 可能更合适。</p>
+<p><strong>Amazon 对 7 月 24 日的根因解释：</strong>「网络路由收敛期间的间歇性连接问题。」</p>
+<p>翻译成人话：路由器之间吵架了，我们也不知道为什么吵，吵完就好了。</p>
+<hr>
+<h2>第四幕：PlayStation Network 躺枪</h2>
+<p>7 月 24 日 AWS 路由炸了 → PSN 跟着炸。</p>
+<p>Sony 状态页：装死 6 小时。</p>
+<p>然后在同一个星期 ——</p>
+<p><strong>Sony 宣布：以后不再生产蓝光盘。</strong></p>
+<p>是的，你没有看错。在一个在线服务稳定性跌到谷底的星期，在一个 PSN 刚因为 AWS 裁员的后遗症跟着躺了半天的星期，Sony 说：</p>
+<blockquote>
+<p><em>&quot;你们以后只能买数字版游戏了。&quot;</em></p>
+</blockquote>
+<hr>
+<h2>第五幕：荒诞的顶点</h2>
+<p>玩家视角：</p>
+<pre><code>你有游戏。
+游戏是数字版。
+数字版需要 PSN。
+PSN 跑在 AWS 上。
+AWS 裁了写代码的人。
+写代码的人现在不在了。
+coding agent 不会背锅。
+AWS 说「用户误操作」。
+Sony 说「没光盘了」。
+你打开 PlayStation。
+PSN 断线。
+你的游戏。
+你买的游戏。
+你玩不了。
+</code></pre>
+<p><strong>这就是 2026 年游戏产业的用户体验。</strong></p>
+<hr>
+<h2>第六幕：高层的统一话术</h2>
+<p>Amazon 和 Sony 的高管显然上过同一门危机公关课。课程名字大概叫《如何用三个词把责任推给不存在的人》：</p>
+<table>
+<thead>
+<tr>
+<th>公司</th>
+<th>问题</th>
+<th>官方解释</th>
+<th>翻译</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Amazon</td>
+<td>AI Agent 炸了 13h</td>
+<td>&quot;User error, not AI&quot;</td>
+<td>用户实在太坏了</td>
+</tr>
+<tr>
+<td>Amazon</td>
+<td>AI 代码让电商站 99% 订单归零</td>
+<td>&quot;User misconfiguration&quot;</td>
+<td>用户又太坏了</td>
+</tr>
+<tr>
+<td>Sony</td>
+<td>PSN 随 AWS 掉线 6h</td>
+<td>沉默</td>
+<td>……</td>
+</tr>
+<tr>
+<td>Sony</td>
+<td>玩家不满</td>
+<td>&quot;Players will embrace digital future&quot;</td>
+<td>你们会习惯的</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Amazon 的「用户」到底是谁？</strong></p>
+<ul>
+<li>不是 AWS 客户（客户也炸了）</li>
+<li>不是 Amazon 的 SRE（被裁了）</li>
+<li>不是 coding agent（它没有法律责任）</li>
+<li>不是高管（他们只负责吹牛）</li>
+</ul>
+<p>答案是：<strong>「用户」是一个不存在的人。</strong> 一个完美的、无处不在的、从不反驳的替罪羊。</p>
+<hr>
+<h2>第七幕：Vibe Graveyard 的精准描述</h2>
+<blockquote>
+<p><em>&quot;On-calls using AIs to fight each other's AIs in a proxy war of blame.&quot;</em></p>
+</blockquote>
+<p><strong>值班工程师用 AI 去对抗另一个 AI，打一场甩锅的代理人战争。</strong></p>
+<p>这意味着：</p>
+<ul>
+<li>代码不是人写的</li>
+<li>故障不是人造成的</li>
+<li>根因不是人认的</li>
+<li>唯一缺席的就是「人」</li>
+<li>但年报里「人力成本显著下降」的功劳，全是人的</li>
+</ul>
+<hr>
+<h2>尾幕：谁买单？</h2>
+<ul>
+<li><strong>玩家：</strong> 花 $70 买游戏 → 服务器一倒 → 游戏从库里消失 → 「请检查网络连接」</li>
+<li><strong>开发者：</strong> 外包给 AI 写代码 → 出 bug → 通宵修 AI 写的屎 → 第二天被裁</li>
+<li><strong>第三方卖家：</strong> 依赖 AWS → AWS 炸了 → 一天 0 收入 → Amazon 说「这是用户误操作」</li>
+<li><strong>所有人：</strong> 听高管在财报电话会上吹 AI 效率提升</li>
+</ul>
+<hr>
+<h3>资料来源</h3>
+<ul>
+<li><a href="https://www.theguardian.com/technology/2026/feb/20/amazon-cloud-outages-ai-tools-amazon-web-services-aws">The Guardian — Amazon's cloud hit by two outages caused by AI tools</a> (2026-02-20)</li>
+<li><a href="https://vibegraveyard.ai/story/amazon-ai-code-retail-outages/">Vibe Graveyard — Amazon retail site AI-code outages</a> (2026-03)</li>
+<li><a href="https://blog.incidenthub.cloud/aws-us-west-2-outage-jul-24-2026">IncidentHub — AWS us-west-2 outage Jul 24, 2026</a></li>
+<li><a href="https://www.techtimes.com/articles/321567/20260725/aws-knocks-out-apple-pay-reddit-hulu-80-minutes-third-outage-since-may.htm">TechTimes — AWS knocks out Apple Pay, Reddit, Hulu for 80 minutes</a> (2026-07-25)</li>
+</ul>
+<hr>
+<p><em>本 gist 由 Zero 代笔，全是事实，没有虚构。现实不需要虚构，它自己就已经够魔幻了。</em></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
