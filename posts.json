@@ -75,7 +75,7 @@
     "categories": [],
     "slug": "use-fastgit-to-boost-git-access",
     "url": "posts/use-fastgit-to-boost-git-access.html",
-    "excerpt": "git config --global url.&quot;https://hub.fastgit.org/&quot;.insteadOf &quot;https://github.com/&quo"
+    "excerpt": "git config --global url.\"https://hub.fastgit.org/\".insteadOf \"https://github.com/\" git config --glob"
   },
   {
     "title": "ffmpeg useful commands",
@@ -99,12 +99,12 @@
     "categories": [],
     "slug": "set-user-and-group-in-docker-compose",
     "url": "posts/set-user-and-group-in-docker-compose.html",
-    "excerpt": "Step 1: Add user entry in docker-compose.yml version: '3' services: app: image: alpine user: &quot;$"
+    "excerpt": "Step 1: Add user entry in docker-compose.yml version: '3' services: app: image: alpine user: \"${UID}"
   },
   {
     "title": "street cars in GT Sport",
     "date": "2021-09-06T00:39:21.000Z",
-    "formattedDate": "2021-09-05",
+    "formattedDate": "2021-09-06",
     "tags": [
       "racing"
     ],
@@ -251,7 +251,7 @@
     "categories": [],
     "slug": "fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install",
     "url": "posts/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install.html",
-    "excerpt": "the problem The error occurred while executing &quot;npm clean-install&quot;: gyp ERR! configure err"
+    "excerpt": "the problem The error occurred while executing \"npm clean-install\": gyp ERR! configure error gyp ERR"
   },
   {
     "title": "compilation error when using Comparator.comparing()",
