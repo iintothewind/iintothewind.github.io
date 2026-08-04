@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>turbovec 评估备忘 (RAG 候选) - 我的博客</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">我的博客</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">时间线</button>
+<button class="tab-btn" data-tab="tags">标签</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← 返回首页</a>
+<h1>turbovec 评估备忘 (RAG 候选)</h1>
+<div class="post-meta">
+<span class="post-date">2026-07-23</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<h1>turbovec (RyanCodrai/turbovec) 评估备忘</h1>
+<blockquote>
+<p>2026-07-23 评估，供后续 RAG 项目参考</p>
+</blockquote>
+<h2>基本信息</h2>
+<ul>
+<li>仓库：<a href="https://github.com/RyanCodrai/turbovec">https://github.com/RyanCodrai/turbovec</a></li>
+<li>语言：Rust + Python bindings</li>
+<li>Stars：13.8k (4 个月)</li>
+<li>协议：MIT</li>
+<li>核心：Google TurboQuant 算法，data-oblivious quantizer</li>
+</ul>
+<h2>亮点</h2>
+<ul>
+<li>10M docs float32 31GB → 4GB，搜索比 FAISS 快</li>
+<li>Online ingest，无训练阶段，无需 rebuild</li>
+<li>ARM NEON 比 FAISS IndexPQFastScan 快 10-19%</li>
+<li>IdMapIndex 支持稳定 ID、O(1) delete、allowlist 过滤（SIMD kernel 层短路）</li>
+<li>LangChain/LlamaIndex/Haystack/Agno 集成</li>
+</ul>
+<h2>硬伤（PoC 可用，生产等迭代）</h2>
+<table>
+<thead>
+<tr>
+<th>严重度</th>
+<th>问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🔴 #121</td>
+<td>Python binding 不释放 GIL，search/add/write/load 全部阻塞其他线程</td>
+</tr>
+<tr>
+<td>🔴 #161</td>
+<td>并发读写 crash：index 先于 maps 更新，窗口期 search → KeyError</td>
+</tr>
+<tr>
+<td>🔴 #159</td>
+<td>dump/persist 非原子：写 index→写 side-car 两步，中间失败直接毁掉已有 store</td>
+</tr>
+<tr>
+<td>🔴 #151</td>
+<td>旋转矩阵不存盘，依赖版本漂移后旧索引静默 recall→0</td>
+</tr>
+<tr>
+<td>🟡 #137</td>
+<td>PyPI wheel 硬编 x86-64-v3，无 AVX2 老 CPU SIGILL</td>
+</tr>
+<tr>
+<td>🟡 #119</td>
+<td>n_vectors u32 截断，≥2^32 静默写坏</td>
+</tr>
+<tr>
+<td>🟡 #114</td>
+<td>文档标 cosine 实际 raw inner product，query 未归一化</td>
+</tr>
+</tbody>
+</table>
+<h2>建议</h2>
+<ul>
+<li>适合 PoC，pip install 即可跑，零成本启动</li>
+<li>单线程只读场景可绕过 #161，但 #121/#159/#151 是硬伤</li>
+<li>生产上建议等几个大版本迭代，PoC 期间同时保留 FAISS+IVF/SQ8 方案对比</li>
+</ul>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

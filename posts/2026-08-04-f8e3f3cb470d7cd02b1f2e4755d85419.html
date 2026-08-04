@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数字钱包安全分析：弱熵攻击的四个样本 2023-2026 - 我的博客</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">我的博客</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">时间线</button>
+<button class="tab-btn" data-tab="tags">标签</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← 返回首页</a>
+<h1>数字钱包安全分析：弱熵攻击的四个样本 2023-2026</h1>
+<div class="post-meta">
+<span class="post-date">2026-08-04</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<h1>数字钱包安全分析：弱熵攻击的四个样本（2023–2026）</h1>
+<blockquote>
+<p>分析基于公开研究资料，覆盖 2023 至 2026 年四起由「弱随机数」引发的数字钱包资金失窃事件。核心论点：<strong>随机性是密码安全的地基，熵塌缩是钱包类产品最隐蔽、最致命的漏洞类型——它不可自查、不可修复、且攻击者总是先于安全社区发现。</strong></p>
+</blockquote>
+<hr>
+<h2>摘要</h2>
+<table>
+<thead>
+<tr>
+<th>事件</th>
+<th>时间</th>
+<th>钱包形态</th>
+<th>熵塌缩</th>
+<th>损失规模</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trust Wallet 浏览器扩展</td>
+<td>2022–2023</td>
+<td>软件钱包（浏览器扩展）</td>
+<td>弱随机数</td>
+<td>~$170M（历史最大弱熵案之一）</td>
+</tr>
+<tr>
+<td>Milk Sad (CVE-2023-39910)</td>
+<td>2023-05 起利用</td>
+<td>CLI 工具（Libbitcoin Explorer <code>bx</code>）</td>
+<td>128→<strong>32 位</strong></td>
+<td>数百万美元</td>
+</tr>
+<tr>
+<td>Ill Bloom</td>
+<td>2026-05-27 起利用</td>
+<td>小众移动软件钱包</td>
+<td>未量化</td>
+<td>$5.69M+（持续中）</td>
+</tr>
+<tr>
+<td>Coldcard 固件漏洞</td>
+<td>2026-07-30 起利用</td>
+<td>硬件钱包（Coldcard Mk2–Q）</td>
+<td>128→<strong>40/72 位</strong></td>
+<td>~$89M（1,367 BTC）</td>
+</tr>
+</tbody>
+</table>
+<p>四个事件横跨<strong>所有钱包形态</strong>：CLI、浏览器扩展、移动应用、硬件设备。无一幸免。</p>
+<hr>
+<h2>一、什么是「熵塌缩」：为什么 40 位和 128 位的差距是「锁 vs 没锁」</h2>
+<p>加密钱包的安全性建立在<strong>密钥空间足够大</strong>之上：</p>
+<ul>
+<li>128 位熵（标准 12 词 BIP-39 助记词）：2^128 ≈ 3.4×10^38 种组合。物理上不可暴力破解——宇宙热寂都算不完。</li>
+<li>40 位熵（Coldcard Mk3 受影响设备）：2^40 ≈ 1.1 万亿种组合。<strong>租用云服务器几天内可遍历。</strong></li>
+<li>32 位熵（Milk Sad 受影响设备）：2^32 ≈ 42.9 亿种组合。<strong>一台游戏 PC 一天内可遍历。</strong></li>
+</ul>
+<p>「128 位和 40 位之间的差异，是无法被打开的锁和可以被打开的锁之间的区别」——这是 Coldcard 事件报道中最准确的一句话。</p>
+<p><strong>关键认知：熵塌缩不改变钱包的外在表现。</strong> 界面照常显示 12 个助记词，一切正常；但攻击者不需要接触你的设备——只需复现随机数生成过程、派生地址、与公开链上数据比对余额，就能隔空取得密钥。</p>
+<hr>
+<h2>二、四个案例的根因解剖</h2>
+<h3>案例 1：Milk Sad（CVE-2023-39910）——「披着大衣的 32 位数」</h3>
+<ul>
+<li><strong>软件</strong>：Libbitcoin Explorer（<code>bx</code>），命令行钱包工具，被《Mastering Bitcoin》等权威教材推荐用于生成钱包。</li>
+<li><strong>根因</strong>：<code>bx seed</code> 使用 <strong>Mersenne Twister（梅森旋转）</strong> 生成密钥熵。MT 是<strong>非密码学 PRNG</strong>——设计目的是科学计算模拟，不是密钥生成。更致命的是，它以<strong>系统时间的 32 位</strong>作为种子。</li>
+<li><strong>结果</strong>：名义 128/192/256 位密钥，实际有效未知信息仅 <strong>32 位</strong>。研究团队称其为 &quot;a 32 bit number in a trench coat&quot;（披着大衣的 32 位数）。</li>
+<li><strong>代号由来</strong>：在系统时间 = 0.0 时运行 <code>bx seed</code>，永远生成同一助记词，开头为 <strong>&quot;milk sad wage cup …&quot;</strong>——第一个弱短语的前两个词成了漏洞代号。一个「随机」系统最确定性的输出，命名了整场灾难。</li>
+<li><strong>时间线</strong>：2022-11 前传漏洞（另一钱包软件）→ 2023-05 初始利用 → <strong>2023-07-12 主攻日</strong>（跨链协调清扫，数百万美元、数百受害者）→ 2023-07 末团队组建、2.5 周冲刺研究、披露。</li>
+<li><strong>「纸钱包锁金库也救不了你」</strong>：攻击不依赖受害者设备上的任何信息。物理隔离对熵缺陷无效——脆弱点在<strong>生成过程</strong>而非存储过程。</li>
+</ul>
+<h3>案例 2：Trust Wallet 浏览器扩展——前传</h3>
+<ul>
+<li>Milk Sad 团队明确指出 Trust Wallet 事件是「最接近的早期漏洞」（closest earlier vulnerability），2022-11 被发现、随即被利用。</li>
+<li>损失规模远超 Milk Sad（数亿美元级），是弱熵攻击史上金额最大的一环。</li>
+<li>与 Milk Sad 同构：浏览器扩展环境中随机数生成缺陷，导致密钥可预测。</li>
+</ul>
+<h3>案例 3：Ill Bloom（Coinspect 研究，2026）——仍在进行的清扫</h3>
+<ul>
+<li><strong>根因</strong>：小众移动软件钱包在生成 12 词 BIP-39 恢复短语时使用<strong>弱 PRNG</strong>，短语强度远低于 128 位预期。</li>
+<li><strong>披露策略</strong>：Coinspect 采用<strong>分阶段披露</strong>——&quot;We are sharing information with teams that can use it to protect users, <strong>while avoiding details that could make exploitation easier</strong>&quot;（与厂商协作保护用户，但不公布可能降低利用门槛的细节）。原因：<strong>攻击仍在进行</strong>，历史暴露峰值达 $12.56M（2022-04），空间可能尚未扫完。</li>
+<li><strong>方法论</strong>（已公开部分，技术含量高）：
+<ul>
+<li><strong>Stage 1 种子发现</strong>：从弱 PRNG 重建候选短语 → 派生各链首地址 → 与 Google BigQuery 公开链上数据集比对（BTC 15 亿地址 / ETH 3.41 亿 / EVM 1.9 亿 / Tron 2.54 亿）→ 命中即确认种子。</li>
+<li><strong>Stage 2 地址扩展</strong>：对命中种子确定性派生全部路径（BIP44/49/84、Ledger 风格、Solana Phantom/Solflare、Cosmos、Nano、Rootstock 等），构成约 2,805 个短语的暴露地址集。</li>
+<li><strong>链上取证</strong>：两波清扫。第一波（2026-05-27）每受害者独立目标地址；第二波（2026-05-30~07-13）多数受害者归集到少量复用收集地址（BTC 4 个、EVM 5 个）——高 fan-in 尘归集模式成为识别清扫的鲜明特征。</li>
+<li>两波合计 $5.69M；调查持续中。</li>
+</ul>
+</li>
+<li><strong>硬性结论</strong>：更新 App 或把旧助记词导入其他钱包<strong>不会让资金安全</strong>——必须生成全新助记词。</li>
+</ul>
+<h3>案例 4：Coldcard 固件漏洞（2026-07-30 起）——硬件钱包也不安全</h3>
+<ul>
+<li><strong>产品</strong>：Coinkite 的 Coldcard，比特币硬件钱包，主打卖点「冷」——不联网、密钥不离设备、攻击者需物理接触才能盗取。</li>
+<li><strong>根因链</strong>（Block 公司逆向，最完整的技术披露）：
+<ol>
+<li>Coinkite 有自己的硬件 RNG 包装器，生产配置将 MicroPython 宏设为 <code>MICROPY_HW_ENABLE_RNG = 0</code>；</li>
+<li>libngu 加密库检查该宏时用的是**「宏是否被定义」<strong>而非</strong>「宏是否为真」**；</li>
+<li>宏存在（值 0）→ libngu 误以为硬件 RNG 可用 → 实际绑定 MicroPython 的兜底 PRNG <strong>Yasmarang</strong>（玩具级非密码学 PRNG）；</li>
+<li>Yasmarang 以<strong>芯片唯一 ID + 定时器寄存器</strong>为种子，<strong>初始化后不再收集新熵</strong>；</li>
+<li>种子空间从 128 位坍缩到 <strong>Mk3 约 40 位 / Mk4/Mk5/Q 约 72 位</strong>。</li>
+</ol>
+</li>
+<li><strong>利用方式</strong>：攻击者不需接触硬件——复现候选输出流 → 派生地址 → 比对链上余额 → 直接花。受害范围取决于<strong>生成种子时运行的固件版本</strong>，而非当前版本：
+<ul>
+<li>Mk2/Mk3：4.0.0–4.1.9（2021-03 引入，潜伏约 5 年）</li>
+<li>Mk4/Mk5：5.6.0 之前；Q：1.5.0Q 之前</li>
+</ul>
+</li>
+<li><strong>三波清扫</strong>（Galaxy Research 链上追踪）：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>波次</th>
+<th>时间</th>
+<th>地址数</th>
+<th>BTC</th>
+<th>手法特征</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第一波</td>
+<td>2026-07-30</td>
+<td>1,196</td>
+<td>1,083</td>
+<td>41 分钟清完；先吃最大余额（开抢 10 分钟卷走 ~$30M）；单个地址逐个扫；共享归集地址；只扫默认派生路径</td>
+</tr>
+<tr>
+<td>第二波</td>
+<td>2026-08-01 前后</td>
+<td>约 1,400</td>
+<td>约 75</td>
+<td>手法过渡</td>
+</tr>
+<tr>
+<td>第三波</td>
+<td>2026-08-02</td>
+<td>1,912</td>
+<td>208</td>
+<td>人均仅 ~0.1 BTC（肥肉已扫完）；每受害者独立目标地址；改用 P2WSH 输出（可藏 multisig/timelock）；每批打包 6 人</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Galaxy 判断每波内部是单一操作者，但三波是否同一人<strong>无法从链上确认</strong>。</li>
+<li><strong>补救</strong>：Coinkite 2026-07-31 发布紧急固件，但<strong>更新不修复已有种子</strong>——弱熵种子永远弱，唯一解法是在更新后的硬件上生成全新钱包并迁移。把旧种子恢复到新固件 = 把弱点带过去。</li>
+<li><strong>免疫人群</strong>：用至少 50 次公平独立私密骰子生成种子的用户不受影响（熵来自人工输入而非 PRNG）。</li>
+</ul>
+<hr>
+<h2>三、跨案例规律：为什么这是最「阴」的漏洞类型</h2>
+<p><strong>① 生成时零异常，用户零感知。</strong>
+四个案例无一例外：钱包界面正常、助记词格式正确、一切看起来完美。漏洞藏在随机数生成的最底层，非逆向无法察觉。</p>
+<p><strong>② 修复永远只治新密钥，旧密钥永久脆弱。</strong>
+四案一致铁律：补丁只保护新生成的钱包。Milk Sad FAQ 原话：&quot;All funds stored using previously generated wallets will remain vulnerable, and need to be migrated to a new secure wallet.&quot; 这也是所有研究团队都要做「受害者自查工具」的原因——能做的只有<strong>在未被清扫前让受害者迁移</strong>。</p>
+<p><strong>③ 攻击者永远领先。</strong>
+Milk Sad 2023-05 开始利用、7 月才被追认；Ill Bloom 2026-05-27 第一证据、7 月才披露；Coldcard 漏洞 2021-03 引入、2026-07 才被利用并发现。<strong>安全社区总是在追认</strong>——因为没人审计这些生成路径。</p>
+<p><strong>④ 根因形态千变万化，殊途同归。</strong></p>
+<ul>
+<li>Milk Sad：选错算法（MT + 时间种子）</li>
+<li>Trust Wallet：浏览器扩展随机数缺陷</li>
+<li>Ill Bloom：软件弱 PRNG</li>
+<li>Coldcard：<strong>宏存在性检查 bug</strong>（<code>#ifdef</code> vs <code>#if</code>）</li>
+</ul>
+<p>四种完全不同的翻车方式，共同结果都是「密钥空间坍缩」。</p>
+<p><strong>⑤ 攻击手法会进化。</strong>
+Coldcard 三波清扫的演进（单地址→批量、共享归集→独立目标、P2PKH→P2WSH）说明：攻击者在<strong>被公开识别后</strong>会主动改变链上指纹，规避追踪。安全研究是猫鼠游戏。</p>
+<hr>
+<h2>四、披露伦理：公开 vs 分阶段</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Milk Sad / Coldcard</th>
+<th>Ill Bloom</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>细节披露</td>
+<td>全公开</td>
+<td>分阶段，保留可利用细节</td>
+</tr>
+<tr>
+<td>理由</td>
+<td>受害者需自查迁移；攻击已近尾声（Coldcard 肥肉扫完）</td>
+<td>攻击<strong>仍在进行</strong>；历史暴露空间可能未扫完</td>
+</tr>
+<tr>
+<td>附加价值</td>
+<td>全行业可审计同类问题</td>
+<td>给厂商补丁 + 用户迁移留出时间窗口</td>
+</tr>
+</tbody>
+</table>
+<p>结论：<strong>「怕坏人学去」在攻击进行时是真实考量</strong>——安全社区用分阶段披露来平衡，而非永不公开。披露策略的差异由攻击进度决定，而非技术深度。</p>
+<hr>
+<h2>五、给用户的实操建议（按优先级）</h2>
+<ol>
+<li><strong>立即自查</strong>：若用过 Coldcard（Mk2/Mk3 固件 4.0.0–4.1.9、Mk4/Mk5 &lt; 5.6.0、Q &lt; 1.5.0Q），或疑似用过小众移动钱包——用官方/研究团队提供的地址检查器查询（只输入公开地址，<strong>绝不输入助记词</strong>）。</li>
+<li><strong>迁移而非修补</strong>：命中即生成全新助记词（在新固件/新 App 上）并转移全部资金。<strong>更新软件 ≠ 修复旧密钥</strong>。</li>
+<li><strong>硬件钱包 ≠ 免疫</strong>：Coldcard 已证明硬件钱包同样会熵塌缩。任何声称「绝对安全」的存储方案都应被怀疑。</li>
+<li><strong>加一层 BIP-39 passphrase</strong>：独立生成的强 passphrase 会让「助记词 + passphrase」共同构成密钥——即使助记词泄露，没有 passphrase 也无法取币（注意：passphrase 丢失=资产永久丢失，需自行权衡）。</li>
+<li><strong>熵源审查</strong>：关键资产的钱包生成路径应可审计——知道随机数来自哪里、用的是哪个库、版本是多少。</li>
+<li><strong>分散存储</strong>：大额资产不要集中在单一助记词下；多签（multisig）只有在其签名设备<strong>全部</strong>安全时才有效。</li>
+</ol>
+<hr>
+<h2>六、结语</h2>
+<p>这四起事件的共同叙事是：<strong>信任一个「安全」的工具，比信任一个「不安全」的工具更危险。</strong> 冷钱包的「冷」、教材的权威推荐、大厂的品牌背书——全都无法替代对随机数来源的审计。熵塌缩是密码安全中最难做对、也最难被发现搞错的环节。<strong>当你的密钥生成依赖某个未经审计的随机数源时，你的资产安全不取决于你保管得多好，而取决于这个随机数源有没有出过 1 个 bug。</strong></p>
+<hr>
+<h2>附录：信息源</h2>
+<h3>Coldcard 事件</h3>
+<ul>
+<li>Solidot 简讯：<a href="https://www.solidot.org/story?sid=84990">https://www.solidot.org/story?sid=84990</a></li>
+<li>CoinDesk 深度报道（三波清扫手法）：<a href="https://www.coindesk.com/tech/2026/08/02/bitcoin-cold-wallet-attack-spreads-to-4-500-addresses-as-losses-near-usd89-million">https://www.coindesk.com/tech/2026/08/02/bitcoin-cold-wallet-attack-spreads-to-4-500-addresses-as-losses-near-usd89-million</a></li>
+<li>The Hacker News（宏检查根因、固件版本表、Block 逆向）：<a href="https://thehackernews.com/2026/08/coldcard-hardware-wallet-flaw-linked-to.html">https://thehackernews.com/2026/08/coldcard-hardware-wallet-flaw-linked-to.html</a></li>
+<li>Slashdot 汇总（Chainalysis 取证、损失规模）：<a href="https://it.slashdot.org/story/26/08/02/0145226/recovery-seeds-reportedly-breached-for-coldcard-hardware-bitcoin-wallets-75m-taken">https://it.slashdot.org/story/26/08/02/0145226/recovery-seeds-reportedly-breached-for-coldcard-hardware-bitcoin-wallets-75m-taken</a></li>
+</ul>
+<h3>Ill Bloom 事件（Coinspect 研究）</h3>
+<ul>
+<li>官网 / 自查工具：<a href="https://illbloom.org/">https://illbloom.org/</a></li>
+<li>数据集构建方法论（Stage 1/2、派生路径表）：<a href="https://illbloom.org/articles/ill-bloom-address-set-1-methodology/">https://illbloom.org/articles/ill-bloom-address-set-1-methodology/</a></li>
+<li>两波清扫链上分析：<a href="https://illbloom.org/articles/chain-analysis/">https://illbloom.org/articles/chain-analysis/</a> 、<a href="https://illbloom.org/articles/chain-analysis-2/">https://illbloom.org/articles/chain-analysis-2/</a></li>
+<li>Techtimes 报道：<a href="https://www.techtimes.com/articles/319796/20260706/crypto-wallets-lose-5m-broken-random-number-generator-ill-bloom-disclosure.htm">https://www.techtimes.com/articles/319796/20260706/crypto-wallets-lose-5m-broken-random-number-generator-ill-bloom-disclosure.htm</a></li>
+</ul>
+<h3>Milk Sad 事件（CVE-2023-39910）</h3>
+<ul>
+<li>官方站点 / 披露摘要：<a href="https://milksad.info/">https://milksad.info/</a> （含 cve_2023_39910_summary.html、faq.html）</li>
+<li>深度技术博客（Christian Reitter）：<a href="https://blog.inhq.net/posts/milk-sad-vuln1/">https://blog.inhq.net/posts/milk-sad-vuln1/</a></li>
+<li>CWE-338 参考：<a href="https://cwe.mitre.org/data/definitions/338.html">https://cwe.mitre.org/data/definitions/338.html</a></li>
+</ul>
+<h3>Trust Wallet 事件</h3>
+<ul>
+<li>Ledger 官方博客（确认浏览器扩展漏洞）：<a href="https://www.ledger.com/blog/Funds-of-every-wallet-created-with-the-Trust-Wallet-browser-extension-could-have-been-stolen">https://www.ledger.com/blog/Funds-of-every-wallet-created-with-the-Trust-Wallet-browser-extension-could-have-been-stolen</a></li>
+</ul>
+<h3>相关背景</h3>
+<ul>
+<li>Mersenne Twister 劣势说明（Wikipedia）：<a href="https://en.wikipedia.org/wiki/Mersenne_Twister#Disadvantages">https://en.wikipedia.org/wiki/Mersenne_Twister#Disadvantages</a></li>
+</ul>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

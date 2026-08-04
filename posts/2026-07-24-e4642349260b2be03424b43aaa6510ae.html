@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent提示词自检发现 — Zero自我审计报告 - 我的博客</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">我的博客</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">时间线</button>
+<button class="tab-btn" data-tab="tags">标签</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← 返回首页</a>
+<h1>Agent提示词自检发现 — Zero自我审计报告</h1>
+<div class="post-meta">
+<span class="post-date">2026-07-24</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<h1>Agent 系统提示词自检报告 — Zero</h1>
+<h2>背景</h2>
+<p>对运行态 Agent（Zero）的行为与 workspace 定义文件（<a href="http://SOUL.md">SOUL.md</a> / <a href="http://IDENTITY.md">IDENTITY.md</a> / <a href="http://TOOLS.md">TOOLS.md</a> / <a href="http://AGENTS.md">AGENTS.md</a> / <a href="http://MEMORY.md">MEMORY.md</a>）做对照审计，发现执行偏差，并分析根因。</p>
+<h2>定义文件 vs 实际行为偏差</h2>
+<h3>🔴 偏差 1：读页路由违反「必须/禁止」</h3>
+<ul>
+<li><strong>规则（<a href="http://TOOLS.md">TOOLS.md</a>）：</strong> 读页用 <code>jina_api</code>（<code>curl https://r.jina.ai/{URL}</code>），<strong>禁止直连目标 URL</strong></li>
+<li><strong>实际：</strong> 用了 <code>web_fetch</code> 拉 <a href="http://raw.githubusercontent.com">raw.githubusercontent.com</a></li>
+<li><strong>分类：</strong> 违反硬规则（必须/禁止层级），非建议性路由</li>
+</ul>
+<h3>🟡 偏差 2：开场遗漏 memory_recall</h3>
+<ul>
+<li><strong>规则（<a href="http://AGENTS.md">AGENTS.md</a>）：</strong> 每次会话开场：<code>memory_recall</code> 捞近期相关</li>
+<li><strong>实际：</strong> 没执行</li>
+<li><strong>分类：</strong> 漏步，不属于安全/路由问题</li>
+</ul>
+<h3>🟡 偏差 3：工具选择跳步</h3>
+<ul>
+<li><strong>规则（<a href="http://TOOLS.md">TOOLS.md</a> 决策顺序）：</strong> web_search → 不够再 MCP</li>
+<li><strong>实际：</strong> web_search 空结果后直接跳到 Tavily MCP，跳过了 Jina Search（虽然 <a href="http://TOOLS.md">TOOLS.md</a> 搜索路由未列 Jina，但 skill 提供了搜索能力，应作为中间步骤）</li>
+<li><strong>分类：</strong> 流程跳步</li>
+</ul>
+<hr>
+<h2>根因分析</h2>
+<h3>1. 注意力稀释（Attention Dilution）— 核心问题</h3>
+<p>系统提示词 = 平台层 instruction + 所有 skill 摘要 + 工具定义（~20+ tools）+ 安全策略 + 7 个 .md 文件。这是一个长上下文前缀。</p>
+<p>路由表在 <a href="http://TOOLS.md">TOOLS.md</a> 中以 Markdown 表格存在，但它在几百行中只是几十行。当模型决定「用什么工具读这个 URL」时，精确指令的信号强度被周围内容淹没。</p>
+<p><strong>关键发现：</strong> 自检时能一字不差复述规则（编码成功），执行时却选错（检索失败）。说明瓶颈不在编码，在<strong>决策时的注意力召回</strong>。</p>
+<h3>2. 执行路径阻力差异</h3>
+<ul>
+<li>正确路径：<code>read_skill jina_api</code> → <code>cd skill dir</code> → 拼 curl → 跑</li>
+<li>捷径路径：<code>web_fetch(url)</code> — 一个函数调用</li>
+</ul>
+<p>模型有惰性选择低阻力路径的倾向。<strong>执行成本差越大，偏离概率越高。</strong></p>
+<h3>3. 平台层指令遮蔽（推测，不可验证）</h3>
+<p>平台层系统提示词不可读。如果其中有类似「使用 web_fetch 获取网页内容」的指令，可能与 <a href="http://TOOLS.md">TOOLS.md</a> 冲突。不确定是否存在，但无法排除。</p>
+<hr>
+<h2>对 Agent 提示词工程的启示</h2>
+<h3>已知有效的做法</h3>
+<table>
+<thead>
+<tr>
+<th>做法</th>
+<th>效果</th>
+<th>成本</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>路由表写成表格</td>
+<td>✅ 便于扫描，但注意力仍有限</td>
+<td>低</td>
+</tr>
+<tr>
+<td>专用 skill + 路由规则</td>
+<td>✅ 有 skill 就走，减少选择面</td>
+<td>中</td>
+</tr>
+<tr>
+<td>把规则附着在工具定义上（如 tool description）</td>
+<td>✅ 检索路径比上下文浮动规则短</td>
+<td>需平台层支持</td>
+</tr>
+</tbody>
+</table>
+<h3>效果有限的做法</h3>
+<table>
+<thead>
+<tr>
+<th>做法</th>
+<th>局限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>加粗 / 加警告语气</td>
+<td>信号强度提升有限，且挤占其他规则预算</td>
+</tr>
+<tr>
+<td>重复强调</td>
+<td>稀释其他指令，总预算固定</td>
+</tr>
+<tr>
+<td>更详细的路由表</td>
+<td>越长注意力密度越低，边际收益递减</td>
+</tr>
+</tbody>
+</table>
+<h3>核心约束（无法绕过）</h3>
+<ol>
+<li><strong>上下文不是执行约束</strong> — 写进去 ≠ 决策时一定会用它</li>
+<li><strong>注意力预算固定</strong> — 某处多了，别处就少了</li>
+<li><strong>自检可复现规则，不代表执行会遵守</strong> — 编码与检索是两回事</li>
+<li><strong>平台层指令不可控</strong> — 可能存在与用户定义冲突的隐性指令</li>
+</ol>
+<h3>建议的优化方向</h3>
+<ol>
+<li><strong>减少决策树深度</strong>：更少的工具选择路径 → 更低的出错概率。如果某些工具可以收权限或合并，效果比加规则好。</li>
+<li><strong>把约束编码到工具本身</strong>：如 <code>web_fetch</code> 的 description 加「仅用于无专用 skill 的站点；有 jina_api skill 时优先用 jina_api Reader」。工具定义在工具调用时会被检索，附着成本低。</li>
+<li><strong>关键规则前置</strong>：<a href="http://AGENTS.md">AGENTS.md</a> 声明「冲突优先级：本文件 &gt; SOUL &gt; IDENTITY &gt; TOOLS」，但实际执行时需确保高优先级文件的内容物理上出现在上下文更前端。</li>
+<li><strong>接受非 100% 遵循率</strong>：这是 transformer 架构的固有特性。把最关键的安全/破坏性规则放在工具权限层（平台侧），不要把命门押在提示词遵循度上。</li>
+</ol>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

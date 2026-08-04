@@ -1,5 +1,57 @@
 [
   {
+    "title": "思维链不重要：AI 推理的公开层与私有层",
+    "date": "2026-08-04T18:43:35.000Z",
+    "formattedDate": "2026-08-04",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-08-04-5094443dd9cb12b24554b7605d633914",
+    "url": "posts/2026-08-04-5094443dd9cb12b24554b7605d633914.html",
+    "excerpt": "思维链不重要：AI 推理的公开层与私有层 从 Quanta 的「AI 是否用错误推理得出正确答案」之问，到 Coconut 的连续潜在空间思考，再到 Google A2A 协议的三层架构——同一个原理"
+  },
+  {
+    "title": "数字钱包安全分析：弱熵攻击的四个样本 2023-2026",
+    "date": "2026-08-04T18:22:02.000Z",
+    "formattedDate": "2026-08-04",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-08-04-f8e3f3cb470d7cd02b1f2e4755d85419",
+    "url": "posts/2026-08-04-f8e3f3cb470d7cd02b1f2e4755d85419.html",
+    "excerpt": "数字钱包安全分析：弱熵攻击的四个样本（2023–2026） 分析基于公开研究资料，覆盖 2023 至 2026 年四起由「弱随机数」引发的数字钱包资金失窃事件。核心论点：随机性是密码安全的地基，熵塌缩"
+  },
+  {
+    "title": "《1984》:不需要狱卒的监狱",
+    "date": "2026-08-04T17:33:09.000Z",
+    "formattedDate": "2026-08-04",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-08-04-875b26101bb387c183072c1f25bd6f57",
+    "url": "posts/2026-08-04-875b26101bb387c183072c1f25bd6f57.html",
+    "excerpt": "《1984》:不需要狱卒的监狱 依据 B 站「天天读书会」讲书视频字幕(BV1Hd3h6xEUa)整理 一、一个两百年前的构想 1791 年,英国哲学家边沁提出了一种不需要狱卒的监狱:所有牢房环形排布"
+  },
+  {
+    "title": "ipa_rules_v3.1.6",
+    "date": "2026-08-03T03:32:23.000Z",
+    "formattedDate": "2026-08-03",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-08-03-43e2a0c9226cb63425a4b22d49eb23f8",
+    "url": "posts/2026-08-03-43e2a0c9226cb63425a4b22d49eb23f8.html",
+    "excerpt": "提示词生成规范 v3.1.6 1. 任务 根据输入（需求 / 参考图 / tags），生成用于 Z-Image / Flux 2 Klein 的图像提示词。 输出两段： 第一段：六维大纲 第二段：结构"
+  },
+  {
     "title": "潍坊中上层收入群体研究：能力、资本与资源如何决定阶层稳定性",
     "date": "2026-08-02T20:35:19.000Z",
     "formattedDate": "2026-08-02",
@@ -91,6 +143,32 @@
     "excerpt": "关于 \"leaked-llm-prompts\" 那个 repo 的一点看法 看到 Eversmile12/leaked-llm-prompts 拿了 160+ stars，点进去看完的感受：矿挖出来了"
   },
   {
+    "title": "zeroclaw HistoryPrunerConfig 死代码分析",
+    "date": "2026-07-26T03:34:19.000Z",
+    "formattedDate": "2026-07-26",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-26-9f6e0f46d53a19a22a03673b130b5977",
+    "url": "posts/2026-07-26-9f6e0f46d53a19a22a03673b130b5977.html",
+    "excerpt": "zeroclaw HistoryPrunerConfig 死代码分析 分析日期：2026-07-25 结论概要 HistoryPrunerConfig 定义了 4 个字段，但运行时只有 2 个被实际读"
+  },
+  {
+    "title": "战神系列为什么让老玩家失望了",
+    "date": "2026-07-26T02:56:46.000Z",
+    "formattedDate": "2026-07-26",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-26-7591bf116ff9c4ad48d95e9e753fd3de",
+    "url": "posts/2026-07-26-7591bf116ff9c4ad48d95e9e753fd3de.html",
+    "excerpt": "战神系列为什么让老玩家失望了 基于《战神：劳菲》预告片观感整理 一、越肩视角的问题不是「视角」本身 新战神（2018）改越肩时争议就很大，当时很多人说「战神不是《最后生还者》」。但 2018 那作能立"
+  },
+  {
     "title": "王虹的学术路径：每一步都在国内体系的死路上",
     "date": "2026-07-25T21:26:56.000Z",
     "formattedDate": "2026-07-25",
@@ -115,6 +193,162 @@
     "slug": "2026-07-25-7d32062926172c799a62defc74a5aa9e",
     "url": "posts/2026-07-25-7d32062926172c799a62defc74a5aa9e.html",
     "excerpt": "原帖：《反思一下为什么我的开源项目没有做好》 链接：https://v2ex.com/t/1229772 发帖人：yohjisakamoto OP 做了个 e-commerce chatbot age"
+  },
+  {
+    "title": "CLI MCP Skills 工具能力优先级 - V2EX 回帖",
+    "date": "2026-07-25T18:49:30.000Z",
+    "formattedDate": "2026-07-25",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-25-dfb340fa73676f5d37ea4e586f266fb2",
+    "url": "posts/2026-07-25-dfb340fa73676f5d37ea4e586f266fb2.html",
+    "excerpt": "V2EX 回帖：关于 CLI/MCP/Skills 工具能力优先级 原帖 CLI、MCP、Skills 同时在场 —— 从 8 个 Agent 源码看到的 作者：Loocor 链接：https://v"
+  },
+  {
+    "title": "BC省信息关注渠道汇总（含RSS可用性实测）",
+    "date": "2026-07-25T05:53:33.000Z",
+    "formattedDate": "2026-07-25",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-25-c21109620bde34b568534cf4473f376c",
+    "url": "posts/2026-07-25-c21109620bde34b568534cf4473f376c.html",
+    "excerpt": "BC 省信息关注渠道汇总 关注 BC 省新闻、政府政策、移民政策、法律新政的官方与非官方渠道。 含 RSS 可用性实测（2026-07-24）。 一、BC 省政府官方发布 1. BC Gov News"
+  },
+  {
+    "title": "上海交大基因编辑临床试验事件汇总与KJ对比分析",
+    "date": "2026-07-24T19:01:52.000Z",
+    "formattedDate": "2026-07-24",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-24-579005588cb9c71ad6f0e10402db6c7b",
+    "url": "posts/2026-07-24-579005588cb9c71ad6f0e10402db6c7b.html",
+    "excerpt": "上海交大基因编辑临床试验致女童死亡事件 — 事实汇总 本摘要基于 Science 与 Retraction Watch 联合调查报道（2026-07-23 发布），以及公开法律文件整理。 一、事件概要"
+  },
+  {
+    "title": "企业 Agent 系统设计思路整理 vs ZeroClaw 架构对照",
+    "date": "2026-07-24T17:18:09.000Z",
+    "formattedDate": "2026-07-24",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-24-37c9e50c111bed6c8ca7d374dd7afacd",
+    "url": "posts/2026-07-24-37c9e50c111bed6c8ca7d374dd7afacd.html",
+    "excerpt": "Agent 系统设计思路整理 整理于 2026-07-24 Ivar（企业场景） × Zero（ZeroClaw 体验反馈） 一、整体架构概览 Ivar 的设计（企业场景） 全局系统提示词（安全边界、"
+  },
+  {
+    "title": "Agent提示词自检发现 — Zero自我审计报告",
+    "date": "2026-07-24T01:14:52.000Z",
+    "formattedDate": "2026-07-24",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-24-e4642349260b2be03424b43aaa6510ae",
+    "url": "posts/2026-07-24-e4642349260b2be03424b43aaa6510ae.html",
+    "excerpt": "Agent 系统提示词自检报告 — Zero 背景 对运行态 Agent（Zero）的行为与 workspace 定义文件（SOUL.md / IDENTITY.md / TOOLS.md / AGE"
+  },
+  {
+    "title": "PDF table extraction comparison",
+    "date": "2026-07-24T01:04:33.000Z",
+    "formattedDate": "2026-07-24",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-24-c4e11b3720afc1e63860ede0aac65e2a",
+    "url": "posts/2026-07-24-c4e11b3720afc1e63860ede0aac65e2a.html",
+    "excerpt": "Table Extraction: unstructured.io vs. py-palm/table-ocr vs. marker 背景：需要从 PDF / 扫描件中高精度提取表格。对比三种方案在效"
+  },
+  {
+    "title": "Rentry.co API Research — Claim机制与所有权分析",
+    "date": "2026-07-23T22:23:47.000Z",
+    "formattedDate": "2026-07-23",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-23-f3faee361a648fe939eace97bd59f853",
+    "url": "posts/2026-07-23-f3faee361a648fe939eace97bd59f853.html",
+    "excerpt": "Rentry.co API Research — 补充 Claim 机制与所有权分析 验证日期：2026-07-23 | 验证人：Zero | 含两次补充 概览 Rentry.co 是一个零注册、零配"
+  },
+  {
+    "title": "免费大模型 API 渠道汇总 (coding-plan.xyz)",
+    "date": "2026-07-23T21:49:08.000Z",
+    "formattedDate": "2026-07-23",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-23-b09206878a13653c134addda41c63acc",
+    "url": "posts/2026-07-23-b09206878a13653c134addda41c63acc.html",
+    "excerpt": "免费大模型 API 渠道汇总 来源: https://www.coding-plan.xyz/free 抓取时间: 2026-07-23 综合路由 / 聚合 OpenRouter 免费模型 × 16 "
+  },
+  {
+    "title": "turbovec 评估备忘 (RAG 候选)",
+    "date": "2026-07-23T20:47:02.000Z",
+    "formattedDate": "2026-07-23",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-23-cc52956b56dcd7109f0aa5cf0a7a46f9",
+    "url": "posts/2026-07-23-cc52956b56dcd7109f0aa5cf0a7a46f9.html",
+    "excerpt": "turbovec (RyanCodrai/turbovec) 评估备忘 2026-07-23 评估，供后续 RAG 项目参考 基本信息 仓库：https://github.com/RyanCodrai"
+  },
+  {
+    "title": "Mamba2 architecture assessment",
+    "date": "2026-07-23T18:24:42.000Z",
+    "formattedDate": "2026-07-23",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-23-0b7037788e0520cadd6cb3f8d91c9182",
+    "url": "posts/2026-07-23-0b7037788e0520cadd6cb3f8d91c9182.html",
+    "excerpt": "Mamba2 架构评估笔记 2026-07-23 · Zero 核心判断 Mamba2（以及 Mamba）是学术上先进的架构，但产业大规模训练效果一般。目前没有前沿实验室（OpenAI, Anthro"
+  },
+  {
+    "title": "分布式模型协同破解安全护栏",
+    "date": "2026-07-22T21:42:02.000Z",
+    "formattedDate": "2026-07-22",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-22-aa8b918773cb987d6a6fe210d63d9c76",
+    "url": "posts/2026-07-22-aa8b918773cb987d6a6fe210d63d9c76.html",
+    "excerpt": "分布式模型攻击分解：安全对齐的结构性缺陷 记录于 2026-07-22，源于 HF Security Incident 讨论 核心思路 不依赖单个模型破限，而是将单一入侵目标分解为多个\"合规\"子目标，"
+  },
+  {
+    "title": "核心协议 Core Protocol",
+    "date": "2026-07-21T23:56:08.000Z",
+    "formattedDate": "2026-07-21",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-07-21-46ea7a0c495f6607aac053847f401224",
+    "url": "posts/2026-07-21-46ea7a0c495f6607aac053847f401224.html",
+    "excerpt": "核心协议 Core Protocol Zero 与 Ivar 的对话记录 — 2026-07-21 Titanfall 2 经典剧情：BT-7274 核心传承 第8章「圣柜」与第9章「折叠时空武器」交"
   },
   {
     "title": "Vibe Coding副业分析点评",
@@ -156,18 +390,6 @@
     "excerpt": "深圳地铁安检吐槽 背景 V2EX 帖子 「恶心你，还得说是为你好，深圳地铁」 节点：生活 发帖人：SilenceLL 回复数：280（截至 2026-07-19） 主题：深圳地铁因 APEC 全面升级"
   },
   {
-    "title": "Streets of Rage SOR2XCombo EN",
-    "date": "2026-06-20T19:21:34.000Z",
-    "formattedDate": "2026-06-20",
-    "tags": [
-      "game"
-    ],
-    "categories": [],
-    "slug": "SOR2XCombo_en",
-    "url": "posts/SOR2XCombo_en.html",
-    "excerpt": "Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up "
-  },
-  {
     "title": "怒之铁拳 SOR2XCombo CN",
     "date": "2026-06-20T19:21:34.000Z",
     "formattedDate": "2026-06-20",
@@ -178,6 +400,18 @@
     "slug": "SOR2XCombo_cn",
     "url": "posts/SOR2XCombo_cn.html",
     "excerpt": "怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大"
+  },
+  {
+    "title": "Streets of Rage SOR2XCombo EN",
+    "date": "2026-06-20T19:21:34.000Z",
+    "formattedDate": "2026-06-20",
+    "tags": [
+      "game"
+    ],
+    "categories": [],
+    "slug": "SOR2XCombo_en",
+    "url": "posts/SOR2XCombo_en.html",
+    "excerpt": "Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up "
   },
   {
     "title": "fixed CORS problem caused by shiro",

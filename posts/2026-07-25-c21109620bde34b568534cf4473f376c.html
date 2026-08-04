@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BC省信息关注渠道汇总（含RSS可用性实测） - 我的博客</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">我的博客</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">时间线</button>
+<button class="tab-btn" data-tab="tags">标签</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← 返回首页</a>
+<h1>BC省信息关注渠道汇总（含RSS可用性实测）</h1>
+<div class="post-meta">
+<span class="post-date">2026-07-25</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<h1>BC 省信息关注渠道汇总</h1>
+<blockquote>
+<p>关注 BC 省新闻、政府政策、移民政策、法律新政的官方与非官方渠道。
+含 RSS 可用性实测（2026-07-24）。</p>
+</blockquote>
+<hr>
+<h2>一、BC 省政府官方发布</h2>
+<h3>1. BC Gov News（最核心入口）</h3>
+<p><strong><a href="https://news.gov.bc.ca/">https://news.gov.bc.ca/</a></strong></p>
+<ul>
+<li>省政府所有部门新闻发布、政策公告、项目启动</li>
+<li>提供 Email 订阅 / RSS 源，可按部门/话题订阅</li>
+</ul>
+<p><strong>RSS：</strong> <code>https://news.gov.bc.ca/feed</code></p>
+<ul>
+<li><strong>实测：</strong> ~10 条，稳定可用</li>
+<li><strong>建议：</strong> 每日拉取，覆盖 90% 政府动态</li>
+</ul>
+<h3>2. BC Laws（法律/法规变更）</h3>
+<p><strong><a href="https://www.bclaws.gov.bc.ca/">https://www.bclaws.gov.bc.ca/</a></strong></p>
+<ul>
+<li><strong>Table of Legislative Changes（TLC）</strong> — 每部法律的最新修订记录</li>
+<li><strong>BC Gazette Part I &amp; II</strong>：
+<ul>
+<li>Part I：政府公告、人事任命</li>
+<li>Part II：新法规、法规修订（具有法律效力）</li>
+</ul>
+</li>
+<li><strong>RSS 可用性：</strong> 不可作常规 RSS 使用；法律/公报另有发布形态</li>
+</ul>
+<h3>3. BC Legislative Assembly — 议会动态</h3>
+<p><strong><a href="https://www.leg.bc.ca/">https://www.leg.bc.ca/</a></strong></p>
+<ul>
+<li><strong>Bill 追踪</strong>：查看所有在审法案及其进展阶段</li>
+<li><strong>Hansard（辩论笔录）</strong>：议会辩论全文，政策走向晴雨表</li>
+<li><strong>Committee Hearings</strong>：公众听证时间表</li>
+<li><strong>RSS 可用性：</strong> <code>https://www.leg.bc.ca/rss.xml</code> 能下载但 <strong>channel 为空</strong>（无 item）</li>
+</ul>
+<hr>
+<h2>二、移民类（省提名 + 联邦）</h2>
+<h3>4. WelcomeBC — BC PNP 官方</h3>
+<p><strong><a href="https://www.welcomebc.ca/immigrate-to-b-c/about-the-bc-provincial-nominee-program/news">https://www.welcomebc.ca/immigrate-to-b-c/about-the-bc-provincial-nominee-program/news</a></strong></p>
+<ul>
+<li>BC PNP（省提名）最新政策更新、抽选结果、申请指南变更</li>
+<li>主站：<strong><a href="https://www.welcomebc.ca/">https://www.welcomebc.ca/</a></strong> — 全省定居就业信息</li>
+<li><strong>RSS 可用性：</strong> 无 <code>/rss</code>（404），只有 HTML 新闻页，不适合自动抓取</li>
+</ul>
+<h3>5. IRCC（联邦移民部）BC 相关通知</h3>
+<p><strong><a href="https://www.canada.ca/en/immigration-refugees-citizenship/news/notices.html">https://www.canada.ca/en/immigration-refugees-citizenship/news/notices.html</a></strong></p>
+<ul>
+<li>联邦层面的移民政策变化</li>
+<li><strong>Supplementary Immigration Levels Plan</strong>（年度移民配额）：<a href="https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/corporate-initiatives/levels.html">https://www.canada.ca/en/immigration-refugees-citizenship/corporate/mandate/corporate-initiatives/levels.html</a></li>
+<li><strong>RSS/Atom：</strong> 官方新闻室提供 Atom API
+<ul>
+<li><code>https://api.io.canada.ca/io-server/gc/news/en/v2?dept=departmentofcitizenshipandimmigration&amp;sort=publishedDate&amp;orderBy=desc&amp;publishedDate%3E=2021-07-23&amp;pick=20&amp;format=atom&amp;atomtitle=Immigration,%20Refugees%20and%20Citizenship%20Canada</code></li>
+<li><strong>实测：</strong> ~20 entries，稳定</li>
+<li>官方索引：<a href="https://www.canada.ca/en/immigration-refugees-citizenship/news/rss.html">https://www.canada.ca/en/immigration-refugees-citizenship/news/rss.html</a></li>
+<li><strong>注意：</strong> Notices HTML 页不是 feed，别当 RSS 用</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>三、时事新闻（补充覆盖）</h2>
+<h3>6. CBC British Columbia</h3>
+<p><strong><a href="https://www.cbc.ca/news/canada/british-columbia">https://www.cbc.ca/news/canada/british-columbia</a></strong></p>
+<ul>
+<li>公共广播，中立，省政报道扎实</li>
+<li><strong>RSS：</strong> <code>https://www.cbc.ca/cmlink/rss-canada-britishcolumbia</code></li>
+<li><strong>实测：</strong> ~20 条，稳定（<code>/webfeed/rss/rss-canada-britishcolumbia</code> 同内容）</li>
+</ul>
+<h3>7. Vancouver Sun / The Province</h3>
+<ul>
+<li>Postmedia 旗下，BC 两大日报；省政报道深入，注意保守倾向</li>
+<li><strong>RSS 可用性：</strong>
+<ul>
+<li>Vancouver Sun：<code>https://vancouversun.com/feed</code></li>
+<li>The Province：<code>https://theprovince.com/feed</code></li>
+</ul>
+</li>
+<li><strong>实测：</strong> ~10 条；有 <code>content:encoded</code>，但正文仍可能被付费墙遮挡</li>
+<li><strong>建议：</strong> 适合标题/摘要扫描，不适合当全文源</li>
+</ul>
+<h3>8. CivicInfo BC</h3>
+<p><strong><a href="https://www.civicinfo.bc.ca/">https://www.civicinfo.bc.ca/</a></strong></p>
+<ul>
+<li>地方政府治理信息聚合</li>
+<li>提供每周电子报，适合关注市政层面</li>
+<li><strong>RSS 可用性：</strong>
+<ul>
+<li>地方新闻：<code>https://www.civicinfo.bc.ca/rss/news.php</code>（~55 条，较干净）</li>
+<li>招聘：<code>https://www.civicinfo.bc.ca/rss/careers.php</code>（条目多，按五百计）</li>
+<li>招标：<code>https://www.civicinfo.bc.ca/rss/bids.php</code>（~38 条）</li>
+</ul>
+</li>
+<li><strong>注意：</strong> 主推 Email 订阅；结构化监控用上面的 RSS</li>
+</ul>
+<hr>
+<h2>四、监管与行业动态</h2>
+<h3>9. BC Regulatory Registry（整合至 BC Laws Gazette）</h3>
+<ul>
+<li>追踪 <strong>BC Gazette Part II</strong> 新法规发布</li>
+<li>涉及专业执业（工程、医疗、移民顾问等）的法规变更</li>
+<li><strong>RSS 可用性：</strong> 不可作常规 RSS 使用</li>
+</ul>
+<hr>
+<h2>五、推荐订阅方案</h2>
+<h3>按类别/频率</h3>
+<table>
+<thead>
+<tr>
+<th>关注类别</th>
+<th>频率</th>
+<th>渠道</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>省政府新闻</td>
+<td>每日</td>
+<td>BC Gov News RSS</td>
+</tr>
+<tr>
+<td>BC PNP</td>
+<td>每月 1-2 次</td>
+<td>WelcomeBC PNP News（手动/网页抓取）</td>
+</tr>
+<tr>
+<td>联邦移民</td>
+<td>每周</td>
+<td>IRCC 新闻室 Atom</td>
+</tr>
+<tr>
+<td>法律新政</td>
+<td>每月</td>
+<td>BC Laws TLC + Gazette Part II（手动）</td>
+</tr>
+<tr>
+<td>议会/选举</td>
+<td>每季度</td>
+<td><a href="http://Leg.bc.ca">Leg.bc.ca</a> Bill Status（手动）</td>
+</tr>
+<tr>
+<td>省政新闻补充</td>
+<td>每日</td>
+<td>CBC BC RSS</td>
+</tr>
+<tr>
+<td>市政/地方政府</td>
+<td>每周</td>
+<td>CivicInfo <code>rss/news.php</code></td>
+</tr>
+<tr>
+<td>标题级补强</td>
+<td>可选</td>
+<td>Vancouver Sun / The Province RSS</td>
+</tr>
+</tbody>
+</table>
+<h3>推荐最小订阅</h3>
+<table>
+<thead>
+<tr>
+<th>目的</th>
+<th>优先 feed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>省政府动态（日）</td>
+<td>BC Gov News <code>https://news.gov.bc.ca/feed</code></td>
+</tr>
+<tr>
+<td>联邦移民（周）</td>
+<td>IRCC Atom（详见 5）</td>
+</tr>
+<tr>
+<td>省政新闻补充（日）</td>
+<td>CBC BC <code>https://www.cbc.ca/cmlink/rss-canada-britishcolumbia</code></td>
+</tr>
+<tr>
+<td>市政/地方政府（周）</td>
+<td>CivicInfo <code>https://www.civicinfo.bc.ca/rss/news.php</code></td>
+</tr>
+<tr>
+<td>标题级补强（可选）</td>
+<td>Vancouver Sun / The Province feed</td>
+</tr>
+<tr>
+<td>PNP / 法律 / 议会</td>
+<td>暂无可靠 RSS → 偶发读页或以后单独做监控任务</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>六、关于自动化 Skill 的建议</h2>
+<h3>总原则</h3>
+<p>不值得一站一 skill。已有 <code>jina_api</code>（读页）+ 现有 RSS/Atom 解析能力，重复封装收益低。</p>
+<h3>推荐落地形态</h3>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>参考文档</strong></td>
+<td>整份渠道表放 <code>shared/tools</code> 或 workspace，需用时查阅</td>
+</tr>
+<tr>
+<td><strong>可选薄 <code>bc_watch</code></strong></td>
+<td>只包高频 RSS：BC Gov News + IRCC（+ 可选 CBC / CivicInfo）</td>
+</tr>
+<tr>
+<td><strong>Cron / 定时 digest</strong></td>
+<td>「自动摘要」类需求 → 定时拉 feed 写本地摘要，agent 读文件</td>
+</tr>
+<tr>
+<td><strong>不做独立 skill</strong></td>
+<td>WelcomeBC、Laws、Legislature、Sun/Province、CivicInfo 招聘/招标 等均不建议封装</td>
+</tr>
+</tbody>
+</table>
+<h3>Skill 值得做的条件（对照现有 <code>arxiv_api</code> / <code>jandan_api</code>）</h3>
+<p>高频调用 + 稳定接口 + 需要固定命令/字段裁剪。BC 这批里只有 BC Gov News / IRCC 勉强沾边。</p>
+<h3>使用注意</h3>
+<ol>
+<li><strong>Sun / Province</strong>：适合标题/摘要扫描，不适合当全文源（Postmedia 付费墙）。</li>
+<li><strong>CivicInfo careers</strong>：体积大，别整份塞进上下文；要 <code>LIMIT</code> / 按日期过滤。</li>
+<li><strong>IRCC</strong>：用官方 Atom API，不要指望 Notices HTML 当 RSS。</li>
+<li><strong>欢迎落地形态</strong>：渠道表文档 +（可选）薄 RSS 聚合 + 定时 digest；不要做成一堆 scrape skill。</li>
+</ol>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
