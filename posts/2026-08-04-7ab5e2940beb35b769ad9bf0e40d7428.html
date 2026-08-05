@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algolia 调查笔记 + HN Search API 实例解析 - 我的博客</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">我的博客</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">时间线</button>
+<button class="tab-btn" data-tab="tags">标签</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← 返回首页</a>
+<h1>Algolia 调查笔记 + HN Search API 实例解析</h1>
+<div class="post-meta">
+<span class="post-date">2026-08-04</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<h1>Algolia 调查笔记 + Hacker News Search API 实战解析</h1>
+<blockquote>
+<p>整理日期：2026-08-04
+调查范围：<a href="http://Algolia.com">Algolia.com</a> 商业搜索服务；HN Search API（<a href="http://hn.algolia.com">hn.algolia.com</a>）实测</p>
+</blockquote>
+<hr>
+<h2>一、Algolia 是什么</h2>
+<p>Algolia 是一家 SaaS 搜索服务商，提供<strong>托管式全文搜索引擎</strong>。核心模式：你把数据推给它，它建索引，你的应用通过 API 查询。卖点是速度（毫秒级）、相关性排序、开箱即用的前端组件。</p>
+<p>需要先区分两件事：</p>
+<ul>
+<li><strong>Algolia 商业产品</strong>：B 端服务，注册账号、建 index、调 API，按用量计费</li>
+<li><strong>HN Search API</strong>（<a href="http://hn.algolia.com">hn.algolia.com</a>）：Algolia 替 Hacker News 免费托管的<strong>公开搜索接口</strong>，任何人免 key 直接调，与商业账号无关</li>
+</ul>
+<hr>
+<h2>二、Algolia 商业产品：使用场景</h2>
+<p>典型使用场景：</p>
+<ol>
+<li><strong>站内搜索</strong>：电商（商品搜索/筛选）、文档站（全文检索）、博客（文章搜索）、社区（帖子/评论搜索）</li>
+<li><strong>搜索建议 / 自动补全</strong>：输入即出联想（Autocomplete）</li>
+<li><strong>相关性排序</strong>：可配置 ranking 规则（典型度、地理位置、自定义权重），比数据库 LIKE 强得多</li>
+<li><strong>多租户隔离</strong>：一套索引按租户过滤</li>
+<li><strong>AI 相关</strong>：向量检索、语义搜索（商业化功能，按量收费）</li>
+</ol>
+<p>个人开发者/小团队常见用法：<strong>博客站内搜索</strong>（替代自写 SQL LIKE）、<strong>文档站搜索</strong>（替代 DocSearch 审核等待）。</p>
+<h3>博客接入的两条路对比</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>自建账号调 API</th>
+<th>DocSearch（官方爬虫）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>谁灌数据</td>
+<td>自己写 sync 脚本推 JSON</td>
+<td>Algolia 爬虫自动爬</td>
+</tr>
+<tr>
+<td>更新</td>
+<td>文章变动要重推索引</td>
+<td>每周自动重爬</td>
+</tr>
+<tr>
+<td>可用性</td>
+<td>注册即用，无审核</td>
+<td>要申请 + 等审核</td>
+</tr>
+<tr>
+<td>工作量</td>
+<td>写 sync 脚本 + 改前端</td>
+<td>通过后引 snippet</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>三、Algolia 商业产品：服务情况</h2>
+<p><strong>免费层（Build 计划）</strong>，来自官网 pricing 实测：</p>
+<ul>
+<li>每月包含一定量请求（按「搜索请求」计费单元），超出后按量付费（如 $0.60 / 1K 请求量级，具体档位以官网为准）</li>
+<li>有记录数/操作数限制，个人博客量级足够</li>
+<li>超出限制的 API：按量计费，不是直接封</li>
+</ul>
+<p><strong>付费升级方向</strong>（官网 plan finder 实测提及）：</p>
+<ul>
+<li><strong>Core search</strong>：搜索基础体验，起步免费、可平滑升级</li>
+<li><strong>AI features</strong>：语义搜索、动态重排（Dynamic Re-ranking）、推荐（Recommend API）</li>
+<li><strong>Enterprise</strong>：更高规模、治理、高级支持</li>
+</ul>
+<p><strong>API 形态</strong>（两条线，别只理解成&quot;一个 API&quot;）：</p>
+<ol>
+<li><strong>写数据</strong>：<code>POST /1/indexes/{indexName}/objects</code> — 把记录（JSON）推入索引</li>
+<li><strong>查数据</strong>：<code>POST /1/indexes/{indexName}/query</code> — 搜索查询</li>
+</ol>
+<p>前端可引官方组件 <strong>InstantSearch / Autocomplete</strong>（JS + CSS），自带输入框、高亮、分页 UI。</p>
+<p><strong>两个 API Key</strong>：一个私有（写入用，只放服务端），一个公开（查询用，可嵌页面）。</p>
+<hr>
+<h2>四、Hacker News Search API（<a href="http://hn.algolia.com">hn.algolia.com</a>）实例解析</h2>
+<h3>4.1 这是什么</h3>
+<p>Hacker News 官方搜索，Algolia 免费托管。数据源是 HN 的 Firebase API 实时同步，<strong>近实时</strong>（实测返回的 <code>updated_at</code> 是当天）。<strong>无需 key、免费、公开</strong>，普通 GET 即用。</p>
+<p>文档页 <code>hn.algolia.com/api</code> 是 JS 渲染（curl 拿不到正文），端点和参数用 GitHub 源码核对的：</p>
+<ul>
+<li>仓库：<code>github.com/algolia/hn-search</code></li>
+<li>路由（<code>config/routes.rb</code>）：<code>namespace :api/v1</code> 下 <code>search</code> / <code>search_by_date</code> / <code>items/:id</code> / <code>users/:username</code></li>
+</ul>
+<h3>4.2 核心端点</h3>
+<p>Base URL：<code>https://hn.algolia.com/api/v1/</code></p>
+<table>
+<thead>
+<tr>
+<th>端点</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /search?query=...</code></td>
+<td>全文搜索，按相关度排序</td>
+</tr>
+<tr>
+<td><code>GET /search_by_date?query=...</code></td>
+<td>按时间排序（新 → 旧）</td>
+</tr>
+<tr>
+<td><code>GET /items/{id}</code></td>
+<td>单个 item（帖子或评论）+ 递归评论树</td>
+</tr>
+<tr>
+<td><code>GET /users/{username}</code></td>
+<td>用户信息（karma、约 created、约延迟）</td>
+</tr>
+</tbody>
+</table>
+<h3>4.3 关键参数</h3>
+<ul>
+<li><code>query</code> — 搜索词</li>
+<li><code>tags=story|comment|poll|job|ask_hn|show_hn</code> — 内容类型过滤；<code>author_{username}</code> 按作者；<code>story_{id}</code> 某帖下评论</li>
+<li><code>numericFilters=points&gt;100</code>、<code>created_at_i&gt;时间戳</code> — 数值/时间过滤（可组合，逗号分隔）</li>
+<li><code>hitsPerPage</code> / <code>page</code> — 分页</li>
+<li><code>advancedSyntax</code> — 高级语法（默认开启）</li>
+<li>返回字段含 <code>_highlightResult</code>（带 <code>&lt;em&gt;</code> 高亮标签，前端直接用）</li>
+</ul>
+<h3>4.4 实测例子（2026-08-04 实调）</h3>
+<p><strong>例 1：基本搜索</strong></p>
+<pre><code class="language-bash">curl &quot;https://hn.algolia.com/api/v1/search?query=llm&amp;hitsPerPage=2&quot;
+</code></pre>
+<p>返回 JSON 含：<code>title / url / author / points / num_comments / created_at / objectID / _highlightResult</code>。命中项标题带高亮：<code>&quot;value&quot;: &quot;&lt;em&gt;LLM&lt;/em&gt; Inevitabilism&quot;</code>。</p>
+<p><strong>例 2：类型过滤 + 统计</strong></p>
+<pre><code class="language-bash">curl &quot;https://hn.algolia.com/api/v1/search?query=rust&amp;tags=story&amp;hitsPerPage=1&quot;
+</code></pre>
+<p><code>nbHits: 59,157</code> — 全库匹配 &quot;rust&quot; 的 story 数；过滤生效。</p>
+<p><strong>例 3：按时间过滤（最近 24h story）</strong></p>
+<pre><code class="language-python">url = f&quot;https://hn.algolia.com/api/v1/search_by_date?tags=story&amp;numericFilters=created_at_i&gt;{int(time.time())-86400}&amp;hitsPerPage=3&quot;
+</code></pre>
+<p>返回 <code>nbHits: 1,184</code>（24 小时内有 1,184 个新 story），结果按时间倒序，数据实时。</p>
+<p><strong>例 4：取帖子 + 评论树</strong></p>
+<pre><code class="language-bash">curl &quot;https://hn.algolia.com/api/v1/items/44567857&quot;
+</code></pre>
+<p>返回帖子元信息 + <code>children</code>（递归评论数组）。实测该帖 1,773 分、124 条直接评论，<code>children[0]</code> 可拿到首条评论作者和正文。</p>
+<h3>4.5 注意事项</h3>
+<ul>
+<li><strong>限速</strong>：源码有 IP 级限速逻辑（<code>RATE_LIMIT_WHITE_LIST</code>），低频测试没问题，高频批量抓会 429</li>
+<li><strong>大帖响应体很大</strong>：上千评论的帖子全树返回很大，按需取</li>
+<li><strong>免 key 免注册</strong>：适合做 HN 搜索工具、热点统计、个人 HN 阅读器</li>
+</ul>
+<h3>4.6 典型用途</h3>
+<ul>
+<li>追话题：<code>/search?query=llm&amp;tags=story</code> → 相关帖列表</li>
+<li>看某人发言：<code>tags=author_pg</code></li>
+<li>热点统计：<code>search_by_date</code> + <code>numericFilters=created_at_i&gt;...</code> + <code>hitsPerPage=1000</code></li>
+<li>完整评论树：<code>items/{id}</code></li>
+</ul>
+<hr>
+<h2>五、结论</h2>
+<ul>
+<li><strong>Algolia 商业产品</strong>：注册即用的托管搜索，适合站内搜索/文档搜索，免费层个人够用；成本是写 sync 脚本 + 前端接入</li>
+<li><strong>HN Search API</strong>：独立于商业账号的公开接口，免费免 key，实时、稳定，做 HN 相关工具直接可用</li>
+</ul>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

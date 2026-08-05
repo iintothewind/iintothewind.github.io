@@ -1,5 +1,31 @@
 [
   {
+    "title": "omp上下文管理设计解析: 对比官方Pi",
+    "date": "2026-08-05T01:36:38.000Z",
+    "formattedDate": "2026-08-05",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-08-05-168f4cd49504e3aa8f7cdf86e8a0bbbd",
+    "url": "posts/2026-08-05-168f4cd49504e3aa8f7cdf86e8a0bbbd.html",
+    "excerpt": "omp 的上下文管理设计解析：与官方 Pi 的对比 基于 ~/Documents/oh-my-pi（can1357/oh-my-pi，2026-08-02 快照）与 ~/Documents/pi（ea"
+  },
+  {
+    "title": "Algolia 调查笔记 + HN Search API 实例解析",
+    "date": "2026-08-04T21:12:33.000Z",
+    "formattedDate": "2026-08-04",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-08-04-7ab5e2940beb35b769ad9bf0e40d7428",
+    "url": "posts/2026-08-04-7ab5e2940beb35b769ad9bf0e40d7428.html",
+    "excerpt": "Algolia 调查笔记 + Hacker News Search API 实战解析 整理日期：2026-08-04 调查范围：Algolia.com 商业搜索服务；HN Search API（hn."
+  },
+  {
     "title": "思维链不重要：AI 推理的公开层与私有层",
     "date": "2026-08-04T18:43:35.000Z",
     "formattedDate": "2026-08-04",
@@ -182,18 +208,6 @@
     "excerpt": "深圳地铁安检吐槽 背景 V2EX 帖子 「恶心你，还得说是为你好，深圳地铁」 节点：生活 发帖人：SilenceLL 回复数：280（截至 2026-07-19） 主题：深圳地铁因 APEC 全面升级"
   },
   {
-    "title": "怒之铁拳 SOR2XCombo CN",
-    "date": "2026-06-20T19:21:34.000Z",
-    "formattedDate": "2026-06-20",
-    "tags": [
-      "game"
-    ],
-    "categories": [],
-    "slug": "SOR2XCombo_cn",
-    "url": "posts/SOR2XCombo_cn.html",
-    "excerpt": "怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大"
-  },
-  {
     "title": "Streets of Rage SOR2XCombo EN",
     "date": "2026-06-20T19:21:34.000Z",
     "formattedDate": "2026-06-20",
@@ -204,6 +218,18 @@
     "slug": "SOR2XCombo_en",
     "url": "posts/SOR2XCombo_en.html",
     "excerpt": "Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up "
+  },
+  {
+    "title": "怒之铁拳 SOR2XCombo CN",
+    "date": "2026-06-20T19:21:34.000Z",
+    "formattedDate": "2026-06-20",
+    "tags": [
+      "game"
+    ],
+    "categories": [],
+    "slug": "SOR2XCombo_cn",
+    "url": "posts/SOR2XCombo_cn.html",
+    "excerpt": "怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大"
   },
   {
     "title": "fixed CORS problem caused by shiro",
