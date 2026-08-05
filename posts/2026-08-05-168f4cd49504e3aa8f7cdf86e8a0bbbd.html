@@ -1,22 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>omp上下文管理设计解析: 对比官方Pi - 我的博客</title>
+<title>omp上下文管理设计解析: 对比官方Pi - My Blog</title>
 <link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
 <div class="sidebar-header">
-<a href="/index.html" class="site-title">我的博客</a>
+<a href="/index.html" class="site-title">My Blog</a>
 </div>
 <div class="sidebar-tabs">
-<button class="tab-btn active" data-tab="timeline">时间线</button>
-<button class="tab-btn" data-tab="tags">标签</button>
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
 </div>
 <div id="tab-timeline" class="tab-panel active">
 <ul id="post-list-timeline" class="post-list"></ul>
@@ -31,7 +32,7 @@
 
 <main id="content">
 <article class="post">
-<a href="/index.html" class="back-home">← 返回首页</a>
+<a href="/index.html" class="back-home">← Back to Home</a>
 <h1>omp上下文管理设计解析: 对比官方Pi</h1>
 <div class="post-meta">
 <span class="post-date">2026-08-05</span>
@@ -68,7 +69,18 @@
 <li><strong>advisor 上下文</strong>：额外维护一组后台 prefetch 上下文，独立走自己的 compaction（<code>session-advisors.ts</code>；advisor <strong>从不</strong>走 snapcompact，只用 LLM 总结）。</li>
 </ol>
 <p>omp 的组合：<code>prefix(systemPrompt + tools) ＋ 追加消息日志 ＋ 各 advisor 上下文</code>。</p>
-<hr>
+<div class="mermaid">flowchart TB
+    subgraph pi[&quot;官方 Pi：entry → 消息投影&quot;]
+        A1[&quot;SessionContext&lt;br/&gt;(messages, thinkingLevel, model, activeToolNames)&quot;] --&gt; A2[&quot;defaultContextEntryTransform&lt;br/&gt;找最近 compaction entry 替换历史&quot;] --&gt; A3[&quot;AgentMessage[] → provider&quot;]
+    end
+
+    subgraph ompx[&quot;omp：三层叠加&quot;]
+        B1[&quot;StablePrefix&lt;br/&gt;system prompt + tool 规格&lt;br/&gt;只算一次并冻结, 跨轮字节相同&lt;br/&gt;MCP 重连等事件 → invalidate()&quot;] --&gt; B4
+        B2[&quot;AppendOnlyLog&lt;br/&gt;消息只增不改&lt;br/&gt;唯一改写口 replaceTail() → 预留给压缩&quot;] --&gt; B4
+        B3[&quot;advisor 上下文&lt;br/&gt;后台 prefetch, 独立 compaction&lt;br/&gt;从不走 snapcompact&quot;] -.-&gt; B4
+        B4[&quot;发给 provider 的上下文&quot;]
+    end
+</div><hr>
 <h2>2. 分类逻辑（Classification）</h2>
 <h3>官方 Pi：只有&quot;entry 类型&quot;分类</h3>
 <p>Pi 的分类是<strong>结构化的</strong>——按 entry 类型决定如何处理：</p>
@@ -171,7 +183,30 @@
 <li><strong>收益门槛（年龄 prune：<code>minimumSavings</code> 20000；shake：<code>minSavings</code> 4000）</strong>：省不够阈值根本不动手，防止&quot;为省 1 token 重写一遍缓存&quot;。</li>
 </ol>
 <p>常态结论：<strong>每轮跑 ≠ 每轮改</strong>。多数轮次 stale pass 扫完发现候选全在温区/保护区/边界前，直接 <code>return { prunedCount: 0, tokensSaved: 0 }</code>——零改动、零缓存失效。缓存命中靠的是 StablePrefix + AppendOnlyLog（每次只 miss 用户新增 delta）；prune/shake 是例外路径，只咬后缀预算内的尾部，且 supersede 的深度清理严格等到 idle 冷窗。</p>
-<h4>② shake（策略选项 / 手动命令，不是每轮自动层）</h4>
+<div class="mermaid">sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant A as omp
+    participant P as Provider
+
+    rect rgb(240, 248, 255)
+    Note over U,P: 常态路径：稳定前缀 + 追加日志
+    U-&gt;&gt;A: 新消息
+    A-&gt;&gt;P: 发送（前缀字节相同 + 新 delta）
+    P--&gt;&gt;A: 命中前缀缓存，只计 delta + cacheRead
+    end
+
+    rect rgb(255, 245, 238)
+    Note over A,P: prune 改写深处消息
+    A-&gt;&gt;P: 改写点之后整段重序列化
+    P--&gt;&gt;A: 从改写点重算 KV（cacheWrite 溢价）→ 尽量避免
+    end
+
+    rect rgb(245, 255, 240)
+    Note over A,P: idle ≥ 90min → 缓存已冷（TTL 1h 已过）
+    A-&gt;&gt;P: 深度清理 superseded / useless（重写免费）
+    end
+</div><h4>② shake（策略选项 / 手动命令，不是每轮自动层）</h4>
 <ul>
 <li><code>shake.ts</code>：把大块工具结果 / 大 fenced/XML 块替换成<strong>短占位符</strong>，原文按需掏到 <code>artifact://</code>。</li>
 <li>自动配置保护 <code>16000</code> 令牌、<code>minSavings: 4000</code>；手动 <code>/shake</code> 可用激进配置（保护窗口归零）。</li>
@@ -226,7 +261,22 @@
 <li>idle（<code>runIdleCompaction</code>：<strong>默认 <code>idleEnabled: false</code></strong>，且通常要 ≥200k tokens + 空闲约 5 分钟）。</li>
 <li>manual（<code>/compact</code> 多档 + <code>/shake</code> + <code>/handoff</code>）。</li>
 </ul>
-<p><strong>双锚定防谎报</strong>：omp 用一个本地存储估算作为<strong>下限</strong>，与 provider 报销的 usage 取大值。防止 payload 压缩 hook 把 provider 报的 prompt token 压低、从而抑制压缩触发（<code>#3174</code>、<code>#estimateStoredContextTokens</code>）。注意：prune 省下的 token <strong>不应</strong>从阈值触发锚点上直接扣掉——触发仍锚定 billed + stored floor。</p>
+<div class="mermaid">flowchart TD
+    S[&quot;每轮 turn end&quot;] --&gt; P1[&quot;pruneStaleToolResults&lt;br/&gt;超驰淘汰 + useless 剔除&lt;br/&gt;独立于 compaction 开关&lt;br/&gt;守卫: suffix≈8k / idle 90min / boundary&quot;]
+    P1 --&gt; P2[&quot;pruneToolOutputs&lt;br/&gt;年龄裁剪&lt;br/&gt;protectTokens 40k / minSavings 20k&lt;br/&gt;cacheWarmSuffix 8k&quot;]
+    P2 --&gt; Q1{&quot;超过阈值?&quot;}
+    Q1 -- &quot;否&quot; --&gt; OK[&quot;正常继续&quot;]
+    Q1 -- &quot;是&quot; --&gt; PR[&quot;tryContextPromotion&lt;br/&gt;换更大窗口模型&lt;br/&gt;零数据损失&quot;]
+    PR -- &quot;成功&quot; --&gt; OK
+    PR -- &quot;失败/不可用&quot; --&gt; Q2{&quot;compaction.strategy&lt;br/&gt;(互斥, 用户设定)&quot;}
+    Q2 -- &quot;snapcompact&lt;br/&gt;(默认)&quot; --&gt; C1[&quot;历史渲染为位图 PNG&lt;br/&gt;视觉模型回读&lt;br/&gt;零 LLM 总结调用&quot;]
+    Q2 -- &quot;context-full&quot; --&gt; C2[&quot;LLM 总结&lt;br/&gt;兼容模型可走 remote streaming v2&quot;]
+    Q2 -- &quot;handoff&quot; --&gt; C3[&quot;生成 handoff 文档&lt;br/&gt;切到新会话&quot;]
+    Q2 -- &quot;shake&quot; --&gt; C4[&quot;大块 → 短占位符&lt;br/&gt;artifact:// 按需恢复原文&quot;]
+    Q2 -- &quot;off&quot; --&gt; OK
+
+    PH[&quot;其他触发相位&lt;br/&gt;pre-prompt / mid-turn /&lt;br/&gt;overflow / idle / manual&quot;] -.-&gt; Q1
+</div><p><strong>双锚定防谎报</strong>：omp 用一个本地存储估算作为<strong>下限</strong>，与 provider 报销的 usage 取大值。防止 payload 压缩 hook 把 provider 报的 prompt token 压低、从而抑制压缩触发（<code>#3174</code>、<code>#estimateStoredContextTokens</code>）。注意：prune 省下的 token <strong>不应</strong>从阈值触发锚点上直接扣掉——触发仍锚定 billed + stored floor。</p>
 <hr>
 <h2>4. omp 为什么这么设计</h2>
 <ol>
@@ -318,6 +368,41 @@
 <script>window.BASE_URL = "";</script>
 <script>window.SIDEBAR_POST_COUNT = 200;</script>
 <script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
 <script src="/js/main.js"></script>
 </body>
 </html>

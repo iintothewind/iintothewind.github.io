@@ -1,22 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>add timeout support for CompletableFuture in java 8 - 我的博客</title>
+<title>add timeout support for CompletableFuture in java 8 - My Blog</title>
 <link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-<button id="sidebar-toggle" aria-label="打开菜单">☰</button>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
 <div class="sidebar-header">
-<a href="/index.html" class="site-title">我的博客</a>
+<a href="/index.html" class="site-title">My Blog</a>
 </div>
 <div class="sidebar-tabs">
-<button class="tab-btn active" data-tab="timeline">时间线</button>
-<button class="tab-btn" data-tab="tags">标签</button>
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
 </div>
 <div id="tab-timeline" class="tab-panel active">
 <ul id="post-list-timeline" class="post-list"></ul>
@@ -31,7 +32,7 @@
 
 <main id="content">
 <article class="post">
-<a href="/index.html" class="back-home">← 返回首页</a>
+<a href="/index.html" class="back-home">← Back to Home</a>
 <h1>add timeout support for CompletableFuture in java 8</h1>
 <div class="post-meta">
 <span class="post-date">2019-08-13</span>
@@ -199,6 +200,41 @@ Unless this is what you want, don't use <code>CompletableFuture</code> in this w
 <script>window.BASE_URL = "";</script>
 <script>window.SIDEBAR_POST_COUNT = 200;</script>
 <script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
 <script src="/js/main.js"></script>
 </body>
 </html>
