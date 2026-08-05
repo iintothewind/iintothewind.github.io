@@ -10,7 +10,7 @@
     "categories": [],
     "slug": "2026-08-05-168f4cd49504e3aa8f7cdf86e8a0bbbd",
     "url": "posts/2026-08-05-168f4cd49504e3aa8f7cdf86e8a0bbbd.html",
-    "excerpt": "omp 的上下文管理设计解析：与官方 Pi 的对比 基于 ~/Documents/oh-my-pi（can1357/oh-my-pi，2026-08-02 快照）与 ~/Documents/pi（ea"
+    "excerpt": "omp 的上下文管理设计解析：与官方 Pi 的对比 基于 can1357/oh-my-pi 与 earendil-works/pi 源码。 0. 两个仓库的身份 官方 Pi（earendil-work"
   },
   {
     "title": "Algolia 调查笔记 + HN Search API 实例解析",

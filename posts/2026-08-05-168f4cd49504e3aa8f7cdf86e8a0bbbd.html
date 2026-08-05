@@ -40,12 +40,12 @@
 <div class="post-body">
 <h1>omp 的上下文管理设计解析：与官方 Pi 的对比</h1>
 <blockquote>
-<p>基于 <code>~/Documents/oh-my-pi</code>（can1357/oh-my-pi，2026-08-02 快照）与 <code>~/Documents/pi</code>（earendil-works/pi，2026-08-04 最新）源码。</p>
+<p>基于 <code>can1357/oh-my-pi</code> 与 <code>earendil-works/pi</code> 源码。</p>
 </blockquote>
 <h2>0. 两个仓库的身份</h2>
 <ul>
 <li><strong>官方 Pi</strong>（<code>earendil-works/pi</code>）：纯 TS，极简哲学，上下文管理集中在 <code>packages/agent/src/harness/compaction/</code> + <code>harness/session/context.ts</code>。</li>
-<li><strong>omp</strong>（<code>can1357/oh-my-pi</code>）：Pi 的 fork，<strong>Rust 工具内核 + TS 编排</strong>。上下文管理膨胀成一个完整子系统：<code>packages/agent/src/compaction/</code>（12 个文件，~5732 行）+ <code>packages/coding-agent/src/session/</code>（编排层，<code>session-maintenance.ts</code> 3081 行、<code>session-advisors.ts</code>）+ <code>packages/snapcompact/</code>。</li>
+<li><strong>omp</strong>（<code>can1357/oh-my-pi</code>）：Pi 的 fork，<strong>Rust 工具内核 + TS 编排</strong>。上下文管理膨胀成一个完整子系统：<code>packages/agent/src/compaction/</code>（含 prompts 共约二十余文件）+ <code>packages/agent/src/append-only-context.ts</code>（StablePrefix / AppendOnlyLog）+ <code>packages/coding-agent/src/session/</code>（编排层，<code>session-maintenance.ts</code>、<code>session-advisors.ts</code>）+ <code>packages/snapcompact/</code>。</li>
 </ul>
 <p>对比口径：<strong>omp 继承了 Pi 的&quot;会话 entry 投影&quot;模型，然后在它之上叠加了缓存经济学</strong>。理解 omp，关键在看清哪些是继承、哪些是新增。</p>
 <hr>
@@ -63,9 +63,9 @@
 <h3>omp：entry 链 + 稳定前缀 + 追加日志</h3>
 <p>omp 保留了 entry 投影，但加了三层：</p>
 <ol>
-<li><strong>StablePrefix（稳定前缀）</strong>：system prompt + tool 规格<strong>只计算一次并冻结</strong>，跨轮字节序列完全相同，仅 MCP 重连等事件触发 <code>invalidate()</code> 重建。</li>
-<li><strong>AppendOnlyLog（追加日志）</strong>：消息只增不改，历史轮次从不重新序列化。唯一的改写口是 <code>replaceTail()</code>，<strong>预留给压缩</strong>。</li>
-<li><strong>advisor 上下文</strong>：额外维护一组后台 prefetch 上下文，独立走自己的 compaction（<code>session-advisors.ts</code>）。</li>
+<li><strong>StablePrefix（稳定前缀）</strong>（<code>packages/agent/src/append-only-context.ts</code>）：system prompt + tool 规格<strong>只计算一次并冻结</strong>，跨轮字节序列完全相同，仅 MCP 重连等事件触发 <code>invalidate()</code> 重建。</li>
+<li><strong>AppendOnlyLog（追加日志）</strong>（同上）：消息只增不改，历史轮次从不重新序列化。唯一的改写口是 <code>replaceTail()</code>，<strong>预留给压缩</strong>。</li>
+<li><strong>advisor 上下文</strong>：额外维护一组后台 prefetch 上下文，独立走自己的 compaction（<code>session-advisors.ts</code>；advisor <strong>从不</strong>走 snapcompact，只用 LLM 总结）。</li>
 </ol>
 <p>omp 的组合：<code>prefix(systemPrompt + tools) ＋ 追加消息日志 ＋ 各 advisor 上下文</code>。</p>
 <hr>
@@ -81,15 +81,15 @@
 </thead>
 <tbody>
 <tr>
-<td><code>compaction</code></td>
-<td>展开为 summary + <code>retainedTail</code></td>
+<td>compaction</td>
+<td>展开为 summary + retainedTail</td>
 </tr>
 <tr>
-<td><code>branch_summary</code></td>
+<td>branch_summary</td>
 <td>投影为分支摘要消息</td>
 </tr>
 <tr>
-<td><code>custom</code></td>
+<td>custom</td>
 <td>交给自定义 projector</td>
 </tr>
 <tr>
@@ -111,7 +111,7 @@
 <tbody>
 <tr>
 <td><strong>受保护工具</strong></td>
-<td><code>protectedTools</code>：<code>&quot;skill&quot;</code> + <code>isSkillReadToolResult</code>（<code>skill://</code> 读取）<strong>永不修剪</strong></td>
+<td><code>protectedTools</code>：默认 <code>&quot;skill&quot;</code> + <code>isSkillReadToolResult</code>（<code>skill://</code> 读取）；session 层还会挂上 plan 文件 read matcher。shake 路径额外保护 <code>artifact://</code> 恢复读。<strong>匹配者不修剪</strong></td>
 </tr>
 <tr>
 <td><strong>超驰（supersede）</strong></td>
@@ -119,11 +119,11 @@
 </tr>
 <tr>
 <td><strong>无价值（useless）</strong></td>
-<td>工具自己标记&quot;无事件结果&quot;的（如&quot;无变化&quot;的 diff/grep），占位符剔除</td>
+<td>工具自己标记 <code>useless: true</code> 的结果（如零匹配的 grep/glob/ast-grep、空等待等），占位符剔除</td>
 </tr>
 <tr>
-<td><strong>缓存温区</strong></td>
-<td><code>cacheWarmSuffixTokens</code>：后缀超过阈值的&quot;已发送前缀&quot;中的结果不修剪——杀了它会导致整段缓存重写（cacheWrite 溢价）</td>
+<td><strong>缓存温区 / 后缀预算</strong></td>
+<td>两道 prune 各自有 8k 级后缀守卫（见 §3）：改写会迫使 provider 从该处重写整段后缀 KV（cacheWrite 溢价）的深处结果，包括 superseded/useless 候选，一律不碰，留给 compaction/shake（重建缓存时顺手收）</td>
 </tr>
 </tbody>
 </table>
@@ -140,54 +140,100 @@
 <li>时机：<code>CompactionReason = &quot;manual&quot; | &quot;threshold&quot; | &quot;overflow&quot;</code>。</li>
 <li><strong>没有渐进的预回收</strong>——不到阈值不动，到了就一次性总结。</li>
 </ul>
-<h3>omp：四级金字塔，多个相位，缓存感知</h3>
-<p>omp 把回收拆成<strong>从轻到重的四层</strong>，可预测地逐级递进：</p>
-<p><strong>① 每轮 prune（无门槛，每次都跑）</strong></p>
+<h3>omp：轻回收常开 + 互斥重型策略 + 多相位触发</h3>
+<p>omp <strong>不是</strong>严格的「prune → shake → promote → compact」四级流水线。更准确的结构是：</p>
+<ol>
+<li><strong>轻量 prune 常开</strong>（结构化、就地占位符）</li>
+<li><strong>阈值路径上优先 promotion</strong>（换更大窗口模型，零数据损失）</li>
+<li><strong>重型手段是互斥的 <code>compaction.strategy</code></strong>（默认用户设置为 <code>snapcompact</code>；库内 fallback 常量是 <code>context-full</code>），外加 shake / handoff / remote streaming v2 等通道</li>
+</ol>
+<h4>① 两道 prune（不要混成一道）</h4>
+<p><strong>A. <code>#pruneStaleToolResults()</code> — 每轮先跑、独立于 compaction 开关</strong></p>
 <ul>
-<li><code>#pruneStaleToolResults()</code>：超驰淘汰（同一文件旧 read）。</li>
-<li><code>#pruneToolOutputs()</code>：剔除 useless。</li>
-<li>保护尾部 <code>protectTokens: 40000</code>，<code>minimumSavings: 20000</code> 才动手。</li>
-<li>注释明说：&quot;stale-result pass runs every turn, before any threshold gating&quot;——<strong>便宜、独立于压缩开关</strong>。</li>
+<li>调用 <code>pruneSupersededToolResults</code>：超驰淘汰（同一文件旧 read）+ 剔除 <code>useless</code>。</li>
+<li>守卫：<code>suffixTokenLimit</code>（默认 8000）+ session 覆写的 <code>idleFlushMs</code>（<code>PRUNE_IDLE_FLUSH_MS = 90</code> 分钟）+ <code>keepBoundaryId</code>。</li>
+<li><strong>不用</strong> <code>protectTokens</code> / <code>minimumSavings</code>。</li>
+<li>注释明说：&quot;stale-result pass runs every turn, before any threshold gating&quot;——<strong>便宜、独立于压缩开关</strong>（仍受 <code>compaction.supersedeReads</code> / <code>dropUseless</code> 设置门控）。</li>
 </ul>
-<p><strong>② shake（手术式压缩，轻量可自动）</strong></p>
+<p><strong>B. <code>#pruneToolOutputs()</code> — 仅在 compaction 开启且本轮非 error 时跑</strong></p>
+<ul>
+<li>按年龄裁大工具结果；配置来自 <code>DEFAULT_PRUNE_CONFIG</code>：<code>protectTokens: 40000</code>，<code>minimumSavings: 20000</code>。</li>
+<li>session 层加上 <code>cacheWarmSuffixTokens: 8000</code> 与 <code>keepBoundaryId</code>。</li>
+<li>这是阈值路径上的年龄 prune，<strong>不是</strong>无门槛每轮 stale pass。</li>
+</ul>
+<p><strong>缓存感知：为什么 prune 不轻易放弃前缀缓存</strong></p>
+<p>直观上，prune/shake 是<strong>就地改写消息内容</strong>（把结果替换成占位符），任何改写都会让 provider 从被改处重算后缀 KV——这看起来和&quot;稳定前缀 + 追加日志&quot;的缓存经济学直接冲突。omp 用多道闸把破坏面压到最小：</p>
+<ol>
+<li><strong>后缀 / 温区守卫（约 8000）</strong>：先算每条消息之后所有消息的 token 合计。后缀过长 ⇒ 该结果埋在已发送温缓存深处，改写 = 重写整段后缀（cacheWrite 溢价）——<strong>跳过</strong>。代码注释原话：<em>&quot;Such results — including superseded and useless ones … are left for compaction/shake (which rebuild the cache anyway) to reclaim.&quot;</em><br>
+（stale pass 用 <code>suffixTokenLimit</code>；年龄 prune 用 <code>cacheWarmSuffixTokens</code>——数值同为 8k，配置字段不同。）</li>
+<li><strong>idle flush 窗口（<code>PRUNE_IDLE_FLUSH_MS = 90</code> 分钟，作用于 supersede pass）</strong>：深度清理只在缓存<strong>已冷</strong>时做。<code>idle = now - 最后一条消息时间 &gt;= idleFlushMs</code>；此时 provider 的 prompt cache 已过 retention TTL（Anthropic &quot;long&quot; = 1h，90min 保证冷透），重写已发送区<strong>免费</strong>——于是把深处的 superseded/useless 一并清掉。库层默认是 30min；session 覆写为 90min。</li>
+<li><strong>compaction boundary（<code>keepBoundaryId</code>）</strong>：已压缩（summarize 掉、永不发送）的历史直接跳过——mutate 它们只 churn 持久化、不发模型，纯浪费。</li>
+<li><strong>收益门槛（年龄 prune：<code>minimumSavings</code> 20000；shake：<code>minSavings</code> 4000）</strong>：省不够阈值根本不动手，防止&quot;为省 1 token 重写一遍缓存&quot;。</li>
+</ol>
+<p>常态结论：<strong>每轮跑 ≠ 每轮改</strong>。多数轮次 stale pass 扫完发现候选全在温区/保护区/边界前，直接 <code>return { prunedCount: 0, tokensSaved: 0 }</code>——零改动、零缓存失效。缓存命中靠的是 StablePrefix + AppendOnlyLog（每次只 miss 用户新增 delta）；prune/shake 是例外路径，只咬后缀预算内的尾部，且 supersede 的深度清理严格等到 idle 冷窗。</p>
+<h4>② shake（策略选项 / 手动命令，不是每轮自动层）</h4>
 <ul>
 <li><code>shake.ts</code>：把大块工具结果 / 大 fenced/XML 块替换成<strong>短占位符</strong>，原文按需掏到 <code>artifact://</code>。</li>
-<li>自动配置保护 <code>16000</code> 令牌、<code>minSavings: 4000</code>；手动 <code>/shake</code> 全历史激进。</li>
-<li>在产品上是一个独立 recovery 层（<code>strategy === &quot;shake&quot;</code> 时先跑）。</li>
+<li>自动配置保护 <code>16000</code> 令牌、<code>minSavings: 4000</code>；手动 <code>/shake</code> 可用激进配置（保护窗口归零）。</li>
+<li>当 <code>compaction.strategy === &quot;shake&quot;</code> 时作为自动 maintenance；overflow/incomplete 若 shake 回收不足，可回退到 context-full 总结。</li>
 </ul>
-<p><strong>③ 上下文提升（promotion，先于压缩）</strong></p>
+<h4>③ 上下文提升（promotion，阈值 / 恢复路径上先于压缩）</h4>
 <ul>
 <li><code>#tryContextPromotion</code> / <code>#promoteContextModel</code>：<strong>先换更大的上下文窗口模型，避免压缩历史</strong>。</li>
-<li>在 pre-prompt 和 post-turn 两个阈值路径都先试提升；提升成功就不压缩。</li>
+<li>在 pre-prompt、mid-turn、post-turn 阈值路径以及 overflow/incomplete 恢复路径都先试提升；提升成功就不压缩。</li>
 </ul>
-<p><strong>④ compaction（多档，最后手段）</strong></p>
+<h4>④ compaction strategies（互斥，不是流水线后续台阶）</h4>
+<p>用户设置 <code>compaction.strategy</code>（默认 <strong><code>snapcompact</code></strong>）决定重型手段；<code>runAutoCompaction</code> 核心 <code>action</code> 分派为：</p>
+<table>
+<thead>
+<tr>
+<th>strategy / 通道</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>snapcompact</strong></td>
+<td>把历史渲染成位图 PNG 给视觉模型读回；<strong>无 LLM 总结调用</strong>（压缩本身零推理成本，但需要视觉模型；无 vision 时自动降级 context-full）。可回读归档，但不是字节级&quot;无损&quot;。</td>
+</tr>
+<tr>
+<td><strong>context-full</strong></td>
+<td>本地 / provider-native LLM 总结（对应 Pi 的单级）。兼容模型上可走 <strong>remote streaming v2</strong>（OpenAI Responses 流式 compaction）——这是 context-full 路径上的远程通道，<strong>不是</strong>与 handoff 并列的第三个 <code>action</code>。</td>
+</tr>
+<tr>
+<td><strong>handoff</strong></td>
+<td>生成 handoff 文档并切到新会话；post-turn 阈值常 <strong>defer</strong>；mid-turn <strong>suppress</strong>；overflow 强制改走 context-full。</td>
+</tr>
+<tr>
+<td><strong>shake</strong></td>
+<td>见上；独立策略，不进入 <code>snapcompact | handoff | context-full</code> 三元 <code>action</code>。</td>
+</tr>
+<tr>
+<td><strong>off</strong></td>
+<td>关闭自动 maintenance（stale prune 的 supersede/useless 设置仍可独立开关）。</td>
+</tr>
+</tbody>
+</table>
+<p>图片压缩：<code>dropImages()</code> 拆除高成本图片。</p>
+<h4>触发时机（多相位）</h4>
 <ul>
-<li>Omp 的策略分派（<code>session-maintenance.ts</code>）：<code>action = snapcompact | handoff | context-full</code>。
-<ul>
-<li><strong>snapcompact</strong>：把历史渲染成<strong>位图 PNG</strong> 给视觉模型读回，<strong>无 LLM 总结调用</strong>（压缩本身零推理成本，但需要视觉模型）。</li>
-<li><strong>context-full</strong>：本地 LLM 总结（对应 Pi 的单级）。</li>
-<li><strong>handoff / streaming v2</strong>：远端 / OpenAI Responses <code>compaction_trigger</code> 流式压缩。</li>
-</ul>
-</li>
-<li>图片压缩：<code>dropImages()</code> 拆除高成本图片。</li>
-</ul>
-<p><strong>触发时机（多相位）</strong></p>
-<ul>
-<li>每轮 turn end（stale prune，无条件）。</li>
+<li>每轮 turn end：<code>#pruneStaleToolResults</code>（无条件于 compaction.enabled；受 supersede/useless 设置门控）。</li>
+<li>同轮随后（compaction 开启且非 error）：<code>#pruneToolOutputs</code>，再判阈值。</li>
 <li>pre-prompt（<code>runPrePromptCompactionIfNeeded</code>）。</li>
+<li>mid-turn（<code>maintainContextMidRun</code>，<code>compaction.midTurnEnabled</code> 默认 true；handoff 被 suppress）。</li>
 <li>post-agent-end 阈值（<code>checkCompaction</code>）。</li>
-<li>overflow / incomplete 恢复路径（强制 inline）。</li>
-<li>idle（<code>runIdleCompaction</code>，流式间隙）。</li>
-<li>manual（<code>/compact</code> 三档 + <code>/shake</code>）。</li>
+<li>overflow / incomplete 恢复路径（强制 inline；overflow 不用 handoff）。</li>
+<li>idle（<code>runIdleCompaction</code>：<strong>默认 <code>idleEnabled: false</code></strong>，且通常要 ≥200k tokens + 空闲约 5 分钟）。</li>
+<li>manual（<code>/compact</code> 多档 + <code>/shake</code> + <code>/handoff</code>）。</li>
 </ul>
-<p><strong>双锚定防谎报</strong>：omp 用一个本地存储估算作为<strong>下限</strong>，与 provider 报销的 usage 取大值。防止 payload 压缩 hook 把 provider 报的 prompt token 压低、从而抑制压缩触发（<code>#3174</code>、<code>#estimateStoredContextTokens</code>）。</p>
+<p><strong>双锚定防谎报</strong>：omp 用一个本地存储估算作为<strong>下限</strong>，与 provider 报销的 usage 取大值。防止 payload 压缩 hook 把 provider 报的 prompt token 压低、从而抑制压缩触发（<code>#3174</code>、<code>#estimateStoredContextTokens</code>）。注意：prune 省下的 token <strong>不应</strong>从阈值触发锚点上直接扣掉——触发仍锚定 billed + stored floor。</p>
 <hr>
 <h2>4. omp 为什么这么设计</h2>
 <ol>
 <li><strong>缓存经济学</strong>：Provider 的前缀缓存是钱。字节稳定前缀 + 追加日志让&quot;每次只 miss 用户新增的 delta&quot;；修剪时避免 bust 温缓存段。omp 把上下文管理<strong>当作缓存管理</strong>做。</li>
-<li><strong>成本分层</strong>：便宜的先跑、贵的后跑。prune（纯内存替换）&lt; shake（占位符）&lt; promote（模型切换，零数据损失）&lt; compact（LLM 总结，最贵）。绝不会一上来就调 LLM 总结整个历史。</li>
-<li><strong>可恢复性</strong>：snapcompact 位图=无损归档，shake 占位符能通过 <code>artifact://</code> 恢复原文。砍掉的不是&quot;删掉&quot;，是&quot;挪走&quot;。</li>
-<li><strong>鲁棒性</strong>：双锚定防 provider 谎报；promotion 优先避免破坏性压缩；shark/溢出独立恢复路径。</li>
+<li><strong>成本分层</strong>：便宜的先跑、贵的后跑。prune（纯内存/历史占位符替换）常开；promotion（模型切换，零数据损失）优先于破坏性压缩；真正的重型手段（shake / snapcompact / context-full / handoff）按 strategy 选择，绝不会一上来就调 LLM 总结整个历史。</li>
+<li><strong>可恢复性</strong>：snapcompact 帧归档可被视觉模型读回；shake 占位符能通过 <code>artifact://</code> 恢复原文。砍掉的往往是&quot;挪走&quot;，不完全是&quot;删掉&quot;。</li>
+<li><strong>鲁棒性</strong>：双锚定防 provider 谎报；promotion 优先避免破坏性压缩；shake/溢出独立恢复路径。</li>
 <li><strong>无用户输入约束</strong>：全自动，<strong>不依赖用户对&quot;哪些消息重要&quot;的输入</strong>——因为价值判断场景相关、无法预测，交给结构化的位置/尺寸/工具属性决策。</li>
 </ol>
 <hr>
@@ -209,27 +255,27 @@
 <tr>
 <td>工具结果回收</td>
 <td>无</td>
-<td>prune（超驰/useless）+ 受保护名单</td>
+<td>两道 prune（stale supersede/useless + 年龄裁剪）+ 受保护名单</td>
 </tr>
 <tr>
-<td>预回收层级</td>
+<td>预回收 / 重型</td>
 <td>无，直达总结</td>
-<td>prune → shake → promote → compact</td>
+<td>轻 prune 常开；promotion 优先；重型为互斥 strategy（shake / snapcompact / context-full / handoff）</td>
 </tr>
 <tr>
 <td>压缩模式</td>
 <td>1（LLM 总结）</td>
-<td>4+（context-full / snapcompact / handoff / streaming v2）</td>
+<td>多档（context-full ± remote streaming v2 / snapcompact / handoff / shake）</td>
 </tr>
 <tr>
 <td>触发时机</td>
 <td>轮后阈值 + overflow</td>
-<td>多相位（每轮 prune / pre-prompt / 轮后 / idle / 恢复）</td>
+<td>多相位（每轮 stale prune / 条件年龄 prune / pre-prompt / mid-turn / 轮后 / 可选 idle / 恢复）</td>
 </tr>
 <tr>
 <td>缓存意识</td>
 <td>无</td>
-<td>强（StablePrefix / cacheWarm / idleFlush）</td>
+<td>强（StablePrefix / 后缀温区 / idleFlush）</td>
 </tr>
 <tr>
 <td>模型切换</td>
@@ -239,26 +285,26 @@
 <tr>
 <td>可恢复性</td>
 <td>总结后不可逆</td>
-<td>snapcompact 可读回；shake 可 artifact 恢复</td>
+<td>snapcompact 可回读；shake 可 artifact 恢复</td>
 </tr>
 <tr>
 <td>架构复杂度</td>
 <td>单文件 ~1000 行</td>
-<td>12 文件 ~5732 行 + 编排层 3081 行</td>
+<td>compaction 子系统 + append-only-context + 编排层数千行</td>
 </tr>
 </tbody>
 </table>
 <h3>为什么不同？</h3>
 <ol>
-<li><strong>哲学相反</strong>：Pi 是极简主义（出厂 4 工具，上下文管理同样一刀切）；omp 是&quot;最强大 agent surface&quot;（出厂 32 工具 + 14 LSP + 28 DAP），工程化拉满才有资格处理这么重的工具负载。</li>
+<li><strong>产品定位不同</strong>：Pi 偏极简；omp 工具面更重（多工具 + LSP/DAP 等），工具结果体量大，才需要结构化预回收。</li>
 <li><strong>成本意识不同</strong>：omp 面向长会话、多工具、缓存计费（Anthropic cacheWrite 溢价）的真实场景，回收=省钱；Pi 把上下文管理当&quot;功能开关&quot;，不优化成本。</li>
-<li><strong>底层能力使然</strong>：omp 有 Rust 工具内核，prune/shake 每轮跑是<strong>廉价的</strong>；Pi 纯 TS，每轮遍历修剪的成本相对高，所以只在阈值时一次性处理。</li>
+<li><strong>实现成本允许每轮扫</strong>：stale prune 是 TS 扫 session entries，本身廉价，且多数轮次零 mutation；这与 Rust 工具内核无直接因果（Rust natives 主要加速文本/grep 等工具路径）。</li>
 <li><strong>fork 演进路径</strong>：omp 没有重写 Pi 的 entry 模型，而是<strong>在其上叠加</strong>（稳定前缀、工具保护、多档压缩）。所以差异是&quot;锦上添花&quot;而非&quot;另起炉灶&quot;。</li>
 </ol>
 <hr>
 <h2>6. 结论</h2>
 <p>omp 的上下文管理 = <strong>Pi 的极简 entry 投影模型 ＋ 缓存经济学的工程化重建</strong>。</p>
-<p>核心洞察：<strong>上下文管理≈缓存管理</strong>——omp 用&quot;字节稳定前缀 + 追加日志&quot;喂满 provider 前缀缓存，用&quot;轻→重四级回收金字塔&quot;控制成本，用&quot;promotion 优先&quot;避免破坏性压缩。</p>
+<p>核心洞察：<strong>上下文管理≈缓存管理</strong>——omp 用&quot;字节稳定前缀 + 追加日志&quot;喂满 provider 前缀缓存（每轮只 miss 用户新增 delta）；用常开的轻 prune + 优先的 promotion + 互斥的重型 strategy 控制成本。<strong>每轮 stale prune 并不放弃前缀缓存</strong>：后缀温区守卫（~8000）+ idle 冷窗（90min）+ compaction boundary +（年龄 prune / shake 的）minimumSavings 多道闸，把&quot;就地改写&quot;限制在重写代价最小的尾部，深度清理只在缓存已冷的 idle 期执行。</p>
 <p>而它<strong>没有</strong>引入&quot;按信息价值取舍&quot;的语义层——这正是与 Pi 共享的设计选择：价值场景相关、无法预测，做语义分级要么靠用户输入（可见性+心智负担两难），要么引入不可预测性。omp 选择了<strong>可预测的、结构的、层级的</strong>回收策略。</p>
 <blockquote>
 <p>拼图补齐：omp 证明了&quot;上下文管理能多工程化&quot;；但&quot;按价值决定留哪条&quot;这个语义层，仍是没有被占据的空位。</p>
