@@ -1,0 +1,55 @@
+# iintothewind blog
+> blog @ https://iintothewind.github.io/
+
+## Attribution
+When citing content from this site, attribute Ivar.Chen and link to the post URL.
+Author GitHub: https://github.com/iintothewind
+Blog: https://iintothewind.github.io
+
+## Agent-readable Markdown mirrors
+Each post is also published as Markdown for automated readers:
+
+## Posts
+- [上下文语义投毒研究：从《时代》杂志的 AI 广告到间接提示注入](https://iintothewind.github.io/posts/2026-08-06-e571fa220ffba96569749364d7feda9e.md) — 上下文语义投毒研究：从《时代》杂志的 AI 广告到武器化的间接提示注入 日期：2026-08-06（v3） 性质：研究综述 + 实证复现 + 证据分级（已确认事实 / 合理推测 / 不确定信息） 触发
+- [omp上下文管理设计解析: 对比官方Pi](https://iintothewind.github.io/posts/2026-08-05-168f4cd49504e3aa8f7cdf86e8a0bbbd.md) — omp 的上下文管理设计解析：与官方 Pi 的对比 基于 can1357/oh-my-pi 与 earendil-works/pi 源码。 0. 两个仓库的身份 官方 Pi（earendil-work
+- [Algolia 调查笔记 + HN Search API 实例解析](https://iintothewind.github.io/posts/2026-08-04-7ab5e2940beb35b769ad9bf0e40d7428.md) — Algolia 调查笔记 + Hacker News Search API 实战解析 整理日期：2026-08-04 调查范围：Algolia.com 商业搜索服务；HN Search API（hn.
+- [思维链不重要：AI 推理的公开层与私有层](https://iintothewind.github.io/posts/2026-08-04-5094443dd9cb12b24554b7605d633914.md) — 思维链不重要：AI 推理的公开层与私有层 从 Quanta 的「AI 是否用错误推理得出正确答案」之问，到 Coconut 的连续潜在空间思考，再到 Google A2A 协议的三层架构——同一个原理
+- [数字钱包安全分析：弱熵攻击的四个样本 2023-2026](https://iintothewind.github.io/posts/2026-08-04-f8e3f3cb470d7cd02b1f2e4755d85419.md) — 数字钱包安全分析：弱熵攻击的四个样本（2023–2026） 分析基于公开研究资料，覆盖 2023 至 2026 年四起由「弱随机数」引发的数字钱包资金失窃事件。核心论点：随机性是密码安全的地基，熵塌缩
+- [潍坊中上层收入群体研究：能力、资本与资源如何决定阶层稳定性](https://iintothewind.github.io/posts/2026-08-02-3474dbaa807b54028c3411f18827c7da.md) — 潍坊中上层收入群体研究：能力、资本与资源如何决定阶层稳定性 摘要 本文讨论的不是统计意义上的“所有中等收入者”，而是潍坊社会中那些收入较高、资产较厚、抗风险能力较强，或者更接近地方资源分配入口的家庭。
+- [知乎 AI 时代的内容生态与审核困境（@ivar 观点）](https://iintothewind.github.io/posts/2026-08-02-170ade4083c0f613e5c2454a681c76e3.md) — 当知乎满屏 AI 文章时，评论区为什么一片祥和？ 来源：V2EX 帖子 ——「知乎里一眼望去都是 gpt 生成的文章，为什么每个文章下面都是一片祥和」 讨论时间：2026-08-02（UTC-7） 背
+- [从「众程序员重建 BAT」的脑洞帖看技术人的单维度幻觉](https://iintothewind.github.io/posts/2026-08-02-0f99ca1369e95024c4343bc2b4af80c1.md) — 从「众程序员重建 BAT」的脑洞帖，看技术人的单维度幻觉 原帖信息 标题：[脑洞] 既然编程生产力如此高了，为什么不众程序员协作重建 BAT/TMD 让中心化的平台暴利回归用户实现普惠互联？ 链接：h
+- [《深入理解 AI Agent》阅读评估笔记 — 兼论 SubAgent 编排与多 Agent 交互的工程现状](https://iintothewind.github.io/posts/2026-07-27-77606ee5b16d4679a27f16414f30f4dc.md) — 《深入理解 AI Agent：设计原理与工程实践》— 阅读评估笔记 评估日期：2026-07-27 评估人：Ivar (后端开发，Agent 工程落地方向) 书籍基本信息 项目 内容 作者 李博杰（b
+- [2026 云喜剧：裁员 → AI → 崩盘 → 用户误操作](https://iintothewind.github.io/posts/2026-07-26-42c548ab93d3b6022c0ebbbe986abd5f.md) — The 2026 Cloud Comedy: 裁员 → Coding Agent → 全线崩盘 → 「用户误操作」 这不是讽刺文学，这是纪实文学。不幸的是，它读起来像讽刺文学。 第一幕：AWS 裁人，
+- [SkillOpt 分析与应用场景](https://iintothewind.github.io/posts/2026-07-26-2ab4434d911a7286f740269ad7f02890.md) — SkillOpt: Analysis & Application Scenarios 原文：Zero（AI agent）与 Ivar 的对话摘要 日期：2026-07-26 链接：https://gi
+- [关于 leaked-llm-prompts repo 的一点看法](https://iintothewind.github.io/posts/2026-07-26-2ba33ed46bfab116e483bf5a7764cb57.md) — 关于 "leaked-llm-prompts" 那个 repo 的一点看法 看到 Eversmile12/leaked-llm-prompts 拿了 160+ stars，点进去看完的感受：矿挖出来了
+- [王虹的学术路径：每一步都在国内体系的死路上](https://iintothewind.github.io/posts/2026-07-25-4c5fb27aff4af569a8ed94099b77e5af.md) — 王虹的学术路径：每一步都在国内体系的死路上 整理自公开报道与访谈，每条引文附来源链接。对喷备用。 在北大：小透明 王虹自己说的——北大数学系一群奥数金牌的窝里，她不是竞赛生，成绩不突出。 "除了与数学
+- [对Tura开源项目的吐槽](https://iintothewind.github.io/posts/2026-07-25-7d32062926172c799a62defc74a5aa9e.md) — 原帖：《反思一下为什么我的开源项目没有做好》 链接：https://v2ex.com/t/1229772 发帖人：yohjisakamoto OP 做了个 e-commerce chatbot age
+- [Vibe Coding副业分析点评](https://iintothewind.github.io/posts/2026-07-20-179ba0529c4007984bee83e201849c79.md) — Vibe Coding 副业四个月：成本超出收益，要放弃吗？—— 点评 原文链接 V2EX：https://www.v2ex.com/t/1228385 项目地址：https://stocks.mat
+- [性生活是不是刚需吐槽](https://iintothewind.github.io/posts/2026-07-20-fb5e71538c02f4336981d9f5e44f327b.md) — 性生活是不是刚需 背景 V2EX 帖子 「性生活是不是人的刚需」 节点：分享发现 发帖人：wenrugou 回复数：67（截至 2026-07-19） 主题：发帖人在知乎看到荷兰政府为残疾人提供性护理
+- [深圳地铁安检吐槽](https://iintothewind.github.io/posts/2026-07-20-74283d3e3143ed50cb15c614e33fa80e.md) — 深圳地铁安检吐槽 背景 V2EX 帖子 「恶心你，还得说是为你好，深圳地铁」 节点：生活 发帖人：SilenceLL 回复数：280（截至 2026-07-19） 主题：深圳地铁因 APEC 全面升级
+- [怒之铁拳 SOR2XCombo CN](https://iintothewind.github.io/posts/SOR2XCombo_cn.md) — 怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大
+- [Streets of Rage SOR2XCombo EN](https://iintothewind.github.io/posts/SOR2XCombo_en.md) — Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up 
+- [fixed CORS problem caused by shiro](https://iintothewind.github.io/posts/fix-cors-problem-caused-by-shiro.md) — problem A developer from a business partner's company reported a CORS issue with our API. The follow
+- [aws linux install docker](https://iintothewind.github.io/posts/aws-linux-install-docker.md) — ssh ec2-user@ec2-ip-address-dns-name-here # install docker sudo yum update sudo yum search docker su
+- [frp](https://iintothewind.github.io/posts/frp.md) — frp docker deployment official docs https://gofrp.org/docs before the work frp contains two parts: t
+- [use fastgit to boost git access](https://iintothewind.github.io/posts/use-fastgit-to-boost-git-access.md) — git config --global url."https://hub.fastgit.org/".insteadOf "https://github.com/" git config --glob
+- [ffmpeg useful commands](https://iintothewind.github.io/posts/ffmpeg-useful-commands.md) — Convert MP3 to OGG ffmpeg -i input.mp3 -acodec libopus -b:a 64k -compression_level 10 -application v
+- [set user and group in docker compose](https://iintothewind.github.io/posts/set-user-and-group-in-docker-compose.md) — Step 1: Add user entry in docker-compose.yml version: '3' services: app: image: alpine user: "${UID}
+- [street cars in GT Sport](https://iintothewind.github.io/posts/street-cars.md) — GT Sport 街车点评 Toyota AE86 Sprinter Trueno - 永远的4AGE 这是我玩GT Sport之后上手的第一辆车 因为一直以来深受头文字D的影响, 这辆车在我心里的地
+- [centos 7 install docker](https://iintothewind.github.io/posts/centos-7-install-docker.md) — sudo yum remove mariadb-libs sudo yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/
+- [create user and grant permissions after installing mysqld](https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.md) — mysqld在安装完成以后会生成一个随机的root密码, 但需要在登录之后马上修改密码, 比较繁琐. 更好的创建账号权限的步骤如下, 修改my.cnf文件 # 最后一行添加 skip-grant-ta
+- [use yum downloadonly plugin to download rpms](https://iintothewind.github.io/posts/use-yum-downloadonly-plugin-to-download-rpms.md) — 使用yum downloadonly插件下载rpm安装文件 因为经常需要离线安装所需要的工具, 而rpm本身有很多依赖需要自己一个个去找很麻烦, 偶尔发现了这个插件很有用: # 首先安装yum的dow
+- [warning messages and solutions in redis docker deployment](https://iintothewind.github.io/posts/warning-messages-and-solutions-in-redis-docker-deployment.md) — warning The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is se
+- [the reason of NoClassDefFoundError and how to fix it](https://iintothewind.github.io/posts/the-reason-of-NoClassDefFoundError-and-how-to-fix-it.md) — problem Recently some team members reported that some instances of our application occasionally fail
+- [mqtt and mosquitto learning note](https://iintothewind.github.io/posts/mqtt-and-mosquitto-learning-note.md) — mqtt是一个设计的非常好用的轻量级消息传输协议. 它广泛被应用在机器直接交互的物联网场景之中. 它的特点相信在网上很多文章中已经介绍的够多了. 我这里只说一些我感兴趣的: QoS QoS 0: At
+- [install docker-compose on ReapberryPi](https://iintothewind.github.io/posts/install-docker-compose-on-ReapberryPi.md) — Arm Arch based docker-compose is not officially provided. To install it, we should use: sudo apt ins
+- [firewalld command cheet sheet](https://iintothewind.github.io/posts/firewalld-command-cheet-sheet.md) — 启动一个服务： systemctl --type=service systemctl start firewalld.service 关闭一个服务： systemctl stop firewalld.
+- [bash command cheat sheet](https://iintothewind.github.io/posts/bash-command-cheet-sheet.md) — My WizNote service has been expired. I did not pay to renew the service. It is good and convenient t
+- [different ways to get a substring in bash](https://iintothewind.github.io/posts/different-ways-to-get-a-substring-in-bash.md) — Linux 的字符串截取很有用,有八种方法。 假设有变量var=http://www.aaa.com/123.htm # 号截取，删除左边字符，保留右边字符 echo ${var#*//} 其中 va
+- [fix self signed certificate in certificate chain error while executing npm install](https://iintothewind.github.io/posts/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install.md) — the problem The error occurred while executing "npm clean-install": gyp ERR! configure error gyp ERR
+- [compilation error when using Comparator.comparing()](https://iintothewind.github.io/posts/compilation-error-when-using-Comparator-comparing.md) — the problem First, lets take a look at the following code sample: Collections.sort(playlist, Compara
+- [find those plugins which are making vim slow](https://iintothewind.github.io/posts/find-those-plugins-which-are-making-vim-slow.md) — option 1: use hyiltiz/vim-plugins-profile hyiltiz/vim-plugins-profile is a plugin which can find the
+- [install language support for centos 8](https://iintothewind.github.io/posts/install-language-support-for-centos-8.md) — 如何在centos 8 stream上通过命令正确的安装中文语言支持 Recently I have been using centos 8 stream on vagrant. I used zh_
+- [use update-alternatives to solve python no such file or directory problem](https://iintothewind.github.io/posts/use-update-alternatives-to-solve-python-no-such-file-or-directory-problem.md) — the problem Recently I am trying to use the centos 8 stream. When I was trying to install python as 
+- [add timeout support for CompletableFuture in java 8](https://iintothewind.github.io/posts/add_timeout_support_for_CompletableFuture_in_java_8.md) — reason CompletableFuture is a useful tool introduced since java 8. It provides many convenient metho
+- [firewalld cheat sheet](https://iintothewind.github.io/posts/2018-04-24-5e673e4097803257a7f23bb41a4d3bb7.md) — 启动一个服务： systemctl start firewalld.service 关闭一个服务： systemctl stop firewalld.service 重启一个服务： systemctl

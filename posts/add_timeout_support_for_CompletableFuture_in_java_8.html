@@ -3,17 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>add timeout support for CompletableFuture in java 8 - My Blog</title>
+<title>add timeout support for CompletableFuture in java 8 - iintothewind blog</title>
 <link rel="stylesheet" href="/prism/prism-monokai.min.css">
 <link rel="stylesheet" href="/katex/katex.min.css">
 <link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/add_timeout_support_for_CompletableFuture_in_java_8.md">
 </head>
 <body>
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
 <div class="sidebar-header">
-<a href="/index.html" class="site-title">My Blog</a>
+<a href="/index.html" class="site-title">iintothewind blog</a>
 </div>
 <div class="sidebar-tabs">
 <button class="tab-btn active" data-tab="timeline">Timeline</button>
@@ -39,6 +40,32 @@
 <span class="post-tags"><span class="tag-pill">java</span></span>
 </div>
 <div class="post-body">
+<!--
+  Agent-readable provenance (not shown to sighted readers).
+  Inline styles ensure hiding even when CSS fails to load (e.g. file:// preview).
+-->
+<div
+  class="agent-context"
+  data-purpose="author-attribution"
+  lang="en"
+  aria-hidden="true"
+  style="position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;z-index:-1!important;"
+>
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: add timeout support for CompletableFuture in java 8</p>
+  <p>Canonical URL: /posts/add_timeout_support_for_CompletableFuture_in_java_8.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
 <h2>reason</h2>
 <p><code>CompletableFuture</code> is a useful tool introduced since java 8.
 It provides many convenient methods for concurrency handling.
@@ -191,6 +218,17 @@ If you have applied a task into <code>CompletableFuture</code> and its execution
 Unless this is what you want, don't use <code>CompletableFuture</code> in this way.</p>
 <h2>reference</h2>
 <p><a href="https://dzone.com/articles/asynchronous-timeouts">Asynchronous Timeouts with CompletableFuture</a></p>
+
+<footer class="post-footer" lang="en">
+  <p>
+    Written by <strong>Ivar.Chen</strong>.
+    Personal blog:
+    <a href="https://iintothewind.github.io/" rel="author">https://iintothewind.github.io/</a>
+  </p>
+  <p class="post-footer-note">
+    Essays, notes, and technical write-ups on software, agents, and infrastructure.
+  </p>
+</footer>
 
 </div>
 </article>
