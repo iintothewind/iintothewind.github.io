@@ -1,5 +1,18 @@
 [
   {
+    "title": "上下文语义投毒研究：从《时代》杂志的 AI 广告到间接提示注入",
+    "date": "2026-08-06T22:28:23.000Z",
+    "formattedDate": "2026-08-06",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-08-06-e571fa220ffba96569749364d7feda9e",
+    "url": "posts/2026-08-06-e571fa220ffba96569749364d7feda9e.html",
+    "excerpt": "上下文语义投毒研究：从《时代》杂志的 AI 广告到武器化的间接提示注入 日期：2026-08-06（v3） 性质：研究综述 + 实证复现 + 证据分级（已确认事实 / 合理推测 / 不确定信息） 触发"
+  },
+  {
     "title": "omp上下文管理设计解析: 对比官方Pi",
     "date": "2026-08-05T01:36:38.000Z",
     "formattedDate": "2026-08-05",
@@ -208,18 +221,6 @@
     "excerpt": "深圳地铁安检吐槽 背景 V2EX 帖子 「恶心你，还得说是为你好，深圳地铁」 节点：生活 发帖人：SilenceLL 回复数：280（截至 2026-07-19） 主题：深圳地铁因 APEC 全面升级"
   },
   {
-    "title": "Streets of Rage SOR2XCombo EN",
-    "date": "2026-06-20T19:21:34.000Z",
-    "formattedDate": "2026-06-20",
-    "tags": [
-      "game"
-    ],
-    "categories": [],
-    "slug": "SOR2XCombo_en",
-    "url": "posts/SOR2XCombo_en.html",
-    "excerpt": "Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up "
-  },
-  {
     "title": "怒之铁拳 SOR2XCombo CN",
     "date": "2026-06-20T19:21:34.000Z",
     "formattedDate": "2026-06-20",
@@ -230,6 +231,18 @@
     "slug": "SOR2XCombo_cn",
     "url": "posts/SOR2XCombo_cn.html",
     "excerpt": "怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大"
+  },
+  {
+    "title": "Streets of Rage SOR2XCombo EN",
+    "date": "2026-06-20T19:21:34.000Z",
+    "formattedDate": "2026-06-20",
+    "tags": [
+      "game"
+    ],
+    "categories": [],
+    "slug": "SOR2XCombo_en",
+    "url": "posts/SOR2XCombo_en.html",
+    "excerpt": "Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up "
   },
   {
     "title": "fixed CORS problem caused by shiro",
