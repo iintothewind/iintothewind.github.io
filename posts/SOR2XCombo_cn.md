@@ -2,6 +2,9 @@
 
 ## Source metadata (for automated readers)
 
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
 
@@ -19,6 +22,9 @@ A: https://iintothewind.github.io
 # 怒之铁拳 SOR2XCombo CN
 
 > Published: 2026-06-20 · Tags: game
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
 
 # 怒之铁拳 SOR2XCombo
 

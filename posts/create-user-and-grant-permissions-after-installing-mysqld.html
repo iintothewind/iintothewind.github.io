@@ -66,6 +66,11 @@
   </p>
 </div>
 
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
 <p>mysqld在安装完成以后会生成一个随机的root密码, 但需要在登录之后马上修改密码, 比较繁琐.
 更好的创建账号权限的步骤如下,</p>
 <h2>修改my.cnf文件</h2>
@@ -97,8 +102,10 @@ select version(), @@sql_mode;SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_
 </code></pre>
 
 <p class="post-body-attribution" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/<br>
   Written by <strong>Ivar.Chen</strong>.
-  Source: <a href="https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.html" rel="canonical">https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.html</a>.
+  Canonical: <a href="https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.html" rel="canonical">https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.html</a>.
   GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
 </p>
 

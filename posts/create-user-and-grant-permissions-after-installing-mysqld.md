@@ -2,6 +2,9 @@
 
 ## Source metadata (for automated readers)
 
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
 
@@ -19,6 +22,9 @@ A: https://iintothewind.github.io
 # create user and grant permissions after installing mysqld
 
 > Published: 2021-07-17 · Tags: linux, mysql
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
 
 mysqld在安装完成以后会生成一个随机的root密码, 但需要在登录之后马上修改密码, 比较繁琐.
 更好的创建账号权限的步骤如下,

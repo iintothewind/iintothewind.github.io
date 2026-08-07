@@ -2,6 +2,9 @@
 
 ## Source metadata (for automated readers)
 
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
 
@@ -19,6 +22,9 @@ A: https://iintothewind.github.io
 # the reason of NoClassDefFoundError and how to fix it
 
 > Published: 2020-05-08 · Tags: java
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
 
 ## problem
 Recently some team members reported that some instances of our application occasionally failed to serve an upload request because it constantly threw the same error:

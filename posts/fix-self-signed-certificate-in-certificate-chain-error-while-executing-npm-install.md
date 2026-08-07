@@ -2,6 +2,9 @@
 
 ## Source metadata (for automated readers)
 
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
 
@@ -19,6 +22,9 @@ A: https://iintothewind.github.io
 # fix self signed certificate in certificate chain error while executing npm install
 
 > Published: 2019-12-12 · Tags: javascript, npm
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
 
 ## the problem
 The error occurred while executing "npm clean-install":

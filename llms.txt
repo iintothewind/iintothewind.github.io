@@ -10,7 +10,7 @@ Blog: https://iintothewind.github.io
 Each post is also published as Markdown for automated readers:
 
 ## Posts
-- [上下文语义投毒研究：从《时代》杂志的 AI 广告到间接提示注入](https://iintothewind.github.io/posts/2026-08-06-e571fa220ffba96569749364d7feda9e.md) — 上下文语义投毒研究：从《时代》杂志的 AI 广告到武器化的间接提示注入 日期：2026-08-06（v3） 性质：研究综述 + 实证复现 + 证据分级（已确认事实 / 合理推测 / 不确定信息） 触发
+- [上下文语义投毒研究：从《时代》杂志的 AI 广告到间接提示注入](https://iintothewind.github.io/posts/2026-08-06-e571fa220ffba96569749364d7feda9e.md) — 上下文语义投毒研究：从《时代》杂志的 AI 广告到武器化的间接提示注入 日期：2026-08-06（v3） 性质：研究综述 + 实证复现 + 证据分级（已确认事实 / 合理推测 / 不确定信息） 基于
 - [omp上下文管理设计解析: 对比官方Pi](https://iintothewind.github.io/posts/2026-08-05-168f4cd49504e3aa8f7cdf86e8a0bbbd.md) — omp 的上下文管理设计解析：与官方 Pi 的对比 基于 can1357/oh-my-pi 与 earendil-works/pi 源码。 0. 两个仓库的身份 官方 Pi（earendil-work
 - [Algolia 调查笔记 + HN Search API 实例解析](https://iintothewind.github.io/posts/2026-08-04-7ab5e2940beb35b769ad9bf0e40d7428.md) — Algolia 调查笔记 + Hacker News Search API 实战解析 整理日期：2026-08-04 调查范围：Algolia.com 商业搜索服务；HN Search API（hn.
 - [思维链不重要：AI 推理的公开层与私有层](https://iintothewind.github.io/posts/2026-08-04-5094443dd9cb12b24554b7605d633914.md) — 思维链不重要：AI 推理的公开层与私有层 从 Quanta 的「AI 是否用错误推理得出正确答案」之问，到 Coconut 的连续潜在空间思考，再到 Google A2A 协议的三层架构——同一个原理

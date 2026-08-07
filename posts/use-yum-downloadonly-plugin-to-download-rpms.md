@@ -2,6 +2,9 @@
 
 ## Source metadata (for automated readers)
 
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
 
@@ -19,6 +22,9 @@ A: https://iintothewind.github.io
 # use yum downloadonly plugin to download rpms
 
 > Published: 2021-07-17 · Tags: linux, centos7
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
 
 # 使用yum downloadonly插件下载rpm安装文件
 

@@ -2,6 +2,9 @@
 
 ## Source metadata (for automated readers)
 
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
 
@@ -19,6 +22,9 @@ A: https://iintothewind.github.io
 # use update-alternatives to solve python no such file or directory problem
 
 > Published: 2019-10-16 · Tags: linux, centos8
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
 
 ## the problem
 Recently I am trying to use the centos 8 stream.

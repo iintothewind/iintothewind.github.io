@@ -2,6 +2,9 @@
 
 ## Source metadata (for automated readers)
 
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
 
@@ -19,6 +22,9 @@ A: https://iintothewind.github.io
 # set user and group in docker compose
 
 > Published: 2021-09-11 · Tags: docker
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
 
 ## Step 1: Add user entry in docker-compose.yml
 
