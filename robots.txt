@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://iintothewind.github.io/sitemap.xml
