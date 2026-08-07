@@ -82,7 +82,7 @@
 <hr>
 <h2>1. 案例解剖：《时代》杂志给 AI 爬虫的「特供版」</h2>
 <h3>1.1 事实链（一手复现 + 独立验证）</h3>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>维度</th>
@@ -112,7 +112,7 @@
 <td>常青内容（榜单/图库）出现；新闻正文页未必有广告</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p><strong>复现方法（写明，避免被挑刺）</strong>：</p>
 <ul>
 <li>用<strong>短 UA</strong> 请求：<code>curl -A &quot;ClaudeBot/1.0&quot;</code> → <code>200 text/markdown</code> 41,915 字节；<code>curl -A &quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64)&quot;</code>（Chrome）→ <code>200 text/html</code> ~1.23MB，页面中无任何 Ally/mobian/sponsored 字样（不是 CSS 隐藏，是整块不存在）。</li>
@@ -182,7 +182,7 @@
 <p>论文承认的防御缺口：现有防护不足，需要「把所有外部数据当作潜在敌意」的范式转变；未来工作包括指纹知识库、通用净化框架、大规模 anti-cloaking 爬虫、对抗鲁棒性基准。</p>
 <h3>2.4 谱系总表</h3>
 <p>按恶意程度分档：</p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>档位</th>
@@ -223,7 +223,7 @@
 <td><strong>合理推测，非论文实验主体</strong>（见 §3.2）</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <hr>
 <h2>3. 证据分级与自我修正</h2>
 <h3>3.1 已确认事实</h3>
@@ -251,7 +251,7 @@
 </blockquote>
 <h3>4.1 先纠偏：判定对象不是「人机不一致」，而是「不一致的语义增量」</h3>
 <p>用「人机内容差异」当信号，粒度太粗、必误杀。差异要拆四档，只对特定两档动手：</p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>档</th>
@@ -286,10 +286,10 @@
 <td><strong>危险（最凶）</strong></td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p><strong>关键判据</strong>：威胁不在「内容不同」，而在「差异里新增的是<strong>语义断言</strong>（D3）还是<strong>可执行指令</strong>（D4）」。「多出一版能省的序列化」和「多出一块人类看不到的事实表」完全不是一回事——防御只对 D3/D4 生效，D1/D2 若也拦，必然误伤。</p>
 <h3>4.2 分层防御矩阵（按能力管道，越靠底层越省力）</h3>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>防御层</th>
@@ -390,9 +390,9 @@
 <td>高</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <h3>4.3 有效性分级：这张矩阵能挡住什么</h3>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>有效性</th>
@@ -427,7 +427,7 @@
 <td>可作为候选漏斗，不可作为裁判</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p><strong>结论</strong>：这套矩阵能可靠打击 <strong>D4（指令型恶意 IPI）</strong>；对 <strong>D3（TIME 这种明面事实植入）它只能靠「来源身份声明 + provenance 随 chunk 走」拉住效果的方向，无法根治</strong>——因为 D3 在语法上无罪，这是信任模型缺陷。</p>
 <h3>4.4 最容易做对/做错的三个点</h3>
 <ol>

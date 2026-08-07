@@ -154,7 +154,7 @@ NYU 的研究者证明，用一串<strong>点号</strong>——字面意义的 <
 <h2>4. Google 视角：A2A 的设计分层与取舍思想</h2>
 <h3>4.1 三层架构</h3>
 <p>Google 于 2025 年 4 月发布 A2A（Agent2Agent）协议初稿，后捐给 Linux Foundation。规范现已到 1.0.0，核心是三层架构：</p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>层</th>
@@ -179,7 +179,7 @@ NYU 的研究者证明，用一串<strong>点号</strong>——字面意义的 <
 <td><strong>JSON-RPC 2.0、gRPC、HTTP/REST</strong> 三种</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>规范原文（1.4 节）的关键声明：</p>
 <blockquote>
 <p>&quot;the file <code>spec/a2a.proto</code> is the <strong>single authoritative normative definition</strong> of all protocol data objects ... A generated JSON artifact (<code>spec/a2a.json</code>) ... <strong>is a non-normative build artifact</strong>.&quot;</p>
@@ -192,7 +192,7 @@ NYU 的研究者证明，用一串<strong>点号</strong>——字面意义的 <
 </blockquote>
 <p>注意措辞——「复用<strong>已被理解</strong>的标准」。<strong>不是「为了人类可读」，而是「为了生态成熟度」。</strong> JSON 被选中的原因：HTTP 基础设施现成、防火墙穿透容易、所有语言都有库。<strong>跨厂商互操作，选最笨但最通用的东西。</strong></p>
 <p>三个「为什么」：</p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>设计选择</th>
@@ -213,7 +213,7 @@ NYU 的研究者证明，用一串<strong>点号</strong>——字面意义的 <
 <td>JSON = 生态兼容；gRPC = 高性能；<strong>同一个协议，两副面孔</strong></td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <h3>4.3 注释分布：一个精妙的实证</h3>
 <p>批评者常说「JSON 是个烂格式，连注释都不支持」。技术上没错——但 A2A 的权威定义里<strong>注释一直都在</strong>：</p>
 <ul>
@@ -232,7 +232,7 @@ message TaskStatus {
 <hr>
 <h2>5. 统一原理</h2>
 <p>把四层讨论叠起来，同一结构反复出现：</p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>场景</th>
@@ -267,7 +267,7 @@ message TaskStatus {
 <td>人类维护便利</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p><strong>同一个原理贯穿到底：思考是私有的、无声的、高维的；语言是公共的、有声的、低维的。语言存在的唯一理由是「有别人要看」——人类，或另一个 agent。</strong></p>
 <hr>
 <h2>6. 收尾：信任建立在结果可复现性上</h2>

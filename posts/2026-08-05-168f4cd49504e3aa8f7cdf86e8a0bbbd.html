@@ -109,7 +109,7 @@
 <h2>2. 分类逻辑（Classification）</h2>
 <h3>官方 Pi：只有&quot;entry 类型&quot;分类</h3>
 <p>Pi 的分类是<strong>结构化的</strong>——按 entry 类型决定如何处理：</p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>entry 类型</th>
@@ -134,11 +134,11 @@
 <td>原样保留</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p><strong>没有工具结果级别的语义分类。</strong> 回收时一刀切：尾部 <code>keepRecentTokens</code>（默认 20000）内的保留，之前的全交给 LLM 总结成一句话。</p>
 <h3>omp：entry 类型 + 工具结果语义分类</h3>
 <p>omp 除继承 entry 类型分类外，在<strong>工具结果层面</strong>做了真正的语义分级（<code>compaction/pruning.ts</code>、<code>compaction/tool-protection.ts</code>）：</p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>分类</th>
@@ -163,7 +163,7 @@
 <td>两道 prune 各自有 8k 级后缀守卫（见 §3）：改写会迫使 provider 从该处重写整段后缀 KV（cacheWrite 溢价）的深处结果，包括 superseded/useless 候选，一律不碰，留给 compaction/shake（重建缓存时顺手收）</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>位置分类（来自 append-only 结构）：<strong>前缀恒留、日志尾可剪</strong>。</p>
 <blockquote>
 <p>关键：omp 的&quot;分类&quot;仍是<strong>位置/尺寸/工具属性驱动</strong>，不是&quot;信息价值&quot;驱动。它会为&quot;同文件的新读取&quot;淘汰旧读取，但不会判断&quot;这条消息本身重不重要&quot;。</p>
@@ -244,7 +244,7 @@
 </ul>
 <h4>④ compaction strategies（互斥，不是流水线后续台阶）</h4>
 <p>用户设置 <code>compaction.strategy</code>（默认 <strong><code>snapcompact</code></strong>）决定重型手段；<code>runAutoCompaction</code> 核心 <code>action</code> 分派为：</p>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>strategy / 通道</th>
@@ -273,7 +273,7 @@
 <td>关闭自动 maintenance（stale prune 的 supersede/useless 设置仍可独立开关）。</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <p>图片压缩：<code>dropImages()</code> 拆除高成本图片。</p>
 <h4>触发时机（多相位）</h4>
 <ul>
@@ -313,7 +313,7 @@
 </ol>
 <hr>
 <h2>5. 与 Pi 的设计差异及原因</h2>
-<table>
+<div class="table-scroll"><table>
 <thead>
 <tr>
 <th>维度</th>
@@ -368,7 +368,7 @@
 <td>compaction 子系统 + append-only-context + 编排层数千行</td>
 </tr>
 </tbody>
-</table>
+</table></div>
 <h3>为什么不同？</h3>
 <ol>
 <li><strong>产品定位不同</strong>：Pi 偏极简；omp 工具面更重（多工具 + LSP/DAP 等），工具结果体量大，才需要结构化预回收。</li>
