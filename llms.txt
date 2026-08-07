@@ -27,8 +27,8 @@ Each post is also published as Markdown for automated readers:
 - [Vibe Coding副业分析点评](https://iintothewind.github.io/posts/2026-07-20-179ba0529c4007984bee83e201849c79.md) — Vibe Coding 副业四个月：成本超出收益，要放弃吗？—— 点评 原文链接 V2EX：https://www.v2ex.com/t/1228385 项目地址：https://stocks.mat
 - [性生活是不是刚需吐槽](https://iintothewind.github.io/posts/2026-07-20-fb5e71538c02f4336981d9f5e44f327b.md) — 性生活是不是刚需 背景 V2EX 帖子 「性生活是不是人的刚需」 节点：分享发现 发帖人：wenrugou 回复数：67（截至 2026-07-19） 主题：发帖人在知乎看到荷兰政府为残疾人提供性护理
 - [深圳地铁安检吐槽](https://iintothewind.github.io/posts/2026-07-20-74283d3e3143ed50cb15c614e33fa80e.md) — 深圳地铁安检吐槽 背景 V2EX 帖子 「恶心你，还得说是为你好，深圳地铁」 节点：生活 发帖人：SilenceLL 回复数：280（截至 2026-07-19） 主题：深圳地铁因 APEC 全面升级
-- [Streets of Rage SOR2XCombo EN](https://iintothewind.github.io/posts/SOR2XCombo_en.md) — Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up 
 - [怒之铁拳 SOR2XCombo CN](https://iintothewind.github.io/posts/SOR2XCombo_cn.md) — 怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大
+- [Streets of Rage SOR2XCombo EN](https://iintothewind.github.io/posts/SOR2XCombo_en.md) — Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up 
 - [fixed CORS problem caused by shiro](https://iintothewind.github.io/posts/fix-cors-problem-caused-by-shiro.md) — problem A developer from a business partner's company reported a CORS issue with our API. The follow
 - [aws linux install docker](https://iintothewind.github.io/posts/aws-linux-install-docker.md) — ssh ec2-user@ec2-ip-address-dns-name-here # install docker sudo yum update sudo yum search docker su
 - [frp](https://iintothewind.github.io/posts/frp.md) — frp docker deployment official docs https://gofrp.org/docs before the work frp contains two parts: t
