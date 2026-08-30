@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZeroClaw Context Budget: analysis + omp-based migration roadmap (RFC draft) - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-08-09-243c320f68638216fffef87080cccd85.md">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>ZeroClaw Context Budget: analysis + omp-based migration roadmap (RFC draft)</h1>
+<div class="post-meta">
+<span class="post-date">2026-08-09</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: ZeroClaw Context Budget: analysis + omp-based migration roadmap (RFC draft)</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-08-09-243c320f68638216fffef87080cccd85.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>ZeroClaw 上下文管理现状分析与优化路线（RFC 草稿）</h1>
+<blockquote>
+<p><strong>参考实现（已验证）</strong>：omp（<code>can1357/oh-my-pi</code>）已经把本文第 3 节的大部分机制工程化落地，
+分析见 <a href="https://gist.github.com/iintothewind/168f4cd49504e3aa8f7cdf86e8a0bbbd">omp 上下文管理设计解析：与官方 Pi 的对比</a>。
+本文第 1、2 节是对 ZeroClaw 现状的独立源码分析（仍然有效）；第 3 节的优化路线据此从「从零设计」修正为「移植 omp 已验证机制」。</p>
+</blockquote>
+<h2>1. 现状（源码证据）</h2>
+<h3>1.1 裁剪：溢出后被动触发，无脑砍 1/3</h3>
+<ul>
+<li>仅在 provider 返回 <code>context_window_exceeded</code> 之后才触发（<code>context_recovery.rs</code>），而不是发送前预算。</li>
+<li>触发时预算 = 当前 token 的 <strong>2/3</strong>（<code>tokens_now * 2 / 3</code>）——不是按模型窗口留余量，是砍三分之一。</li>
+<li>裁完插入 breadcrumb 并重试一次。长会话反复「溢出 → 砍 1/3 → 重试」。</li>
+</ul>
+<h3>1.2 窗口：32k 硬顶是配置默认值，不是模型真实窗口</h3>
+<ul>
+<li><code>max_context_tokens</code> 默认 <strong>32_000</strong>（<a href="http://schema.rs">schema.rs</a> 默认值），即使模型窗口 200k 也卡在 32k。</li>
+<li>#7100 的 per-model <code>context_window</code> 解析（#9535/#9854/#9083/#8966）均未合并，runtime 对「模型窗口到底多大」没有可靠信息。</li>
+<li>窗口数字本身不是真的，谈何用满。</li>
+</ul>
+<h3>1.3 缓存：仅 Anthropic 主动标记，runtime 无缓存友好约束</h3>
+<ul>
+<li>Anthropic：system 前缀、最后一条消息、最后一个 tool 定义均标 <code>cache_control: ephemeral</code>（<code>anthropic.rs:358-421</code>）——provider 层照抄最佳实践，runtime 无参与。</li>
+<li>OpenAI：仅读取 <code>cached_tokens</code> 计费（<code>openai.rs:596</code>），客户端不标记（provider 自动缓存，合理）。</li>
+<li>Bedrock：<code>should_cache_system</code> 只在 system &gt; 3072 token 时缓存。</li>
+<li><strong>核心冲突</strong>：Anthropic 缓存是<strong>前缀缓存</strong>。每次溢出裁掉最老整轮 → 前缀变化 → 缓存全失效 → 重试 = 缓存重写 + 重试双倍成本。修剪越频繁，缓存命中率越低，甚至更贵。</li>
+</ul>
+<h3>1.4 根因：三块都为「单次请求正确性」兜底，无一块为「长会话连续性/经济性」负责</h3>
+<ul>
+<li>裁剪是 safety net（不崩、不产生幻觉替代物），设计输入里没有「利用率」「缓存命中率」。</li>
+<li>窗口是配置默认值，不是模型事实。</li>
+<li>缓存是 provider 自带的，runtime 无约束。</li>
+<li>#8196 砍掉 LLM summary 后，「确定性裁剪」成为唯一幸存者——最简单、最不易错，代价就是窗口空置 + 缓存自废。</li>
+</ul>
+<hr>
+<h2>2. 问题清单</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>问题</th>
+<th>证据</th>
+<th>影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>裁剪是溢出后被动触发，不是发送前预算管理</td>
+<td>context_recovery.rs:71,80</td>
+<td>窗口利用率低、延迟感知差（先报错才补救）</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>预算 = 当前 2/3，与模型窗口无关</td>
+<td>context_recovery.rs:80</td>
+<td>该用满的窗口没用满；该多砍的没砍够</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>默认窗口 32k 硬编码，per-model 解析未合</td>
+<td><a href="http://schema.rs:3430">schema.rs:3430</a>, #7100</td>
+<td>大窗口模型白费</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>前缀裁剪破坏 Anthropic 前缀缓存</td>
+<td><a href="http://anthropic.rs">anthropic.rs</a> 缓存标记 + history_trim</td>
+<td>缓存命中率低，重试 + 重写双倍成本</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>无统一预算管线：窗口/缓存/裁剪互不知情</td>
+<td>三文件各自独立</td>
+<td>无法做「缓存友好裁剪」「稳定前缀」等优化</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2>3. 优化路线：以 omp 为已验证参考实现的移植路径</h2>
+<blockquote>
+<p>omp 在 Pi 的 entry 投影模型之上，用 <strong>StablePrefix + AppendOnlyLog + 常开轻 prune + 互斥重型策略</strong> 重建了同一套问题，
+核心洞察：<strong>上下文管理 ≈ 缓存管理</strong>。以下 R 项标注其对应的 omp 实现（详见参考 gist），ZeroClaw 无需重新设计，照搬 + Rust 化即可。</p>
+</blockquote>
+<h3>R1（前置）：真实窗口解析落地 → omp：promotion / 恢复路径</h3>
+<ul>
+<li>合并 #7100 线的 per-model <code>context_window</code> 解析，runtime 以此为准。</li>
+<li>无真实窗口，后续预算优化都在错误数字上做文章。</li>
+</ul>
+<h3>R2：缓存经济学基建：稳定前缀 + 追加日志 → omp：StablePrefix / AppendOnlyLog</h3>
+<ul>
+<li><strong>StablePrefix</strong>（<code>append-only-context.ts</code>）：system prompt + 工具规格只计算一次并冻结，跨轮字节完全相同；仅 MCP 重连等事件 <code>invalidate()</code> 重建。</li>
+<li><strong>AppendOnlyLog</strong>：消息只增不改，唯一改写口 <code>replaceTail()</code> 预留给压缩。</li>
+<li>直接替代 P4 的根因：现在的「砍最老 1/3」是前缀删除，反着来的。</li>
+</ul>
+<h3>R3：发送前预算 + 多相位触发 → omp：多相位触发</h3>
+<ul>
+<li>omp 触发时机：每轮 stale prune（无条件）→ 条件年龄 prune → pre-prompt / mid-turn / post-agent-end 阈值检查；handoff 策略 post-turn <strong>defer</strong>、mid-turn <strong>suppress</strong>；overflow / incomplete 恢复路径<strong>强制 inline</strong>。</li>
+<li>替代现在的「只等溢出错误」：每轮先跑轻 prune，压缩时机按相位与策略分派，而不是一刀切。</li>
+</ul>
+<h3>R4：工具结果分类管理 → omp：工具结果语义分级</h3>
+<ul>
+<li><strong>受保护工具</strong>（protectedTools：<code>skill</code>、plan 文件 read）、<strong>超驰</strong>（同一文件多次 read 只留最新）、<strong>useless 剔除</strong>（工具自标，如零匹配 grep）。</li>
+<li>替代 P5 的「无分类」：让大块 tool_result 在入上下文前就有分级处置。</li>
+</ul>
+<h3>R5：缓存友好的「多道闸」修剪 → omp：温区守卫 + idle 冷窗 + boundary + minimumSavings</h3>
+<ul>
+<li><strong>后缀温区守卫（~8k）</strong>：埋在已发送缓存深处的消息，改写 = 重写整段后缀（cacheWrite 溢价），跳过。</li>
+<li><strong>idle 冷窗（90min）</strong>：深度清理只在缓存已冷（TTL 1h 过后）才做，重写免费。</li>
+<li><strong>compaction boundary</strong>：已压缩掉的消息跳过，mutate 纯浪费。</li>
+<li><strong>收益门槛</strong>：省不够阈值不动手，防「为省 1 token 重写一遍缓存」。</li>
+<li>这四道闸直接回应 P4：每轮跑 ≠ 每轮改，多数轮次零 mutation、零缓存失效。</li>
+</ul>
+<h3>R6：统一预算管线（架构层）</h3>
+<ul>
+<li>三块代码（history_trim / context_recovery / provider cache 标记）收敛为单一 <code>ContextBudget</code> 层：输入窗口（R1）、system floor、工具定义、缓存断点、历史；输出「该不该裁、裁到哪个边界、走哪条策略通道」。</li>
+<li>omp 的形态可作参照：<code>compaction/</code> 子系统 + <code>append-only-context.ts</code> + <code>session-maintenance.ts</code> 编排层。</li>
+</ul>
+<h3>R7（可选，经济性闭环）</h3>
+<ul>
+<li>按轮记录 <code>cache_read_input_tokens</code> / <code>cache_creation_input_tokens</code>，出命中率报表验证 R2/R5 效果。</li>
+</ul>
+<hr>
+<h2>4. 移植风险与权衡</h2>
+<ul>
+<li><strong>语言差异</strong>：omp 是 TS 编排层（Rust 内核），ZeroClaw 全 Rust。StablePrefix/AppendOnlyLog/多相位触发均可直接移植为 Rust 结构；omp 的「每轮扫 session entries」廉价性在 Rust 下只会更好。</li>
+<li><strong>provider 缓存模型</strong>：Anthropic 前缀缓存（cacheWrite 溢价）是 omp 经济学的核心假设，ZeroClaw 主要 provider 一致；OpenAI 靠自动缓存（只读计费），Bedrock 有 system 阈值——差异策略仍按每家对齐，但主干机制（稳定前缀）与 provider 无关、通用。</li>
+<li><strong>omp 的边界（已知空位）</strong>：omp 明确<strong>不做</strong>「按信息价值取舍」的语义层——价值场景相关、无法预测，语义分级要么靠用户输入（可见性 + 心智负担两难），要么引入不可预测性。ZeroClaw 若想超越 omp，可考虑这层（用户侧「这条保留」的显式标记），但这不是移植阻点，而是后续增量。</li>
+<li><strong>回归风险</strong>：R2 的前缀冻结要求 system/tools 序列化确定性；MCP 工具集动态变化时需显式 invalidate 路径（omp 已处理）。</li>
+</ul>
+<hr>
+<h2>5. 一句话总结</h2>
+<blockquote>
+<p>ZeroClaw 现状：溢出 → 无差别砍最老 1/3 → 重试，窗口 32k 硬顶没用满，前缀裁剪自废缓存。
+正确路径不是重新发明，而是<strong>移植 omp 已验证机制</strong>：稳定前缀 + 追加日志（R2）→ 发送前多相位触发（R3）→ 工具结果分类（R4）→ 缓存多道闸修剪（R5）→ 统一预算管线（R6），前置仍是真实窗口解析（R1）。
+若要比 omp 更进一步，唯一空位是「按价值取舍」的语义层（omp 明确放弃的位置）。</p>
+</blockquote>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-08-09-243c320f68638216fffef87080cccd85.html" rel="canonical">https://iintothewind.github.io/posts/2026-08-09-243c320f68638216fffef87080cccd85.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+<!-- Post footer placeholder: empty for now; add agent-camouflage markup here later if needed. -->
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

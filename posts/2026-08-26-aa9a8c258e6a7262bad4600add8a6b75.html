@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Harness Core Mechanisms Review Notes - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-08-26-aa9a8c258e6a7262bad4600add8a6b75.md">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>DeepSeek Harness Core Mechanisms Review Notes</h1>
+<div class="post-meta">
+<span class="post-date">2026-08-26</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: DeepSeek Harness Core Mechanisms Review Notes</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-08-26-aa9a8c258e6a7262bad4600add8a6b75.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>DeepSeek Harness Core Mechanisms — Review Notes</h1>
+<blockquote>
+<p>Nature: external source-review notes, <strong>not part of the project doc system</strong>, does not affect any gate; delete the whole file when no longer needed.
+Method: three parallel source scans + manual line-by-line verification of the critical paths (agent-loop main loop, surfaceOp validation, deriveMessages, tools three-stage waterfall declarations).
+Line numbers reflect the current checkout and are for navigation only.
+Sections: §1 Design philosophy · §2 Package map · §3 Context management &amp; log · §4 Compaction · §5 Memory status · §6 Tool loop · §7 Subagent · §8 User interaction · §9 Model connection · §10 Enterprise adoption checklist · §11 Key file index</p>
+</blockquote>
+<hr>
+<h2>1. Overall Design Philosophy (four pillars)</h2>
+<ol>
+<li>
+<p><strong>Everything is a plugin; there is no privileged core</strong> (vendored Cordis framework)</p>
+<ul>
+<li>The model adapter, the tool registry, the session log, and the agent loop itself are all plugins.</li>
+<li>Extension = mounting a plugin beside the others: <code>ctx.effect()</code> / <code>ctx.on()</code> / <code>ctx.waterfall()</code>; registration is reversible on unload.</li>
+<li>Runtime shape = profile (stacked bundle layers) + patch (cordis.patch.yml replaces/inserts rows by id); <code>dsh --dump-config</code> prints the actually-booted tree, and any printed row can be overridden by a patch.</li>
+</ul>
+</li>
+<li>
+<p><strong>Events fall into three domains; picking the right domain is the first decision of most changes</strong></p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Purpose</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>session events</td>
+<td>durable facts, append-only to the log, survive reload</td>
+<td><code>turn/*</code>, <code>step/*</code>, <code>user/message</code>, <code>assistant/*</code>, <code>tool/result</code>, <code>approval/*</code></td>
+</tr>
+<tr>
+<td>agent events (<code>agent/*</code>)</td>
+<td>observe / intercept in-flight work</td>
+<td><code>agent/pre-step</code>, <code>agent/request</code>, <code>agent/request-error</code>, <code>agent/turn-stopping</code></td>
+</tr>
+<tr>
+<td>capability events</td>
+<td>attach policy/adapters to a seam without importing the loop</td>
+<td><code>fs/*</code>, <code>tools/*</code>, <code>llm/stream</code>, <code>telemetry/*</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>Waterfall listeners must <code>next()</code> to delegate, otherwise they short-circuit the chain.</li>
+<li><code>agent/pre-step</code>, <code>agent/request</code>, <code>llm/stream</code>, <code>tools/*</code> are waterfalls; <code>agent/turn-stopping</code> is a serial event with no <code>next()</code>.</li>
+</ul>
+</li>
+<li>
+<p><strong>&quot;model-visible ⟺ logged&quot; is the single hardest invariant</strong></p>
+<ul>
+<li>Everything that reaches a model request must be reconstructable from the append-only log; a runtime invariant asserts it.</li>
+<li>Model history is not maintained state; it is a projection derived by <code>deriveMessages()</code>.</li>
+<li>Audit, replay, fork, resume, and telemetry all come free from the same stream.</li>
+<li>Reconstruction test: <code>packages/core/agent-loop/tests/request-reconstruction.spec.ts</code>; the <code>request/header</code> event stores the full canonical request envelope.</li>
+</ul>
+</li>
+<li>
+<p><strong>Capability seam = three roles</strong>: Service Definition (interface) / Service Provider (implementation) / Consumer (typically a model-facing tool). Swapping a provider swaps the whole product's behavior — point fs/subprocess at a remote sandbox and Bash/PTY/LSP move together with zero provider forks. A single role is not a complete seam.</p>
+</li>
+</ol>
+<p>Supporting principles: fail-loud config (throw at load/assembly), explicit &gt; implicit (a default is an explicit <code>resolve(request): Spec</code> in the owning implementation, never a hidden <code>?? default</code> inside <code>run()</code>), cross-boundary ids use branded types, trust TypeScript at same-process type boundaries and only validate at parser/queue/tool-JSON/durable-file/worker/process/wire boundaries.</p>
+<h2>2. Package map (relevant subset)</h2>
+<pre><code>packages/core/session        SessionEvent append-only log + in-memory store; deriveMessages projection; fork
+packages/core/system-prompt  prompt section / tool schema / variable registration and assembly
+packages/core/tools          scoped tool registry + three-stage waterfall execution pipeline
+packages/core/agent          Agent interface + dual-channel Inbox
+packages/core/agent-loop     ReactLoopAgent main loop state machine + parallel tool scheduler
+packages/core/scope          per-agent scoped registration primitive (createScope + scope-chain event routing)
+packages/compaction          compaction seam: definition / compaction-basic provider / command-compact
+packages/context             request-context injection: agent-instructions / time-context / session-reference
+packages/spill               oversized tool-result spill: spill-policy (transformer) + spill-local (store)
+packages/session-query       session retrieval: logical corpus + SQLite FTS5 backend
+packages/subagent            subagent seam: runtime + providers (spawn/fork/acp/codex/claude-code/dsh-sdk) + continuable
+packages/guard               repeat-tool-reminder (advisory) + timeout-policy
+packages/interaction         user-approval / user-questions / commands / permission-presets
+packages/plan                plan-mode (log state) + exit_plan_mode review tool
+packages/todo                todo_write whole-table snapshot tool
+packages/llm                 LlmRuntime adapter seam + stream vocabulary + retry-policy; llm-deepseek adapter
+packages/credentials         credential reference seam (env name, value not stored) + four-layer resolution order
+packages/sdk / packages/acp  JSON-RPC / ACP transport frontends driving the same loop
+packages/experimental/agent-team  (experimental) roster/mailbox/taskboard, all folded from the Lead's log
+</code></pre>
+<h2>3. Context Management: the log is the truth</h2>
+<h3>3.1 Session log and derived projection</h3>
+<ul>
+<li>Log is append-only; only three event types may reach the surface (user/message, assistant/message, tool/result) and they <strong>must carry a <code>surfaceOp</code> marker</strong> (<code>append</code> or <code>{op:'replace',start,end}</code>); a non-eligible type carrying a marker throws directly (<code>surface.ts:184-208</code>). The replace shape is whitelist-validated: exactly 3 keys, start/end are safe non-negative integers.</li>
+<li><code>deriveMessages()</code> (<code>core/session/src/index.ts:726-747</code>): incremental cache, each new surface node projected only once O(new nodes); <code>surface.replaceGeneration</code> change forces a full rebuild (no raw-log fallback after composition); returns a fresh array while internal Message objects are shared and <strong>deep-frozen</strong> (content reuses already-frozen event data, no second clone needed).</li>
+<li>Per-node rule <code>deriveEventMessage</code> (<code>surface.ts:83-114</code>): user/message → verbatim pass-through (<strong>no framing may be added at the projection layer</strong> — framing is baked into content by the producer); assistant/message with empty content → null (a max-tokens step hosting only usage does not enter the transcript); other types (chunks, turn/step boundaries, log-only) → null.</li>
+<li>Chunk fidelity: <code>assistant/message</code> references its <code>assistant/chunk</code> stream via <code>sourceEventSeqs</code> (empty array = known empty stream, absent = legacy unrecorded).</li>
+<li>Crash repair: synthesize <code>TOOL_NOT_STARTED</code> / <code>TOOL_OUTCOME_UNKNOWN</code> results for incomplete tool calls so replay always stays valid.</li>
+<li>Fork: <code>ctx.sessions.fork(source, boundary?, childSessionId?)</code>; child header records <code>parentSession</code>, <code>traceSession</code> follows lineage.</li>
+</ul>
+<h3>3.2 System-prompt assembly (<code>core/system-prompt/src/index.ts</code>)</h3>
+<ul>
+<li>Registration surface: <code>section()</code> / <code>context()</code> / <code>tools()</code> / <code>variable()</code> → ScopedLayers (global layer + per-agent <code>agent.ctx</code> scope layer, same-name scoped shadows global).</li>
+<li><code>assemble()</code> (467-542): resolve variables (scoped overrides global) → merge sections by ascending <code>order</code> (-100 identity, 0 persona, 100–199 tool-guidance band) → multiple <code>complete:true</code> sections is an error → collect tool providers (parameters isolated via structuredClone) → <code>orderTools</code> (<code>toolOrder</code> config or lexicographic, 140-183) → <code>system-prompt/assemble</code> waterfall (listener result authoritative, complete sections still restore after) → suppressor clears contexts.</li>
+<li><code>renderPrompt</code> (212-295) does strict <code>{{var}}</code> interpolation: unknown variable / no value / malformed group throws (fail-loud).</li>
+<li>Tool schema and prompt sections are produced by the same assembly but sent separately; presentation mode: <code>native</code> (all schemas) / <code>code</code> (everything collapsed into a reserved <code>run_code</code> transport + generated SDK prompt section) / <code>both</code>.</li>
+</ul>
+<h3>3.3 Request-context injection (<code>packages/context/</code>)</h3>
+<ul>
+<li><code>agent-instructions</code>: on the first pre-step, folds <code>$DSH_HOME/AGENTS.md</code> + project-root→cwd <code>AGENTS.md</code>/<code>CLAUDE.md</code> (+<code>.local.md</code>) chain into one durable <code>&lt;system-reminder&gt;</code> user message; subsequently discovers nested files via first-party read/write/edit &quot;touch&quot; and appends add/update/remove notices; SHA-1 digest dedup; <code>maxBytes</code> narrows wide-to-narrow; <strong>no watcher, touch-driven</strong>.</li>
+<li><code>time-context</code>: injects a sourced snapshot at pre-step <code>{kind:'plugin', plugin:'time-context', form:'snapshot'}</code>, throttled on a positive interval.</li>
+<li><code>session-reference</code>: user <code>@mention</code> of another session → <code>readSurface()</code> bounded snapshot (keeps only direct user text, assistant text, compact checkpoint), ≤3 sources each ≤64KiB, as a sourced message with form <code>'recall'</code> placed right after the referencing message.</li>
+<li>Common property: every injection is an ordinary <code>user/message</code> event with a typed <code>source</code> → automatically satisfies model-visible ⟺ logged, zero drift across restart.</li>
+</ul>
+<h2>4. Compaction: compression is a log operation</h2>
+<p>Three-layer split: Service Definition (<code>compaction/</code>) / Provider (<code>compaction-basic/</code>) / Consumer (<code>/compact</code> command).</p>
+<p><strong>Trigger</strong> (<code>compaction-basic/src/index.ts</code>):</p>
+<ul>
+<li>Automatic: <code>agent/pre-step</code> pressure check, tokenMeter ≥ <code>thresholdRatio</code> (default 0.8) × routed model context window (index.ts:293-304);</li>
+<li>Overflow recovery: <code>agent/request-error</code> receiving <code>CONTEXT_WINDOW_EXCEEDED</code> forces a reduction bypassing the threshold (index.ts:179-223);</li>
+<li>Manual: <code>/compact</code> → <code>compactNow()</code> (index.ts:368-420, only when idle); <code>auto: false</code> for manual-only; <code>modelPolicies</code> overrides per provider/model.</li>
+</ul>
+<p><strong>basic strategy</strong>:</p>
+<ol>
+<li>Optional model-free pruning: <code>ctx.toolResultPruner</code> rewrites oversized tool/result to head 4096 + marker + tail 1024 code points (content-only replace, original event stays in the log);</li>
+<li>Range selection <code>selectCompactableRange</code> (<code>region.ts:98-134</code>): keep a recent tail by <code>retainRatio</code> (default 0.16) or <code>retainTokens</code>, falling back to a tool-pairing balanced boundary — <strong>never split an assistant tool-call/result pair</strong>;</li>
+<li>Summary = a single <code>ctx.llm.stream()</code> call that <strong>replays verbatim the conversation's own system prompt + tools + the compacted range's messages</strong>, appending only the compaction instruction as the last user message to reuse the provider KV cache (<code>summarizer.ts:121-182</code>, <code>purpose: 'compaction'</code>);</li>
+<li>The summary must be <strong>strictly smaller</strong> than the original (region.ts:374-378), otherwise compaction is rejected.</li>
+</ol>
+<p><strong>Log protocol</strong> (README 39-57):</p>
+<pre><code>compaction/start    synchronous append = durable lock (prevents concurrent compaction)
+compaction/summary  log-only (summary / shadowedSeqs / token count / provider envelope)
+user/message        the only surface mutation: surfaceOp:{op:'replace',start,end} + sourceEventSeqs,
+                    content = preamble + &lt;compacted-summary&gt; (summarizer.ts:69,189-195)
+compaction/end
+</code></pre>
+<ul>
+<li>A crash leaves a detectable orphan <code>start</code> rather than a false completion; shadowed events are never deleted, replay is deterministic.</li>
+<li>Known cost: <strong>replace invalidates the KV cache from the first replaced token</strong> — documented in the README but irreducible.</li>
+</ul>
+<h2>5. External memory: no memory tool, it is a combination</h2>
+<p>A repo-wide search (ripgrep, 200+ matches individually screened) found <strong>no dedicated memory tool / user-memory store</strong>. The mechanisms playing that role:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Mechanism</th>
+<th>Content</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>session-query</td>
+<td>cross-session SQLite FTS5 search (see below)</td>
+<td>closest to a memory tool</td>
+</tr>
+<tr>
+<td>session-reference</td>
+<td>@mention bounded snapshot</td>
+<td>user-triggered</td>
+</tr>
+<tr>
+<td>skill catalog</td>
+<td>durable <code>&lt;available_skills&gt;</code> list + <code>skill</code> tool loads body on demand</td>
+<td>list resident, body lazy</td>
+</tr>
+<tr>
+<td><code>~/.dsh/AGENTS.md</code></td>
+<td>de-facto user-preference / instruction layer</td>
+<td>injected by agent-instructions</td>
+</tr>
+<tr>
+<td>fork lineage</td>
+<td>parentSession + traceSession</td>
+<td>structured traceability</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>session-query details</strong>:</p>
+<ul>
+<li>API: <code>listSessions / readSession / filterSessions / filterEvents / listEvents</code> (each event classified current/shadowed/log-only), <code>readSurface / readEvent</code> (before/after ≤ <code>readWindowMax</code>=50), <code>traceSession / traceEvent</code> (ancestor chain + recursive descendant tree; cycle → <code>SESSION_QUERY_INVALID_LINEAGE</code>; replace chain follows to its last replacement). Logical corpus is live-preferred (live beats persisted).</li>
+<li>SQLite backend: FTS5 <code>unicode61</code>; derived DB + local TEMP tables shadow durable rows; sort = descending highlighted span count; cursor bound to generation; <code>openAt: never</code> keeps precise reads with search disabled.</li>
+<li>Model-facing <code>tool-session-query</code>: 5 read-only tools (<code>session_search</code> / <code>session_event_search</code> / <code>session_trace</code> / <code>session_event_trace</code> / <code>session_event_read</code>); authorization = caller's <code>cwd</code> <strong>exactly equal</strong> to the target's (no symlink-equivalence recognition); <code>session_search</code> always excludes the self session, and a search of the current session stops before the calling step to avoid self-match; <strong>not mounted by default composition (opt-in)</strong>.</li>
+<li>Known weaknesses: FTS5 unicode61 has no substring matching (needs a separate filterEvents literal scan); SQLite uses synchronous <code>DatabaseSync</code> blocking the JS thread; the query layer itself has no caller authorization, trusting the tool layer for the trust boundary.</li>
+</ul>
+<p><strong>Spill (oversized result offload)</strong>:</p>
+<ul>
+<li><code>spill-policy</code>: <code>tools/post-execute</code> transformer. When the final plain-text result exceeds <code>maxInlineBytes</code> (UTF-8 bytes, disabled by default), the full text is stored in <code>ctx.spillStore</code> and the model sees only a bounded head/tail preview + a locator notice <code>(Omitted N bytes. Full formatted result stored at: &lt;locator&gt;. Use read with offset/limit, or grep...)</code>. The preview deducts the notice overhead from the same budget, the <strong>replacement never exceeds the cap</strong>; best-effort — if storage fails it silently falls back to the original result and never errors; skips the <code>read</code> tool (prevents read→spill→read loop) and nested execution.</li>
+<li><code>spill-local</code>: path <code>&lt;root&gt;/session-&lt;sha256(sessionId)&gt;/&lt;random&gt;-&lt;safeName&gt;</code>, 0600 exclusive-create to prevent symlink planting.</li>
+<li><strong>Retrieval = the model itself uses the existing <code>read</code>/<code>grep</code> tools on that path</strong>; the seam deliberately provides no retrieval API, and the retrieval hint is supplied by the backend. The locator depends on a co-located filesystem; remote deployment needs a different backend.</li>
+</ul>
+<h2>6. Tool-calling loop</h2>
+<h3>6.1 Main loop state machine (<code>core/agent-loop/src/agent.ts</code>)</h3>
+<ul>
+<li>Private <code>Phase</code> union (38-46): <code>idle{lastTurn} | maintenance{abort, wakeRequested} | running{turn, step, wakeRequested}</code>; a single driver coroutine <code>kick</code> runs <code>while (await this.turn()) {}</code>, returns to idle and replays a latched wake; <code>wakeDriver</code> only starts from idle (172-193); disposal never latches a wake.</li>
+<li><strong>Turn vs Step</strong>: a step = one model request plus the tools it calls; a turn = zero or more steps.</li>
+<li><code>turn()</code> (246-330): append <code>turn/start</code> → loop steps:
+<ol>
+<li><code>preStep</code> (225-243): claim inbox batch → <code>systemPrompt.assemble()</code> → <strong><code>agent/pre-step</code> waterfall</strong> (listeners may rewrite claimed messages or return <code>{kind:'reject'}</code> → turn ends <code>blocked</code>);</li>
+<li>an empty first step (rejected or rewritten empty) still owns the turn boundary but spends no model call → <code>completed</code>;</li>
+<li>append <code>step/start</code> → claimed messages appended one-by-one as <code>user/message</code> (with <code>surfaceOp:'append'</code>) → <code>step()</code> → finally append <code>step/end</code>;</li>
+<li><strong>max-tokens sticky</strong>: once any step hits the ceiling, later normally-completed steps must not downgrade the turn outcome;</li>
+<li>turn about to end but <code>inbox.nextStep</code> non-empty → continue (steer/inject extends the turn); fire serial <code>agent/turn-stopping</code> before ending;</li>
+<li>catch: error normalized (<code>LlmError</code> keeps facts, otherwise <code>errorChain</code> under <code>UNKNOWN</code>) → <code>agent/error</code>; <strong>finally always appends <code>turn/end</code></strong>, reason ∈ <code>completed|max-tokens|aborted|error|blocked</code>;</li>
+<li>inbox still has pending → reset phase and return true for the next turn.</li>
+</ol>
+</li>
+<li><strong>Dual-channel Inbox</strong> (<code>core/agent/src/inbox.ts</code>): <code>next-turn</code> (one message consumed per turn boundary) / <code>next-step</code> (whole batch consumed per step boundary). Entry points: <code>followup()</code> = next-turn + wake; <code>steer()</code> = next-step + wake; <code>inject()</code> = next-step without waking; generic <code>send(msg,target,wakeup)</code>. <strong>Every mutation first appends an <code>agent/inbox/spliced</code> log event before mutating the in-memory projection</strong> (186-192), so resume rebuilds the queue by replay (32-39); duplicate pending message ids throw; claim takes the full next-step batch plus at most one queued turn message.</li>
+<li><strong>Cancellation and error recovery</strong>: <code>cancel(cause)</code> clears the inbox + aborts the phase AbortController; a wake racing an abort is reclassified to next-turn; mid-stream abort still persists partial assistant content with <code>interrupted: true</code> (354-370); stream failure goes through the <strong><code>agent/request-error</code> waterfall</strong> which may return <code>{kind:'retry'}</code> (373-389); request composition itself is extensible via the <strong><code>agent/request</code> waterfall</strong> over the frozen seed config (buildRequest 426-514), and logs <code>request/header</code> (initial/resume/change) + <code>request/context</code> diff events.</li>
+<li>Tools continuing the turn: <code>executeToolCalls</code>' <code>acceptContext</code> callback splices result contexts into the next-step inbox; a successful batch's <code>concludesTurn</code> ends the turn.</li>
+</ul>
+<h3>6.2 Parallel scheduler (<code>core/agent-loop/src/tool-calls.ts:59-246</code>)</h3>
+<ul>
+<li>Grouped by <code>ctx.tools.executionMode</code>: <code>parallel</code> calls fill a bounded rolling pool (<code>maxParallelToolCalls</code>), <code>exclusive</code> calls form barriers; later calls are <strong>reclassified just before dispatch</strong> (a registry change can create a barrier mid-batch).</li>
+<li>Results commit strictly in <strong>model order</strong> (<code>commitReady</code>); abort synthesizes <code>ABORTED_BEFORE_DISPATCH</code> for undelivered calls to keep replay valid; a scheduler-internal failure drains already-started dispatches but <strong>never fabricates results</strong>.</li>
+</ul>
+<h3>6.3 Tool pipeline, three-stage waterfall (<code>core/tools/src/index.ts</code>)</h3>
+<pre><code>tools/pre-execute (:152)   allow | deny(reason) | ask
+                           ask → approval service (demotes to deny if not mounted)
+                           argument rewriting deliberately excluded (:583-591, &quot;already logged and presented&quot;)
+                           after the waterfall, per-agent guards (:711, :1110-1150) act as a monotonic second gate
+tools/execute (:163)       around-dispatch wrapper (timeout/retry/metrics)
+                           wrapper may only replace exec.signal; registry re-fuses the caller's original signal
+                           (fuseToolSignals, defined :1889; invoked from dispatchToolBody :1537) → cancellation cannot be detached
+tools/post-execute (:175)  accept (rewrite content or canonical value) | additionalContexts | block
+finishScheduledExecution   lossless-JSON snapshot + deep freeze → finalizeContent → tools/result event
+</code></pre>
+<ul>
+<li>A denial is also materialized as an error result that flows through post-execute (a block's feedback becomes an error result).</li>
+<li><code>ToolDefinition</code> (:222-288): JSON <code>parameters</code> schema + <strong>mandatory output contract</strong> (<code>output.schema</code> validated against the body value; pure <code>render</code> → model content; <code>presentationMeta</code> → UI payload <strong>persisted on the <code>tool/result</code> event</strong> for free replay); <code>execute(args, exec)</code> where exec provides <code>deferContext()</code> / <code>concludeTurn()</code>; optional <code>timeoutMs</code> (<strong>cooperative only, never sent to the model</strong>); <code>isConcurrencySafe(args)</code> <strong>fail-closed</strong> (anything but exact <code>true</code> is exclusive); <code>presentCall</code>/<code>presentResult</code> pure functions (generic fallback if omitted) → shared by UI streaming and log replay.</li>
+<li>Schema enters the prompt via the constructor registering <code>ctx.systemPrompt.tools(scope =&gt; wireSchemas(scope))</code> (:832, :980-1001).</li>
+<li>Extension points: <code>register</code> (global or agent-scoped, scoped shadows global), <code>restrict({allow,deny})</code> per-scope filter, <code>guard()</code>, <code>presentAs(mode)</code> per-scope presentation override, <code>tools/code-dispatch-log</code> waterfall (rewrite Code Mode sub-dispatch log copies).</li>
+</ul>
+<h3>6.4 Guard (<code>packages/guard/</code>)</h3>
+<ul>
+<li><strong>repeat-tool-reminder</strong>: purely advisory. Counts consecutive identical <code>[toolName, canonicalized args]</code> per agent (deep key-sort so property order is irrelevant, :89-105), counting inside <code>tools/post-execute</code> so <strong>denied calls also feed the loop detector</strong> (:181-207); at thresholds (default [3,5,8]) it prepends a reminder UserMessage (source-tagged <code>{kind:'plugin', form:'notice'}</code>, never renders as a user turn) onto the decision's <code>additionalContexts</code>, including on <code>block</code> outcomes (:213-224); never vetoes or rewrites; any claimed step containing a real user message resets the chain (<code>agent/pre-step</code> listener, :229-232); config fails loud at load (empty / non-integer / &lt;2 throws).</li>
+<li><strong>timeout-policy</strong> (:55-81): <code>tools/execute</code> wrapper enforcing the declared <code>timeoutMs</code>; derives a deadline signal, swaps it onto <code>exec</code>, delegates, restores the upstream signal in <code>finally</code>, and replaces the result with <code>{code:'TOOL_TIMEOUT'}</code> <strong>only when its own timer fired</strong> (code-scoped via <code>timeoutOf</code>, so a nested outer deadline reads as an ordinary cancel); never abandons or races the tool promise — cooperative cancellation only.</li>
+</ul>
+<h2>7. Subagent</h2>
+<h3>7.1 Three-role seam (<code>packages/subagent/</code>)</h3>
+<ul>
+<li><strong>Service Definition</strong> <code>SubagentRuntime</code> (<code>ctx.subagents</code>): named provider registry (<code>registerProvider</code> effect-scoped / HMR-safe :385-401); capability-validating one-shot <code>start</code> (:430-442, unsupported capability ⇒ typed <code>SubagentError</code>, <strong>never silent degradation</strong> :496-512); continuable ops <code>startContinuable / followup / interrupt(authority) / reportFrom(child) / drainContinuableDescendants|Children</code>; persistence-backed <code>listChildren</code>/<code>listDescendants</code>; lifecycle events <code>subagent/start|end</code> dispatched through a scope carrier keyed by the delegating parent.</li>
+<li><strong>Provider contract</strong> (<code>types.ts:292-331</code>): <code>{ name, capabilities, inheritsParentContext, start(), prepareContinuable? }</code>; one-shot <code>start</code> owns setup until publication; publication transfers ownership to <code>SubagentRun { id, localAgent?, result, dispose }</code> whose <code>result</code> resolves (never rejects on child failure) with <code>{ output, structured?, diagnostic?, stopReason }</code>. For a continuable child, <strong>the presence of <code>prepareContinuable</code> is the capability declaration</strong> — the provider contributes only detached data (an optional seed); the continuation manager owns identity, composition, prompts, cold-resume, and disposal.</li>
+<li>Provider spectrum: <code>spawn-in-process</code> (brand-new child agent, own session/prompt, zero parent context) / <code>fork-in-process</code> (seeded with the parent's <strong>completed-turn prefix</strong>, <code>completedTurnPrefix</code>, <code>packages/subagent/subagent-fork-in-process/src/index.ts:48-54</code>; continuable fork deliberately disabled, TODO :77-82 — seeded-prefix interacting with post-seed prompt sections is a real trap) / out-of-process transports: <code>subagent-acp</code> / <code>codex</code> / <code>claude-code</code> / <code>dsh-sdk</code>.</li>
+<li><strong>Consumers</strong>: <code>tool-subagent</code> (delegation entry; config picks provider; background <code>one-shot|continuable</code>; default <code>maxDepth: 3</code>; persona/toolFilter passthrough), <code>tool-subagent-control</code> (messaging/listing), <code>tool-subagent-report</code> (child→parent channel).</li>
+</ul>
+<h3>7.2 Continuable machinery (<code>subagent/src/continuation.ts</code>)</h3>
+<ul>
+<li><code>Activation</code> (:197-246) = one residency epoch of a durable child: retained AgentHandle, WeakSet ancestry, owned children blocking settlement, memoized <code>disposal</code> promise doubling as admission cutoff; per-child ops serialize through <code>ChildLock</code> (:326-347).</li>
+<li><code>materialize</code>: create fresh (provider spec + delegated policy capture) or <strong>cold-resume</strong> from a persisted session; settlement delivers a plain-language notice into the <strong>parent's inbox</strong> (&quot;Background subagent <id> finished…&quot;, :297-318) rather than resolving a promise.</li>
+<li><code>interrupt</code> requires a human-parent address or exact live-ancestor authority; lineage checks (:1273) prevent cross-tree tampering.</li>
+</ul>
+<h3>7.3 Transcript and depth</h3>
+<ul>
+<li>Each child is an independent Session whose header records <code>parentSession</code>; the resolved <code>subagent/descriptor</code> event is appended inside the <strong>child's own initial turn</strong> (pre-step hook, <code>in-process-driver/src/index.ts:79-89</code>), keeping the parent log clean; discovery folds child logs.</li>
+<li>Depth (<code>depth.ts:28-36</code>): <code>max(header.delegationDepth, runtime option)</code> — monotone, so a resumed child <strong>cannot reset its recursion budget</strong>.</li>
+</ul>
+<h3>7.4 experimental/agent-team (experimental)</h3>
+<ul>
+<li><code>TeamService</code> (:56-115) = façade over TeamRoster (members, default cap 8) / TeamMailbox (64 msgs × 64KiB) / TeamTaskBoard (256 tasks) / TeamJournal + TeamActivity/Lifecycle — <strong>all state folded from the Lead's own session log</strong> (crash-safe recovery on <code>agent/session-start</code>).</li>
+<li>Members spawned as continuable subagents; <code>tryMembership</code> (roster.ts:91-121) classifies any live agent whose parentSession points at a rostered root as teammate, otherwise a fresh implicit lead ('lead' pseudo-member); mailbox delivery rides the normal inbox; limits enforced deployment-side.</li>
+</ul>
+<h3>7.5 Scope (<code>core/scope</code>)</h3>
+<ul>
+<li><code>createScope(ctx, key)</code> (:137-147): mints a Cordis fiber carrying an opaque scope tag for every agent (agent-loop constructor agent.ts:94-95).</li>
+<li>Event routing <code>scopeTarget(base, key)</code> (:170-185): untagged listeners see everything; a tagged listener receives a dispatch only if its key sits on the target's <strong>ancestor chain</strong> (events flow up, never down) — a single standing composition observes all its agents while an agent-scoped plugin sees only its own calls (e.g. <code>tools/pre-execute</code> dispatched on <code>exec.agent</code>).</li>
+<li>Parent links are bind-once with cycle detection and a privileged <code>rebind</code> (:42-82).</li>
+</ul>
+<h2>8. User interaction</h2>
+<h3>8.1 Approval seam (<code>interaction/user-approval/src/index.ts</code>)</h3>
+<ul>
+<li><code>ApprovalService</code> (<code>ctx.approval</code>, L192), sole entry <code>request(req)</code> (L257): <strong>asserts an open turn</strong> (L259; reason: the audit event pair must lie within the durable log's commit/replay boundary, L121-126) → append <code>approval/asked</code> → <code>decide()</code> → append <code>approval/decided</code> (same id paired; pure audit, not in the model transcript, L44-58).</li>
+<li><code>decide()</code> (L304) order: signal already aborted → <code>cancelled</code>; policy=<code>never</code> rejects <strong>before dispatch</strong> (L312, specifically to prevent a <code>prepend:true</code> listener from bypassing determinism); otherwise a scope-filtered waterfall <code>'approval/request'</code> (L317); default / thrown / illegal return all normalize to <code>unavailable</code> (<strong>fail-closed</strong>, L320-328); a signal abort racing the answer drops a late answer by construction (L330-343).</li>
+<li>Result vocabulary closed: <code>allowed-once | rejected | cancelled | unavailable</code> (types.ts L28); the only grant type, and exactly once.</li>
+<li>Policy is log state: <code>approval/policy</code> last-wins fold (L112); <code>setPolicy</code> (L226) toggles and injects a user message notifying the model; the current policy is placed after the retained history via a system-prompt section (order 115) so it does not break the KV-cache prefix (L204-216).</li>
+<li>Tool trigger point: <code>core/tools</code> L1689-1712, when a pre-tool decision is <code>ask</code> it opportunistically takes <code>ctx.get('approval')</code> (demotes to deny if unmounted), with payload <code>{agent, toolName, callId, reason, signal}</code>; answering frontends mount waterfall listeners (web: <code>host/apiproxy/src/api-proxy.ts:1363</code>; ACP: <code>acp/acp/src/index.ts:271</code>).</li>
+</ul>
+<h3>8.2 Ask-user (<code>interaction/user-questions</code>)</h3>
+<ul>
+<li><code>ctx.userQuestions</code> holds a single UI provider (<code>registerProvider</code> L64, duplicate registration throws); <code>ask()</code> (L92) validates: aborted / empty question / exact-live-root (<code>CALLER_NOT_LIVE</code>; <code>DELEGATED_CALLER</code> — an owned subagent would block forever, so rejected directly, L99-113) / intent validity (L121-135).</li>
+<li>Model-facing <code>tool-ask-user</code> registers <code>ask_user_question</code>: its execute asks and <strong>feeds the answer back to the loop as an ordinary tool result</strong> — the tool call is the pause point.</li>
+</ul>
+<h3>8.3 Commands / Permission presets / Plan mode</h3>
+<ul>
+<li><code>commands</code>: <code>CommandRuntime</code> (<code>ctx.commands</code>) registers slash commands; <code>parseCommand</code> (L116) + <code>execute</code> (L329) intercept <code>/xxx</code> at the UI layer, <strong>model never invoked</strong>; before/after the handler it appends log-only <code>command/run</code>/<code>command/done</code> (thrown also settles as error, L340-356); image admission enforced at the registry (L358); scoped layer supports per-agent shadowing of globals (L435).</li>
+<li><code>permission-presets</code>: a preset = sandbox × approval bundle (default <code>workspace-write</code>+ask, <code>danger-full-access</code>+never, L183); the <code>/permission</code> write path records a <code>permission/preset</code> user intent first, then lands via each knob's canonical setter (L391-408); read path = <code>permissions</code> projection (fold L129) for the UI; construction requires a confining executor or throws (L208).</li>
+<li><code>plan-mode</code> (<code>plan/plan-mode/src/index.ts</code>): <code>plan/mode {active}</code> last-wins fold (L129) → zero catch-up on resume/fork; <code>/plan</code> (L295) → pending (WeakMap) inside an open turn, appended with narrative by an <code>agent/pre-step</code> listener once the step is admitted (L223-240), or committed immediately outside a turn; exit review: <code>exit_plan_mode</code> tool (L342) validates # heading then sends a plan-review question via <code>userQuestions.ask</code> (<code>intent:{kind:'plan-review', approve:'Approve'}</code>, L384); Approve → pending takes effect silently; &quot;Keep planning&quot; / custom feedback returns to the model as an Error (L407-411); <code>plan</code> projection {active,pending} is a pure replay derivation (L261). <strong>Design choice: plan state is prompt guidance only, not a hard constraint; hard limits rest on the sandbox/approval knobs independently; the exit tool stays registered to keep the tool catalog stable.</strong></li>
+</ul>
+<h3>8.4 Todo (<code>todo/tool-todo</code>)</h3>
+<ul>
+<li><code>todo_write</code> replaces the whole table, appending a <code>todo/write</code> snapshot each time (L213), last-write-wins; UI reads the <code>todos</code> projection (cleared on turn/start, retained on turn/end, L135-148); model receives a counts-structured result (L215); <code>allowParallelInProgress</code> is a deployment-required policy that changes both the tool description and validation (L37, L107).</li>
+</ul>
+<h2>9. Model connection</h2>
+<h3>9.1 Adapter seam (<code>llm/llm/src/index.ts</code>)</h3>
+<ul>
+<li><code>LlmRuntime</code> (<code>ctx.llm</code>, L311) = adapter registry (<code>registerAdapter</code> L365 all-or-nothing + atomic <code>replace</code> L385) + configurable-provider catalog (L458) + discovery (L531); <code>stream()</code> (L985) passes through the <code>'llm/stream'</code> waterfall (L993), interceptable/short-circuitable by middleware.</li>
+<li>abstract <code>LlmAdapter</code> (L191) must implement only <code>stream</code>; <code>prepareCall</code> (L824) binds model metadata and dispatch to one registration generation, the prepared call is single-use, config frozen-compared (<code>INVALID_PREPARED_CALL</code>) — prevents generation mix-ups from settings/HMR; <code>forAdapter</code> (L878) strips another provider's replayState.</li>
+</ul>
+<h3>9.2 Stream vocabulary and errors (<code>llm/llm/src/types.ts</code>)</h3>
+<ul>
+<li><code>StreamChunk</code> (L312): block-start / text-delta / reasoning-delta / tool-call-delta / block-end / usage / finish; <code>FinishReasonMap</code> (L116): stop / tool-calls / max-tokens / <strong>aborted / error (with LlmFailure)</strong>; ContentBlock/FinishReason are merge-extensible; ReplayEnvelope (L290) carries adapter-private replay metadata.</li>
+<li>Errors: adapter throws are normalized in <code>adapterStream</code> to a terminal finish chunk (L1003; middleware/consumer errors still thrown); <code>LlmError extends HarnessError</code> is serializable (status/retryAfterMs/requestId); <code>assertUsableApiKey</code> (L138) diagnoses credentials but <strong>never echoes the key</strong>.</li>
+</ul>
+<h3>9.3 Retry (<code>retry-policy.ts</code> + llm-retry plugin)</h3>
+<ul>
+<li>Owned entirely by the provider router: normal default 5 attempts, backoff 500ms→10s ±10% jitter, retryable = RATE_LIMIT/SERVER/TIMEOUT/TRANSPORT/EMPTY_RESPONSE (or always); executed by the optional <code>llm-retry</code> plugin at the agent failed-step extension point, honoring Retry-After, cancelable delays, and <strong>the retry itself is also a durable event</strong>.</li>
+</ul>
+<h3>9.4 DeepSeek adapter and credentials</h3>
+<ul>
+<li><code>llm-deepseek</code>: registers <code>deepseek-official</code>; baseURL/key <strong>resolved per request</strong> (settings layered over cordis.yml), key fetched via credential ref (default <code>DEEPSEEK_API_KEY</code>), missing reports <code>MISSING_CREDENTIAL</code> rather than failing at load; in-flight stream keeps the facts from when it started.</li>
+<li><code>credentials-local</code>: the seam stores a <strong>reference</strong> (env variable name), the provider holds the value; resolution layers (L617): <strong>process environment (wins) &gt; <code>$DSH_HOME/.credentials.yaml</code> (managed, writable) &gt; cwd/.env &gt; home/.env</strong> — an explicit env is the current-run intent, the managed store overrides .env so a Models-page write takes effect immediately; cross-process lock + atomic write + patches only its own keys; chokidar hot-publishes external edits; <code>describe()</code> (L627) exposes only configured/source/writable, never the value.</li>
+</ul>
+<h3>9.5 Multiple frontends, one loop</h3>
+<ul>
+<li><code>sdk/server</code> (<code>packages/sdk/server/src/server.ts</code>): subscribes to <code>session/event</code>/<code>agent/status</code> and forwards as JSON-RPC notifications (L71-87); <code>session/prompt</code> → <code>agent.followup()</code> (L132-142, fire-and-forget).</li>
+<li><code>acp</code>: one in-flight slot per session, committed-message-granularity push (deliberately trades away token-level latency for clean automation results); <code>session/request_permission</code> bridges the approval waterfall.</li>
+<li>Both are transport adapters; scope-filtered dispatch lets each frontend answer only for the agents it owns; interaction rendering belongs to the Web host.</li>
+</ul>
+<h2>10. Enterprise adoption checklist</h2>
+<h3>Adopt directly (high value)</h3>
+<ol>
+<li><strong>Event-sourced session log + derived projection</strong> (&quot;model-visible ⟺ logged&quot;) — audit / replay / disconnect-recovery / fork solved at once, an enterprise-compliance necessity;</li>
+<li><strong>Compaction = a replace operation on the log</strong>: durable lock (start event) + original data never deleted (shadowed) + crash-self-healing detectable (orphan start);</li>
+<li><strong>KV-cache awareness end-to-end</strong>: injection always append-only, summarizer replays the warm prefix, policy sections placed after retained history;</li>
+<li><strong>Three-stage tool waterfall with immutable arguments</strong>: pre-execute's allow/deny/ask is the natural hook for permissions/approval; post-execute rewrites results without touching arguments;</li>
+<li><strong>Fail-closed approval semantics</strong>: closed result set + exceptions/illegal returns normalize to unavailable + <code>never</code> decided before any listener (registration order cannot break the guarantee) + asked/decided paired audit + open-turn enclosure;</li>
+<li><strong>Credential reference seam</strong>: store the env name not the value, four-layer trust order (env &gt; managed &gt; .env chain), <code>describe()</code> never leaks value, errors never echo the secret;</li>
+<li><strong>Signal fusion</strong>: a wrapper may only replace <code>exec.signal</code>, the registry re-fuses the caller's original signal — middleware cannot detach cancellation;</li>
+<li><strong>Monotone subagent depth</strong> persisted in the header, resume cannot reset the recursion budget;</li>
+<li><strong>Advisory-only guards</strong>: reminders travel as tagged <code>additionalContexts</code> (never rendered as a user turn), never silently veto;</li>
+<li><strong>Prepared-call generation binding</strong> prevents hot-update config mix-ups; <strong>fail-loud config validation</strong> (inverted threshold, unknown tool name throw at load);</li>
+<li><strong>UI state = pure event fold (projection)</strong>: todos/permissions/plan/approval-policy are all last-wins or structured folds, free resume/fork;</li>
+<li><strong>Provider capability negotiation is fail-loud</strong>: unsupported ⇒ typed error, never silent degradation.</li>
+</ol>
+<h3>Adapt before use</h3>
+<ul>
+<li>The KV-cache invalidation cost of replace-style compaction (from the first replaced token) — known, documented in the README, irreducible;</li>
+<li>SQLite synchronous <code>DatabaseSync</code> blocks the JS thread; FTS5 <code>unicode61</code> has no substring matching;</li>
+<li>session-query's weak authorization (cwd string equality, no symlink-equivalence) — multi-tenant needs a redesigned trust boundary; the query layer itself has no caller authorization;</li>
+<li>Spill locator depends on a co-located filesystem — remote/container deployment needs a different backend;</li>
+<li>Approval requires an open turn (cannot ask outside a turn, an intentional crash semantic), and ask-user fails directly for delegated subagents — the product layer must absorb these;</li>
+<li>No user-level long-term memory — build your own if needed (session-query is the nearest substitute; or borrow the skill catalog's &quot;list resident + body lazy&quot; pattern);</li>
+<li>agent-instructions has no watcher (touch-driven) — high-churn scenarios need to add their own listener.</li>
+</ul>
+<h3>Cost awareness (meta-takeaway)</h3>
+<ul>
+<li>This rigor is not free: deep-freeze/snapshot at every boundary, per-execution WeakMap bookkeeping, memoized disposal transactions, very long invariant comments. Teams without multi-tenant durability needs can ship a much simpler loop.</li>
+<li>The fork provider's continuable gap (TODO) reveals the real trap of seeded-prefix children interacting with post-seed prompt sections.</li>
+<li>The most valuable thing to take away is the <strong>invariant-selection method</strong>: write &quot;what must be true&quot; as assertable rules (surface type must carry a marker, approval event pair must be paired, replace shape is whitelisted) and push mechanically-checkable parts into an executed gate — this is worth more than copying any single implementation.</li>
+</ul>
+<h2>11. Key file index (quick lookup)</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Main loop state machine / turn() / step()</td>
+<td><code>packages/core/agent-loop/src/agent.ts</code> (Phase :38-46; turn :246-330; preStep :225-243; buildRequest :426-514)</td>
+</tr>
+<tr>
+<td>Parallel tool scheduler</td>
+<td><code>packages/core/agent-loop/src/tool-calls.ts</code> (:59-246)</td>
+</tr>
+<tr>
+<td>Reconstruction test</td>
+<td><code>packages/core/agent-loop/tests/request-reconstruction.spec.ts</code></td>
+</tr>
+<tr>
+<td>Inbox</td>
+<td><code>packages/core/agent/src/inbox.ts</code> (spliced-first :186-192; replay :32-39)</td>
+</tr>
+<tr>
+<td>Tool three-stage waterfall / definition</td>
+<td><code>packages/core/tools/src/index.ts</code> (:152/:163/:175; ToolDefinition :222-288; ask→approval :1689-1712; wireSchemas :980-1001)</td>
+</tr>
+<tr>
+<td>Log projection / surface validation</td>
+<td><code>packages/core/session/src/index.ts</code> (:726-747 deriveMessages), <code>src/surface.ts</code> (:83-114; :184-208)</td>
+</tr>
+<tr>
+<td>Prompt assembly</td>
+<td><code>packages/core/system-prompt/src/index.ts</code> (assemble :467-542; renderPrompt :212-295; orderTools :140-183)</td>
+</tr>
+<tr>
+<td>Scope</td>
+<td><code>packages/core/scope/src/index.ts</code> (createScope :137-147; routing :170-185)</td>
+</tr>
+<tr>
+<td>Compaction</td>
+<td><code>packages/compaction/compaction-basic/src/index.ts</code> (:137-224 trigger; :293-304 threshold; :368-420 compactNow), <code>src/region.ts</code> (:98-134 range; :374-378 smaller-check), <code>src/summarizer.ts</code> (:121-182 KV replay; :189-195 surface replace)</td>
+</tr>
+<tr>
+<td>Spill</td>
+<td><code>packages/spill/spill-policy</code>, <code>spill-local/src/index.ts</code></td>
+</tr>
+<tr>
+<td>Session-query</td>
+<td><code>packages/session-query/</code> (logical corpus), <code>session-query-sqlite</code> (FTS5), <code>tool-session-query</code> (5 tools)</td>
+</tr>
+<tr>
+<td>Subagent runtime / continuable</td>
+<td><code>packages/subagent/subagent/src/index.ts</code>, <code>src/types.ts</code> (:292-331), <code>src/continuation.ts</code> (Activation :197-246; ChildLock :326-347), <code>src/depth.ts</code></td>
+</tr>
+<tr>
+<td>Guard</td>
+<td><code>packages/guard/repeat-tool-reminder/src/index.ts</code>, <code>timeout-policy/src/index.ts</code> (:55-81)</td>
+</tr>
+<tr>
+<td>Approval</td>
+<td><code>packages/interaction/user-approval/src/index.ts</code> (request :257; decide :304; policy fold :112)</td>
+</tr>
+<tr>
+<td>Ask-user / Commands / Presets</td>
+<td><code>packages/interaction/user-questions/src/index.ts</code>, <code>commands/src/index.ts</code>, <code>permission-presets/src/index.ts</code></td>
+</tr>
+<tr>
+<td>Plan mode / Todo</td>
+<td><code>packages/plan/plan-mode/src/index.ts</code>, <code>packages/todo/tool-todo/src/index.ts</code></td>
+</tr>
+<tr>
+<td>LLM</td>
+<td><code>packages/llm/llm/src/index.ts</code> (registry :365/:385; prepareCall :824; stream :985), <code>src/types.ts</code> (StreamChunk :312), <code>src/retry-policy.ts</code>, <code>packages/llm/llm-deepseek/src/index.ts</code></td>
+</tr>
+<tr>
+<td>Credentials</td>
+<td><code>packages/credentials/credentials-local/src/index.ts</code> (resolve :617; describe :627)</td>
+</tr>
+<tr>
+<td>SDK / ACP frontends</td>
+<td><code>packages/sdk/server/src/server.ts</code>, <code>packages/acp/acp/src/index.ts</code></td>
+</tr>
+<tr>
+<td>Agent team (experimental)</td>
+<td><code>packages/experimental/agent-team/src/index.ts</code>, <code>roster.ts</code> (:91-121)</td>
+</tr>
+</tbody>
+</table></div>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-08-26-aa9a8c258e6a7262bad4600add8a6b75.html" rel="canonical">https://iintothewind.github.io/posts/2026-08-26-aa9a8c258e6a7262bad4600add8a6b75.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+<!-- Post footer placeholder: empty for now; add agent-camouflage markup here later if needed. -->
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -9,7 +9,13 @@ Blog: https://iintothewind.github.io
 ## Agent-readable Markdown mirrors
 Each post is also published as Markdown for automated readers:
 
-## Posts (43)
+## Posts (49)
+- [博弈论遇上真人：从 100 块钱开始的三道裂缝](https://iintothewind.github.io/posts/2026-08-29-6a851042e585784fe0e41ec80957de10.md) — 博弈论遇上真人：从 100 块钱开始的三道裂缝 整理自视频字幕 · 出处：词越复沉 假设我给你 100 块钱，但有个条件：你必须和一个陌生人分。怎么分由你决定，对方只有两个选择——接受或者拒绝。他接受
+- [Domain-Driven Agents 简述与评论](https://iintothewind.github.io/posts/2026-08-29-cc99d77c2cc0a96e8de8382606b9ba58.md) — Domain-Driven Agents — 简述与评论 URL: https://coldtake.dev/blog/domain-driven-agents 文章简述 作者核心论点：AI agen
+- [Agent-native database access: why GUI clients are the wrong abstraction for AI-driven data workflows](https://iintothewind.github.io/posts/2026-08-28-341258a0aad3f94ff4536280294a6fa3.md) — Agent-Native Database Access: A Different Take Source: V2EX #1237986 — "公司不让装 Navicat 了，就自己写了一个数据库客户
+- [DeepSeek Harness Core Mechanisms Review Notes](https://iintothewind.github.io/posts/2026-08-26-aa9a8c258e6a7262bad4600add8a6b75.md) — DeepSeek Harness Core Mechanisms — Review Notes Nature: external source-review notes, not part of th
+- [DeepSeek Harness 核心机制调研笔记](https://iintothewind.github.io/posts/2026-08-25-2d58bdcedf8255d3352add512e8c7d47.md) — DeepSeek Harness 核心机制调研笔记(供问答使用) 性质:外部代码调研笔记,不属于项目文档体系,不影响任何门禁;不需要时可整个删除。 方法:三个并行源码扫描 + 关键路径人工逐行验证(a
+- [ZeroClaw Context Budget: analysis + omp-based migration roadmap (RFC draft)](https://iintothewind.github.io/posts/2026-08-09-243c320f68638216fffef87080cccd85.md) — ZeroClaw 上下文管理现状分析与优化路线（RFC 草稿） 参考实现（已验证）：omp（can1357/oh-my-pi）已经把本文第 3 节的大部分机制工程化落地， 分析见 omp 上下文管理设
 - [上下文语义投毒研究：从《时代》杂志的 AI 广告到间接提示注入](https://iintothewind.github.io/posts/2026-08-06-e571fa220ffba96569749364d7feda9e.md) — 上下文语义投毒研究：从《时代》杂志的 AI 广告到武器化的间接提示注入 日期：2026-08-06（v3） 性质：研究综述 + 实证复现 + 证据分级（已确认事实 / 合理推测 / 不确定信息） 基于
 - [omp上下文管理设计解析: 对比官方Pi](https://iintothewind.github.io/posts/2026-08-05-168f4cd49504e3aa8f7cdf86e8a0bbbd.md) — omp 的上下文管理设计解析：与官方 Pi 的对比 基于 can1357/oh-my-pi 与 earendil-works/pi 源码。 0. 两个仓库的身份 官方 Pi（earendil-work
 - [Algolia 调查笔记 + HN Search API 实例解析](https://iintothewind.github.io/posts/2026-08-04-7ab5e2940beb35b769ad9bf0e40d7428.md) — Algolia 调查笔记 + Hacker News Search API 实战解析 整理日期：2026-08-04 调查范围：Algolia.com 商业搜索服务；HN Search API（hn.

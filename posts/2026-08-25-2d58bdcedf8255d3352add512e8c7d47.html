@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Harness 核心机制调研笔记 - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-08-25-2d58bdcedf8255d3352add512e8c7d47.md">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>DeepSeek Harness 核心机制调研笔记</h1>
+<div class="post-meta">
+<span class="post-date">2026-08-25</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: DeepSeek Harness 核心机制调研笔记</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-08-25-2d58bdcedf8255d3352add512e8c7d47.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>DeepSeek Harness 核心机制调研笔记(供问答使用)</h1>
+<blockquote>
+<p>性质:外部代码调研笔记,<strong>不属于项目文档体系</strong>,不影响任何门禁;不需要时可整个删除。
+方法:三个并行源码扫描 + 关键路径人工逐行验证(agent-loop 主循环、surfaceOp 校验、deriveMessages、tools 三段瀑布声明)。
+行号基于当前 checkout,仅供定位参考。
+章节:§1 设计哲学 · §2 包地图 · §3 上下文管理与日志 · §4 Compaction · §5 记忆现状 · §6 工具循环 · §7 Subagent · §8 用户交互 · §9 模型连接 · §10 企业借鉴清单 · §11 关键文件索引</p>
+</blockquote>
+<hr>
+<h2>1. 整体设计哲学(四条支柱)</h2>
+<ol>
+<li>
+<p><strong>一切皆插件,没有特权核心</strong>(vendored Cordis 框架)</p>
+<ul>
+<li>模型适配器、工具注册表、session 日志、agent loop 本身都是插件。</li>
+<li>扩展 = 在旁边挂插件:<code>ctx.effect()</code> / <code>ctx.on()</code> / <code>ctx.waterfall()</code>;注册即可逆卸载。</li>
+<li>运行形态 = profile(bundle 叠加层)+ patch(cordis.patch.yml 按 row id 替换/插入),<code>dsh --dump-config</code> 可打印实际启动树,任何打印出来的 row 都可被 patch 替换。</li>
+</ul>
+</li>
+<li>
+<p><strong>事件分三个域,选对域是每个改动的第一个决策</strong></p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>域</th>
+<th>用途</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>session events</td>
+<td>durable 事实,append-only 落日志,活过 reload</td>
+<td><code>turn/*</code>, <code>step/*</code>, <code>user/message</code>, <code>assistant/*</code>, <code>tool/result</code>, <code>approval/*</code></td>
+</tr>
+<tr>
+<td>agent events(<code>agent/*</code>)</td>
+<td>观察/拦截进行中的工作</td>
+<td><code>agent/pre-step</code>, <code>agent/request</code>, <code>agent/request-error</code>, <code>agent/turn-stopping</code></td>
+</tr>
+<tr>
+<td>capability events</td>
+<td>给能力缝挂 policy/adapter,不 import loop</td>
+<td><code>fs/*</code>, <code>tools/*</code>, <code>llm/stream</code>, <code>telemetry/*</code></td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>瀑布(waterfall)listener 必须 <code>next()</code> 委托,否则短路整条链。</li>
+<li><code>agent/pre-step</code>、<code>agent/request</code>、<code>llm/stream</code>、<code>tools/*</code> 是瀑布;<code>agent/turn-stopping</code> 是串行事件无 <code>next()</code>。</li>
+</ul>
+</li>
+<li>
+<p><strong>&quot;model-visible ⟺ logged&quot; 是全项目最硬的不变量</strong></p>
+<ul>
+<li>一切进模型请求的内容必须能从 append-only 日志重建,运行时 invariant 断言。</li>
+<li>模型历史不是维护出来的状态,而是 <code>deriveMessages()</code> 从日志派生的投影。</li>
+<li>审计、重放、fork、resume、telemetry 全部从同一条流免费获得。</li>
+<li>重建测试:<code>packages/core/agent-loop/tests/request-reconstruction.spec.ts</code>;<code>request/header</code> 事件保存完整 canonical 请求信封。</li>
+</ul>
+</li>
+<li>
+<p><strong>Capability seam 三角色</strong>:Service Definition(接口)/ Service Provider(实现)/ Consumer(通常是 model-facing 工具)。换 provider 即换产品行为:fs/subprocess 指向远程沙箱,Bash/PTY/LSP 一起搬家,零 provider fork。单个角色不算完整 seam。</p>
+</li>
+</ol>
+<p>辅助原则:fail-loud 配置(load/assembly 时抛错)、显式 &gt; 隐式(默认值是 owning 实现里的 <code>resolve(request): Spec</code> 步骤,不是 run() 里隐藏的 <code>?? default</code>)、跨边界 id 用 branded type、信任 TypeScript 同进程类型边界只在解析器/队列/工具 JSON/持久文件/worker/进程/wire 边界做运行时校验。</p>
+<h2>2. 包地图(与本笔记相关的部分)</h2>
+<pre><code>packages/core/session        SessionEvent append-only 日志 + 内存 store;deriveMessages 投影;fork
+packages/core/system-prompt  prompt section/tool schema/variable 注册与组装
+packages/core/tools          scoped 工具注册表 + 三段瀑布执行管线
+packages/core/agent          Agent 接口 + 双通道 Inbox
+packages/core/agent-loop     ReactLoopAgent 主循环状态机 + 并行工具调度器
+packages/core/scope          per-agent scoped 注册原语(createScope + scope-chain 事件路由)
+packages/compaction          压缩缝:definition / compaction-basic provider / command-compact
+packages/context             request-context 注入:agent-instructions / time-context / session-reference
+packages/spill               大 tool result 落盘:spill-policy(transformer)+ spill-local(store)
+packages/session-query       会话检索:逻辑语料 + SQLite FTS5 后端
+packages/subagent            子代理缝:runtime + providers(spawn/fork/acp/codex/claude-code/dsh-sdk)+ continuable
+packages/guard               repeat-tool-reminder(劝告式)+ timeout-policy
+packages/interaction         user-approval / user-questions / commands / permission-presets
+packages/plan                plan-mode(日志态)+ exit_plan_mode 评审工具
+packages/todo                todo_write 整表快照工具
+packages/llm                 LlmRuntime adapter 缝 + 流词汇 + retry-policy;llm-deepseek adapter
+packages/credentials         凭据引用缝(env 名,不存值)+ 四层解析顺序
+packages/sdk / packages/acp  JSON-RPC / ACP 传输前端,驱动同一 loop
+packages/experimental/agent-team  (实验)roster/mailbox/taskboard,全部 fold 自 Lead 日志
+</code></pre>
+<h2>3. 上下文管理:日志即真相</h2>
+<h3>3.1 Session log 与派生投影</h3>
+<ul>
+<li>日志 append-only;只有三种事件类型可上 surface(user/message、assistant/message、tool/result)且<strong>必须带 <code>surfaceOp</code> marker</strong>(<code>append</code> 或 <code>{op:'replace',start,end}</code>);非 eligible 类型携带 marker 直接抛错(<code>surface.ts:184-208</code>)。replace 形状白名单校验:恰好 3 键,start/end 为 safe 非负整数。</li>
+<li><code>deriveMessages()</code>(<code>core/session/src/index.ts:726-747</code>):增量缓存,每新 surface node 只投影一次 O(new nodes);<code>surface.replaceGeneration</code> 变化即整体重建(composition 后无 raw-log fallback);返回 fresh array,内部 Message 共享且 <strong>deep-frozen</strong>(内容复用已冻结的事件数据,无需二次拷贝)。</li>
+<li>单节点规则 <code>deriveEventMessage</code>(<code>surface.ts:83-114</code>):user/message → verbatim 直通(<strong>投影层禁止加 framing</strong>,framing 由 producer 烘焙进 content);assistant/message 空 content → null(仅承载 usage 的 max-tokens 步骤不进 transcript);其余类型(chunk、turn/step 边界、log-only)→ null。</li>
+<li>chunk 保真:<code>assistant/message</code> 用 <code>sourceEventSeqs</code> 引用其 <code>assistant/chunk</code> 流(空数组=已知空流,缺省=legacy 未记录)。</li>
+<li>崩溃修复:给未完成的 tool call 合成 <code>TOOL_NOT_STARTED</code> / <code>TOOL_OUTCOME_UNKNOWN</code> 结果,回放始终有效。</li>
+<li>Fork:<code>ctx.sessions.fork(source, boundary?, childSessionId?)</code>;child header 记 <code>parentSession</code>,<code>traceSession</code> 可追血缘。</li>
+</ul>
+<h3>3.2 System-prompt 组装(<code>core/system-prompt/src/index.ts</code>)</h3>
+<ul>
+<li>注册面:<code>section()</code> / <code>context()</code> / <code>tools()</code> / <code>variable()</code> → ScopedLayers(global 层 + per-agent <code>agent.ctx</code> scope 层,同名 scoped 遮蔽全局)。</li>
+<li><code>assemble()</code>(467-542):变量解析(scoped 覆盖全局)→ sections 按 <code>order</code> 升序合并(-100 identity、0 persona、100–199 tool guidance 区间)→ 多个 <code>complete:true</code> section 报错 → tool providers 收集(parameters structuredClone 隔离)→ <code>orderTools</code>(<code>toolOrder</code> 配置或字典序,140-183)→ <code>system-prompt/assemble</code> waterfall(listener 结果 authoritative,complete section 之后恢复)→ suppressor 清空 contexts。</li>
+<li><code>renderPrompt</code>(212-295)严格 <code>{{var}}</code> 插值:未知变量/无值/畸形组直接 throw(fail-loud)。</li>
+<li>工具 schema 与 prompt section 同一 assembly 产出但分开发送;presentation mode:<code>native</code>(全量 schema)/ <code>code</code>(全部折叠进保留的 <code>run_code</code> transport + 生成的 SDK prompt section)/ <code>both</code>。</li>
+</ul>
+<h3>3.3 Request-context 注入(<code>packages/context/</code>)</h3>
+<ul>
+<li><code>agent-instructions</code>:首个 pre-step 把 <code>$DSH_HOME/AGENTS.md</code> + 项目根→cwd 的 <code>AGENTS.md</code>/<code>CLAUDE.md</code>(+<code>.local.md</code>)链折叠成一条 durable <code>&lt;system-reminder&gt;</code> user 消息;后续靠 first-party read/write/edit &quot;touch&quot; 发现嵌套文件并追加 add/update/remove 通知;SHA-1 digest 去重;<code>maxBytes</code> 由宽到窄省略;<strong>无 watcher,touch-driven</strong>。</li>
+<li><code>time-context</code>:pre-step 注入 sourced 快照 <code>{kind:'plugin', plugin:'time-context', form:'snapshot'}</code>,正 interval 节流。</li>
+<li><code>session-reference</code>:用户 <code>@mention</code> 其他会话 → <code>readSurface()</code> 有界快照(只留 direct user 文本、assistant 文本、compact checkpoint),≤3 个来源各 64KiB 上限,作为 form <code>'recall'</code> 的 sourced 消息紧跟引用之后。</li>
+<li>共同点:一切注入都是带 typed <code>source</code> 的普通 <code>user/message</code> 事件 → 天然满足 model-visible ⟺ logged,重启零漂移。</li>
+</ul>
+<h2>4. Compaction:压缩即日志操作</h2>
+<p>三层拆分:Service Definition(<code>compaction/</code>)/ Provider(<code>compaction-basic/</code>)/ Consumer(<code>/compact</code> 命令)。</p>
+<p><strong>触发</strong>(<code>compaction-basic/src/index.ts</code>):</p>
+<ul>
+<li>自动:<code>agent/pre-step</code> 压力检查,tokenMeter ≥ <code>thresholdRatio</code>(默认 0.8)× 路由模型 context window(index.ts:293-304);</li>
+<li>溢出恢复:<code>agent/request-error</code> 收到 <code>CONTEXT_WINDOW_EXCEEDED</code> 绕过阈值强制削减(index.ts:179-223);</li>
+<li>手动:<code>/compact</code> → <code>compactNow()</code>(index.ts:368-420,idle 才允许);<code>auto: false</code> 纯手动;<code>modelPolicies</code> 按 provider/model 覆盖策略。</li>
+</ul>
+<p><strong>basic 策略</strong>:</p>
+<ol>
+<li>可选 model-free 剪枝:<code>ctx.toolResultPruner</code> 把超限 tool/result 改写为 head 4096 + marker + tail 1026 code points(content-only replace,原事件留在日志);</li>
+<li>选区 <code>selectCompactableRange</code>(<code>region.ts:98-134</code>):尾部按 <code>retainRatio</code>(默认 0.16)或 <code>retainTokens</code> 保留近期尾巴,回退到 tool-pairing 平衡边界——<strong>绝不切开 assistant tool-call/result 对</strong>;</li>
+<li>摘要 = 一次性 <code>ctx.llm.stream()</code> 调用,<strong>逐字节重放对话自己的 system prompt + tools + 被压缩区间消息</strong>,只追加压缩指令作最后一条 user 消息以复用 provider KV cache(<code>summarizer.ts:121-182</code>,<code>purpose: 'compaction'</code>);</li>
+<li>摘要必须<strong>严格小于</strong>原文(region.ts:374-378),否则拒绝压缩。</li>
+</ol>
+<p><strong>日志协议</strong>(README 39-57):</p>
+<pre><code>compaction/start    同步 append = durable 锁(防并发压缩)
+compaction/summary  log-only(摘要/shadowedSeqs/token 数/provider 信封)
+user/message        唯一 surface 突变:surfaceOp:{op:'replace',start,end} + sourceEventSeqs,
+                    内容 = preamble + &lt;compacted-summary&gt;(summarizer.ts:69,189-195)
+compaction/end
+</code></pre>
+<ul>
+<li>崩溃留下可检测的孤儿 start,不产生虚假完成;被遮蔽(shadowed)事件永不清除,重放确定。</li>
+<li>已知代价:<strong>replace 使 KV cache 从首个被替换 token 起失效</strong>——成本写进 README 却无法消除。</li>
+</ul>
+<h2>5. 外部记忆:没有 memory 工具,是组合拳</h2>
+<p>全仓库检索(ripgrep,200+ 匹配逐一甄别)<strong>不存在</strong>专门 memory tool / user-memory store。承担该角色的机制:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>机制</th>
+<th>内容</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>session-query</td>
+<td>跨会话 SQLite FTS5 检索(见下)</td>
+<td>最接近记忆工具</td>
+</tr>
+<tr>
+<td>session-reference</td>
+<td>@mention 有界快照</td>
+<td>用户显式触发</td>
+</tr>
+<tr>
+<td>skill catalog</td>
+<td>durable <code>&lt;available_skills&gt;</code> 目录 + <code>skill</code> 工具按需加载正文</td>
+<td>目录常驻、正文懒加载</td>
+</tr>
+<tr>
+<td><code>~/.dsh/AGENTS.md</code></td>
+<td>事实上的用户偏好/指令层</td>
+<td>agent-instructions 注入</td>
+</tr>
+<tr>
+<td>fork 血缘</td>
+<td>parentSession + traceSession</td>
+<td>结构化追溯</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>session-query 详情</strong>:</p>
+<ul>
+<li>API:<code>listSessions / readSession / filterSessions / filterEvents / listEvents</code>(每事件分类 current/shadowed/log-only)、<code>readSurface / readEvent</code>(before/after ≤ <code>readWindowMax</code>=50)、<code>traceSession / traceEvent</code>(祖先链 + 递归后代树;环 → <code>SESSION_QUERY_INVALID_LINEAGE</code>;replace 链追到最后一个替换)。逻辑语料 live-preferred(live 胜 persisted)。</li>
+<li>SQLite 后端:FTS5 <code>unicode61</code>;派生库 + 本地 TEMP 表遮蔽 durable 行;排序 = highlight span 数降序;cursor 绑定 generation;<code>openAt: never</code> 可关搜索保留精确读。</li>
+<li>模型面 <code>tool-session-query</code>:5 个只读工具(<code>session_search</code> / <code>session_event_search</code> / <code>session_trace</code> / <code>session_event_trace</code> / <code>session_event_read</code>);授权 = 调用者与目标 <code>cwd</code> <strong>字符串精确相等</strong>(不认 symlink 等价);<code>session_search</code> 永远排除自身会话,当前会话搜索停在调用 step 之前防自匹配;<strong>默认 composition 不挂载(opt-in)</strong>。</li>
+<li>已知弱点:FTS5 unicode61 无子串匹配(需另走 filterEvents literal scan);SQLite 用同步 <code>DatabaseSync</code> 阻塞 JS 线程;查询层本身无 caller 授权,信任边界推给工具层。</li>
+</ul>
+<p><strong>Spill(大结果落盘)</strong>:</p>
+<ul>
+<li><code>spill-policy</code>:<code>tools/post-execute</code> transformer。最终 plain-text 结果 &gt; <code>maxInlineBytes</code>(UTF-8 字节,缺省禁用)时:全文存 <code>ctx.spillStore</code>,模型只见 bounded head/tail preview + 定位符通知 <code>(Omitted N bytes. Full formatted result stored at: &lt;locator&gt;. Use read with offset/limit, or grep...)</code>;preview 从同一预算扣除 notice 开销,<strong>替换体永不超上限</strong>;best-effort,存储失败静默回退原结果绝不报错;跳过 <code>read</code> 工具(防 read→spill→read 循环)与嵌套执行。</li>
+<li><code>spill-local</code>:路径 <code>&lt;root&gt;/session-&lt;sha256(sessionId)&gt;/&lt;random&gt;-&lt;safeName&gt;</code>,0600 exclusive-create 防 symlink 种植。</li>
+<li><strong>取回 = 模型自己用现有 read/grep 读该路径</strong>;seam 刻意不做 retrieval API,检索提示由 backend 提供。locator 依赖共置 FS,远程部署需换 backend。</li>
+</ul>
+<h2>6. 工具调用循环</h2>
+<h3>6.1 主循环状态机(<code>core/agent-loop/src/agent.ts</code>)</h3>
+<ul>
+<li>私有 <code>Phase</code> union(38-46):<code>idle{lastTurn} | maintenance{abort, wakeRequested} | running{turn, step, wakeRequested}</code>;单驱动协程 <code>kick</code> 跑 <code>while (await this.turn()) {}</code>,收敛回 idle 并重放锁存的 wake;<code>wakeDriver</code> 只从 idle 启动(172-193);disposal 不锁存 wake。</li>
+<li><strong>Turn vs Step</strong>:step = 一次模型请求 + 其工具调用;turn = 零或多个 step。</li>
+<li><code>turn()</code>(246-330):append <code>turn/start</code> → 循环 steps:
+<ol>
+<li><code>preStep</code>(225-243):claim inbox batch → <code>systemPrompt.assemble()</code> → <strong><code>agent/pre-step</code> 瀑布</strong>(listener 可改写 claimed messages 或 <code>{kind:'reject'}</code> → turn 以 <code>blocked</code> 结束);</li>
+<li>空首步(rejected 或改写为空)仍拥有 turn 边界但不花模型调用 → <code>completed</code>;</li>
+<li>append <code>step/start</code> → claimed messages 逐条 append 为 <code>user/message</code>(带 <code>surfaceOp:'append'</code>)→ <code>step()</code> → finally append <code>step/end</code>;</li>
+<li><strong>max-tokens sticky</strong>:任一 step 触顶后,后续正常完成不得降级 turn 结果;</li>
+<li>turn 将结束但 <code>inbox.nextStep</code> 非空 → 继续(steer/inject 延长 turn);结束前发串行 <code>agent/turn-stopping</code>;</li>
+<li>catch:error 归一(<code>LlmError</code> 保真,否则 <code>errorChain</code> under <code>UNKNOWN</code>)→ <code>agent/error</code>;<strong>finally 必 append <code>turn/end</code></strong>,reason ∈ <code>completed|max-tokens|aborted|error|blocked</code>;</li>
+<li>inbox 还有 pending → 重置 phase 返回 true 继续下一个 turn。</li>
+</ol>
+</li>
+<li><strong>双通道 Inbox</strong>(<code>core/agent/src/inbox.ts</code>):<code>next-turn</code>(每 turn 边界消费一条)/ <code>next-step</code>(每 step 边界消费整批)。入口:<code>followup()</code>=next-turn+wake;<code>steer()</code>=next-step+wake;<code>inject()</code>=next-step 不唤醒;泛化 <code>send(msg,target,wakeup)</code>。<strong>每次变更先落 <code>agent/inbox/spliced</code> 日志再改内存</strong>(186-192),resume 靠重放重建队列(32-39);重复 pending message id 抛错;claim 取整批 next-step + 至多一条排队的 turn。</li>
+<li><strong>取消与错误恢复</strong>:<code>cancel(cause)</code> 清空 inbox + abort phase AbortController;wake 与 abort 竞速时重分类为 next-turn;流式中止仍持久化部分 assistant content 带 <code>interrupted: true</code>(354-370);流失败走 <strong><code>agent/request-error</code> 瀑布</strong>可返回 <code>{kind:'retry'}</code>(373-389);请求组装本身可被 <strong><code>agent/request</code> 瀑布</strong>扩展(基于冻结 seed config,buildRequest 426-514),并落 <code>request/header</code>(initial/resume/change)+ <code>request/context</code> diff 事件。</li>
+<li>工具续转:<code>executeToolCalls</code> 的 <code>acceptContext</code> 回调把结果上下文拼进 next-step inbox;成功批次的 <code>concludesTurn</code> 结束 turn。</li>
+</ul>
+<h3>6.2 并行调度器(<code>core/agent-loop/src/tool-calls.ts:59-246</code>)</h3>
+<ul>
+<li>按 <code>ctx.tools.executionMode</code> 分组:<code>parallel</code> 进有界滚动池(<code>maxParallelToolCalls</code>),<code>exclusive</code> 形成屏障;later calls <strong>开工前最后一刻重新分类</strong>(registry 变更可在批次中途制造屏障)。</li>
+<li>结果严格按<strong>模型顺序</strong> commit(<code>commitReady</code>);abort 为未派发调用合成 <code>ABORTED_BEFORE_DISPATCH</code> 保持回放有效;调度器自身失败则 drain 已启动 dispatch 但<strong>不伪造结果</strong>。</li>
+</ul>
+<h3>6.3 工具管线三段瀑布(<code>core/tools/src/index.ts</code>)</h3>
+<pre><code>tools/pre-execute (:152)   allow | deny(reason) | ask
+                           ask → approval service(未挂载则降级 deny)
+                           参数改写被刻意排除(:583-591,&quot;已落日志已展示&quot;)
+                           瀑布后 per-agent guards(:711,:1110-1150)作单调第二道闸
+tools/execute (:163)       around-dispatch wrapper(超时/重试/metrics)
+                           wrapper 仅可换 exec.signal;registry 重融 caller 原始信号
+                           (fuseToolSignals,:1532-1560)→ 取消无法脱离
+tools/post-execute (:175)  accept(重写 content 或 canonical value)| additionalContexts | block
+finishScheduledExecution   lossless-JSON 快照 + deep freeze → finalizeContent → tools/result 事件
+</code></pre>
+<ul>
+<li>denial 也物化为 error result 流经 post-execute(block 反馈变成 error result)。</li>
+<li><code>ToolDefinition</code>(:222-288):JSON <code>parameters</code> schema + <strong>强制 output contract</strong>(<code>output.schema</code> 校验 body value;pure <code>render</code> → 模型内容;<code>presentationMeta</code> → UI payload <strong>持久化到 tool/result 事件</strong>,回放免费);<code>execute(args, exec)</code>,exec 提供 <code>deferContext()</code> / <code>concludeTurn()</code>;可选 <code>timeoutMs</code>(<strong>协作式,从不发给模型</strong>);<code>isConcurrencySafe(args)</code> <strong>fail-closed</strong>(非精确 <code>true</code> 即 exclusive);<code>presentCall</code>/<code>presentResult</code> 纯函数(缺省 generic fallback)→ UI 流式渲染与日志回放共用。</li>
+<li>schema 进 prompt:构造函数注册 <code>ctx.systemPrompt.tools(scope =&gt; wireSchemas(scope))</code>(:832,:980-1001)。</li>
+<li>扩展点:<code>register</code>(global 或 agent-scoped,scoped 遮蔽 global)、<code>restrict({allow,deny})</code> per-scope 过滤、<code>guard()</code>、<code>presentAs(mode)</code> per-scope presentation 覆盖、<code>tools/code-dispatch-log</code> 瀑布(Code Mode 子 dispatch 日志副本改写)。</li>
+</ul>
+<h3>6.4 Guard(<code>packages/guard/</code>)</h3>
+<ul>
+<li><strong>repeat-tool-reminder</strong>:纯劝告。per-agent 计数连续相同 <code>[toolName, canonicalized args]</code>(deep key-sort,属性顺序无关,:89-105),计数在 <code>tools/post-execute</code> → <strong>denied 调用也喂给循环检测</strong>(:181-207);阈值(默认 [3,5,8])时 prepend reminder UserMessage(source-tagged <code>{kind:'plugin', form:'notice'}</code>,永不渲染为用户发言)到 <code>additionalContexts</code>,block 结果同样生效(:213-224);从不否决或改写;真实 user message 进入 claim 即重置链(<code>agent/pre-step</code>,:229-232);配置 load 时校验(空/非整数/&lt;2 抛错)。</li>
+<li><strong>timeout-policy</strong>(:55-81):<code>tools/execute</code> wrapper 强制声明的 <code>timeoutMs</code>;派生 deadline signal 换上 exec、委托、finally 恢复上游信号;<strong>仅当自己的 timer 触发</strong>才把结果替换为 <code>{code:'TOOL_TIMEOUT'}</code>(code-scoped <code>timeoutOf</code>,嵌套外层 deadline 表现为普通取消);从不放弃或 race 工具 promise——协作式取消。</li>
+</ul>
+<h2>7. Subagent</h2>
+<h3>7.1 三角色缝(<code>packages/subagent/</code>)</h3>
+<ul>
+<li><strong>Service Definition</strong> <code>SubagentRuntime</code>(<code>ctx.subagents</code>):命名 provider registry(<code>registerProvider</code> effect-scoped/HMR-safe :385-401);能力校验的一次性 <code>start</code>(:430-442,不支持的能力 ⇒ typed <code>SubagentError</code>,<strong>绝不静默降级</strong> :496-512);continuable 操作 <code>startContinuable / followup / interrupt(authority) / reportFrom(child) / drainContinuableDescendants|Children</code>;持久化 <code>listChildren/listDescendants</code>;lifecycle 事件 <code>subagent/start|end</code> 经 scope carrier 派发给委派父。</li>
+<li><strong>Provider 契约</strong>(<code>types.ts:292-331</code>):<code>{ name, capabilities, inheritsParentContext, start(), prepareContinuable? }</code>;一次性 <code>start</code> 拥有 setup 直到 publication;publication 把所有权转移给 <code>SubagentRun { id, localAgent?, result, dispose }</code>,<code>result</code> resolve 不 reject(child 失败 → <code>stopReason</code>)。对 continuable child,<strong><code>prepareContinuable</code> 方法存在性即能力声明</strong>,provider 只贡献 detached 数据(seed),continuation manager 拥有身份/组合/prompt/cold-resume/disposal。</li>
+<li>Provider 光谱:<code>spawn-in-process</code>(全新 child agent,自有 session/prompt,零父上下文)/ <code>fork-in-process</code>(以父<strong>已完成 turn 前缀</strong>为种子,completedTurnPrefix,<code>subagent-fork-in-process/src/index.ts:48-54</code>;continuable fork 刻意禁用,TODO :77-82 —— seeded-prefix 与 post-seed prompt sections 相互作用是个真实的坑)/ out-of-process transports:<code>subagent-acp</code> / <code>codex</code> / <code>claude-code</code> / <code>dsh-sdk</code>。</li>
+<li><strong>Consumers</strong>:<code>tool-subagent</code>(delegation 入口;config 选 provider;background <code>one-shot|continuable</code>;默认 <code>maxDepth: 3</code>;persona/toolFilter 透传)、<code>tool-subagent-control</code>(消息/列表)、<code>tool-subagent-report</code>(child→parent 通道)。</li>
+</ul>
+<h3>7.2 Continuable 机器(<code>subagent/src/continuation.ts</code>)</h3>
+<ul>
+<li><code>Activation</code>(:197-246)= 一个 durable child 的驻留纪元:retained AgentHandle、WeakSet ancestry、owned children blocking settlement、memoized disposal promise 兼作 admission cutoff;per-child 操作经 <code>ChildLock</code>(:326-347)串行化。</li>
+<li><code>materialize</code>:新建(provider spec + delegated policy capture)或从持久会话 <strong>cold-resume</strong>;settlement 以普通语言通知进入<strong>父 inbox</strong>(&quot;Background subagent <id> finished…&quot;,:297-318),不是 resolve promise。</li>
+<li><code>interrupt</code> 需要 human-parent address 或 exact live ancestor authority;lineage checks(:1273)防跨树篡改。</li>
+</ul>
+<h3>7.3 Transcript 与深度</h3>
+<ul>
+<li>每个 child 是独立 Session,header 记 <code>parentSession</code>;<code>subagent/descriptor</code> 事件 append 在 <strong>child 自己的首个 turn</strong>(pre-step hook,<code>in-process-driver/src/index.ts:79-89</code>),父日志保持干净;discovery folds child logs。</li>
+<li>深度(<code>depth.ts:28-36</code>):<code>max(header.delegationDepth, runtime option)</code> —— 单调,续接/resume 的 child <strong>无法重置递归预算</strong>。</li>
+</ul>
+<h3>7.4 experimental/agent-team(实验)</h3>
+<ul>
+<li><code>TeamService</code>(:56-115)= façade over TeamRoster(成员,默认 cap 8)/ TeamMailbox(64 msgs × 64KiB)/ TeamTaskBoard(256 tasks)/ TeamJournal + Activity/Lifecycle —— <strong>全部状态从 Lead 自己的 session log fold</strong>(crash-safe recovery on <code>agent/session-start</code>)。</li>
+<li>成员 = continuable subagents;<code>tryMembership</code>(roster.ts:91-121):live agent 的 parentSession 指向 rostered root 即 teammate,否则 fresh implicit lead('lead' pseudo-member);mailbox 走正常 inbox;上限全部 deployment-side 强制。</li>
+</ul>
+<h3>7.5 Scope(<code>core/scope</code>)</h3>
+<ul>
+<li><code>createScope(ctx, key)</code>(:137-147):给每个 agent 一个 Cordis fiber,context 带不透明 scope tag(agent-loop 构造函数 agent.ts:94-95)。</li>
+<li>事件路由 <code>scopeTarget(base, key)</code>(:170-185):untagged listener 见一切;tagged listener 仅当其 key 在 target 的<strong>祖先链</strong>上才收到(事件向上流动,永不向下)——一个常驻 composition 观察它所有 agent,而 agent-scoped 插件只见自己的调用(如 <code>tools/pre-execute</code> 以 <code>exec.agent</code> 为 key)。</li>
+<li>parent links bind-once + 环检测 + 特权 <code>rebind</code>(:42-82)。</li>
+</ul>
+<h2>8. 用户交互</h2>
+<h3>8.1 审批缝(<code>interaction/user-approval/src/index.ts</code>)</h3>
+<ul>
+<li><code>ApprovalService</code>(<code>ctx.approval</code>,L192)唯一入口 <code>request(req)</code>(L257):<strong>断言 open turn</strong>(L259;理由:审计事件对必须在 durable log 的 commit/replay 边界内,L121-126)→ append <code>approval/asked</code> → <code>decide()</code> → append <code>approval/decided</code>(同 id 配对;纯审计,不进模型 transcript,L44-58)。</li>
+<li><code>decide()</code>(L304)顺序:signal 已 abort → <code>cancelled</code>;policy=<code>never</code> 在 <strong>dispatch 之前</strong>拒绝(L312,专防 <code>prepend:true</code> listener 绕过确定性);否则走 scope-filtered 瀑布 <code>'approval/request'</code>(L317);缺省/抛错/非法返回一律归一 <code>unavailable</code>(<strong>fail-closed</strong>,L320-328);signal abort 与答案竞速,晚到答案按构造丢弃(L330-343)。</li>
+<li>结果词汇封闭:<code>allowed-once | rejected | cancelled | unavailable</code>(types.ts L28);唯一 grant 类型且仅一次。</li>
+<li>策略是日志态:<code>approval/policy</code> last-wins fold(L112);<code>setPolicy</code>(L226)切换并 inject 一条通知模型的 user message;当前策略经 system-prompt section(order 115)放在保留历史之后,不破 KV 缓存前缀(L204-216)。</li>
+<li>工具触发点:<code>core/tools</code> L1689-1712,pre-tool 决策为 <code>ask</code> 时 opportunistic <code>ctx.get('approval')</code>(没挂载 → 降级 deny),载荷 <code>{agent, toolName, callId, reason, signal}</code>;应答端由前端挂瀑布 listener(web:<code>host/apiproxy/src/api-proxy.ts:1363</code>;ACP:<code>acp/acp/src/index.ts:271</code>)。</li>
+</ul>
+<h3>8.2 Ask-user(<code>interaction/user-questions</code>)</h3>
+<ul>
+<li><code>ctx.userQuestions</code> 单 UI provider(<code>registerProvider</code> L64,重复注册抛错);<code>ask()</code>(L92)校验:aborted / 空问题 / exact-live-root(<code>CALLER_NOT_LIVE</code>;<code>DELEGATED_CALLER</code>——owned 子代理会永久阻塞故直接拒,L99-113)/ intent 合法性(L121-135)。</li>
+<li>模型面 <code>tool-ask-user</code> 注册 <code>ask_user_question</code>:execute 内 ask,<strong>答案作为普通 tool result 喂回 loop</strong>——工具调用即暂停点。</li>
+</ul>
+<h3>8.3 Commands / Permission presets / Plan mode</h3>
+<ul>
+<li><code>commands</code>:<code>CommandRuntime</code>(<code>ctx.commands</code>)注册 slash command;<code>parseCommand</code>(L116)+<code>execute</code>(L329)在 UI 层拦截 <code>/xxx</code>,<strong>完全不发模型</strong>;handler 前后 log-only <code>command/run</code>/<code>command/done</code>(thrown 也 settle 为 error,L340-356);图片 admission 在 registry 强制(L358);scoped layer 支持 per-agent 遮蔽全局(L435)。</li>
+<li><code>permission-presets</code>:预设 = sandbox × approval 捆绑(默认 <code>workspace-write</code>+ask、<code>danger-full-access</code>+never,L183);<code>/permission</code> 写路径先记 <code>permission/preset</code> 用户意图再经各 knob canonical setter 落盘(L391-408);读路径 = <code>permissions</code> projection(fold L129)供 UI;构造期要求 confining executor 否则 throw(L208)。</li>
+<li><code>plan-mode</code>(<code>plan/plan-mode/src/index.ts</code>):<code>plan/mode {active}</code> 事件 last-wins fold(L129)→ resume/fork 零 catch-up;<code>/plan</code>(L295)→ open turn 中挂 pending(WeakMap),由 <code>agent/pre-step</code> 在 step 被接受后 append + 叙事(L223-240),turn 外立即 commit;退出评审:<code>exit_plan_mode</code> 工具(L342)校验 # 标题后经 <code>userQuestions.ask</code> 发 plan-review 问题(<code>intent:{kind:'plan-review', approve:'Approve'}</code>,L384);Approve → pending 静默生效;&quot;Keep planning&quot;/自定义反馈以 Error 形式回模型(L407-411);<code>plan</code> projection {active,pending} 纯 replay 推导(L261)。<strong>设计取舍:plan 态只是 prompt 引导不强制限制;硬约束靠 sandbox/approval knob 独立承担;exit tool 常驻注册保持工具目录稳定。</strong></li>
+</ul>
+<h3>8.4 Todo(<code>todo/tool-todo</code>)</h3>
+<ul>
+<li><code>todo_write</code> 整表替换,每次 append <code>todo/write</code> 快照(L213),last-write-wins;UI 读 <code>todos</code> projection(turn/start 清空、turn/end 保留,L135-148);模型收 counts 结构化结果(L215);<code>allowParallelInProgress</code> 是部署必选策略,同时改变工具描述与校验(L37, L107)。</li>
+</ul>
+<h2>9. 模型连接</h2>
+<h3>9.1 Adapter 缝(<code>llm/llm/src/index.ts</code>)</h3>
+<ul>
+<li><code>LlmRuntime</code>(<code>ctx.llm</code>,L311)= adapter registry(<code>registerAdapter</code> L365 all-or-nothing + 原子 <code>replace</code> L385)+ configurable-provider 目录(L458)+ discovery(L531);<code>stream()</code>(L985)经 <code>'llm/stream'</code> 瀑布(L993)可被中间件拦截/短路。</li>
+<li>abstract <code>LlmAdapter</code>(L191)唯必须 <code>stream</code>;<code>prepareCall</code>(L824)将 model 元数据与 dispatch 绑定到一个 registration generation,prepared call 一次性、config 冻结比对(<code>INVALID_PREPARED_CALL</code>)——防 settings/HMR 代际混搭;<code>forAdapter</code>(L878)剥离他家的 replayState。</li>
+</ul>
+<h3>9.2 流词汇与错误(<code>llm/llm/src/types.ts</code>)</h3>
+<ul>
+<li><code>StreamChunk</code>(L312):block-start / text-delta / reasoning-delta / tool-call-delta / block-end / usage / finish;<code>FinishReasonMap</code>(L116):stop / tool-calls / max-tokens / <strong>aborted / error(带 LlmFailure)</strong>;ContentBlock/FinishReason merge-extensible;ReplayEnvelope(L290)承载 adapter 私有重放元数据。</li>
+<li>错误:adapter 抛错在 <code>adapterStream</code> 归一化为 terminal finish chunk(L1003;middleware/consumer 错误仍 thrown);<code>LlmError extends HarnessError</code> 可序列化(status/retryAfterMs/requestId);<code>assertUsableApiKey</code>(L138)诊断凭据但<strong>从不回显 key</strong>。</li>
+</ul>
+<h3>9.3 Retry(<code>retry-policy.ts</code> + llm-retry 插件)</h3>
+<ul>
+<li>归 provider 路由所有:normal 默认 5 次、退避 500ms→10s ±10% jitter、retryable = RATE_LIMIT/SERVER/TIMEOUT/TRANSPORT/EMPTY_RESPONSE(或 always);由可选 <code>llm-retry</code> 插件在 agent 失败步扩展点执行、尊重 Retry-After、delay 可取消、<strong>重试本身也是 durable 事件</strong>。</li>
+</ul>
+<h3>9.4 DeepSeek adapter 与凭据</h3>
+<ul>
+<li><code>llm-deepseek</code>:注册 <code>deepseek-official</code>;baseURL/key <strong>每请求解析</strong>(settings 层叠 cordis.yml),key 经 credential ref(默认 <code>DEEPSEEK_API_KEY</code>)取,缺失报 <code>MISSING_CREDENTIAL</code> 而非加载失败;in-flight 流保持启动时的 facts。</li>
+<li><code>credentials-local</code>:seam 存<strong>引用</strong>(env 变量名),provider 持值;resolve 分层(L617):<strong>进程环境(wins)&gt; <code>$DSH_HOME/.credentials.yaml</code>(托管可写)&gt; cwd/.env &gt; home/.env</strong>——显式 env 是本次运行意图,托管店压过 .env 使 Models 页写入即时生效;跨进程锁 + 原子写 + 只 patch 自己的 key;chokidar 热发布外部编辑;<code>describe()</code>(L627)只暴露 configured/source/writable,永不出值。</li>
+</ul>
+<h3>9.5 多前端,同一 loop</h3>
+<ul>
+<li><code>sdk/server</code>(<code>packages/sdk/server/src/server.ts</code>):订阅 <code>session/event</code>/<code>agent/status</code> 转 JSON-RPC notification(L71-87);<code>session/prompt</code> → <code>agent.followup()</code>(L132-142,fire-and-forget)。</li>
+<li><code>acp</code>:每 session 单 in-flight slot、committed-message 粒度推送(有意放弃 token 级延迟换干净自动化结果);<code>session/request_permission</code> 桥接 approval 瀑布。</li>
+<li>二者皆 transport adapter;scope-filtered dispatch 让各前端只应答自己拥有的 agent;交互渲染归属 Web host。</li>
+</ul>
+<h2>10. 企业 agent 借鉴清单</h2>
+<h3>直接采用(高价值)</h3>
+<ol>
+<li><strong>Event-sourced 会话日志 + 派生投影</strong>(&quot;model-visible ⟺ logged&quot;)——审计/回放/断线恢复/fork 一次解决,企业合规刚需;</li>
+<li><strong>压缩 = 日志上的 replace 操作</strong>:durable 锁(start 事件)+ 原始数据永存(shadowed 不删)+ 崩溃自愈可检测(孤儿 start);</li>
+<li><strong>KV-cache 感知贯穿一切</strong>:注入永远 append-only、summarizer 重放 warm prefix、策略 section 放保留历史之后;</li>
+<li><strong>三段工具瀑布 + 参数不可变</strong>:pre-execute 的 allow/deny/ask 就是权限/审批天然挂点;post-execute 改结果不碰参数;</li>
+<li><strong>fail-closed 审批语义</strong>:封闭结果集 + 异常/野值归一 unavailable + <code>never</code> 先于 listener 裁决(注册顺序无法破坏保证)+ asked/decided 配对审计 + open-turn 包裹;</li>
+<li><strong>凭据引用缝</strong>:存 env 名不存值、四层信任顺序(env &gt; 托管店 &gt; .env 链)、describe() 不泄值、错误不回显 secret;</li>
+<li><strong>信号融合</strong>:wrapper 只能换 exec.signal,registry 重融 caller 原始信号——中间件无法使取消脱离;</li>
+<li><strong>monotone subagent 深度</strong>持久化在 header,resume 无法重置递归预算;</li>
+<li><strong>advisory-only 守卫</strong>:提醒走 tagged additionalContexts(永不渲染为用户发言),从不静默否决;</li>
+<li><strong>prepared-call 代际绑定</strong>防热更新配置混搭;<strong>fail-loud 配置校验</strong>(阈值倒置、未知工具名都在 load 时抛错);</li>
+<li><strong>UI 状态 = pure event fold(projection)</strong>:todos/permissions/plan/approval policy 全是 last-wins 或结构化 fold,resume/fork 免费;</li>
+<li><strong>provider 能力协商 fail-loud</strong>:不支持即 typed error,绝不静默降级。</li>
+</ol>
+<h3>需改造后再用</h3>
+<ul>
+<li>replace 型压缩的 KV cache 失效成本(首个替换 token 起)——已知、写进 README、无法消除;</li>
+<li>SQLite 同步 <code>DatabaseSync</code> 阻塞 JS 线程;FTS5 <code>unicode61</code> 无子串匹配;</li>
+<li>session-query 授权弱(cwd 字符串相等,不认 symlink 等价)——多租户需重新设计信任边界;查询层本身无 caller 授权;</li>
+<li>spill locator 依赖共置文件系统——远程/容器部署需换 backend;</li>
+<li>审批要求 open turn(turn 外无法询问,有意的崩溃语义)、ask-user 对受托子代理直接失败——产品层要消化;</li>
+<li>无用户级长期记忆——需要的话要自建(session-query 是最近替代;或参考 skill catalog 的&quot;目录常驻+正文懒加载&quot;);</li>
+<li>agent-instructions 无 watcher(touch-driven)——高频变更场景需自行加监听。</li>
+</ul>
+<h3>代价意识(元启示)</h3>
+<ul>
+<li>这套 rigor 不免费:每个边界 deep-freeze/snapshot、per-execution WeakMap 记账、memoized disposal 事务、超长 invariant 注释。无多租户持久化需求的团队可用更简单的 loop。</li>
+<li>fork-provider 的 continuable 缺口(TODO)揭示 seeded-prefix child 与 post-seed prompt sections 的真实陷阱。</li>
+<li>最值得带走的是<strong>不变量选择方法</strong>:把&quot;什么必须为真&quot;写成可断言规则(surface 类型必须带 marker、审批事件对必须配对、replace 形状白名单),机械可查的部分交给执行 gate——比抄任何单个实现都值钱。</li>
+</ul>
+<h2>11. 关键文件索引(快查)</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>主题</th>
+<th>文件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主循环状态机 / turn()/step()</td>
+<td><code>packages/core/agent-loop/src/agent.ts</code>(Phase :38-46;turn :246-330;preStep :225-243;buildRequest :426-514)</td>
+</tr>
+<tr>
+<td>并行工具调度</td>
+<td><code>packages/core/agent-loop/src/tool-calls.ts</code>(:59-246)</td>
+</tr>
+<tr>
+<td>重建测试</td>
+<td><code>packages/core/agent-loop/tests/request-reconstruction.spec.ts</code></td>
+</tr>
+<tr>
+<td>Inbox</td>
+<td><code>packages/core/agent/src/inbox.ts</code>(spliced-first :186-192;replay :32-39)</td>
+</tr>
+<tr>
+<td>工具三段瀑布 / 定义</td>
+<td><code>packages/core/tools/src/index.ts</code>(:152/:163/:175;ToolDefinition :222-288;ask→approval :1689-1712;wireSchemas :980-1001)</td>
+</tr>
+<tr>
+<td>日志投影 / surface 校验</td>
+<td><code>packages/core/session/src/index.ts</code>(:726-747 deriveMessages)、<code>src/surface.ts</code>(:83-114;:184-208)</td>
+</tr>
+<tr>
+<td>Prompt 组装</td>
+<td><code>packages/core/system-prompt/src/index.ts</code>(assemble :467-542;renderPrompt :212-295;orderTools :140-183)</td>
+</tr>
+<tr>
+<td>Scope</td>
+<td><code>packages/core/scope/src/index.ts</code>(createScope :137-147;路由 :170-185)</td>
+</tr>
+<tr>
+<td>Compaction</td>
+<td><code>packages/compaction/compaction-basic/src/index.ts</code>(:137-224 触发;:293-304 阈值;:368-420 compactNow)、<code>src/region.ts</code>(:98-134 选区;:374-378 小于校验)、<code>src/summarizer.ts</code>(:121-182 KV 重放;:189-195 surface replace)</td>
+</tr>
+<tr>
+<td>Spill</td>
+<td><code>packages/spill/spill-policy</code>、<code>spill-local/src/index.ts</code></td>
+</tr>
+<tr>
+<td>Session-query</td>
+<td><code>packages/session-query/</code>(逻辑语料)、<code>session-query-sqlite</code>(FTS5)、<code>tool-session-query</code>(5 工具)</td>
+</tr>
+<tr>
+<td>Subagent runtime / continuable</td>
+<td><code>packages/subagent/src/index.ts</code>、<code>src/types.ts</code>(:292-331)、<code>src/continuation.ts</code>(Activation :197-246;ChildLock :326-347)、<code>src/depth.ts</code></td>
+</tr>
+<tr>
+<td>Guard</td>
+<td><code>packages/guard/repeat-tool-reminder/src/index.ts</code>、<code>timeout-policy/src/index.ts</code>(:55-81)</td>
+</tr>
+<tr>
+<td>审批</td>
+<td><code>packages/interaction/user-approval/src/index.ts</code>(request :257;decide :304;policy fold :112)</td>
+</tr>
+<tr>
+<td>Ask-user / Commands / Presets</td>
+<td><code>packages/interaction/user-questions/src/index.ts</code>、<code>commands/src/index.ts</code>、<code>permission-presets/src/index.ts</code></td>
+</tr>
+<tr>
+<td>Plan mode / Todo</td>
+<td><code>packages/plan/plan-mode/src/index.ts</code>、<code>packages/todo/tool-todo/src/index.ts</code></td>
+</tr>
+<tr>
+<td>LLM</td>
+<td><code>packages/llm/llm/src/index.ts</code>(registry :365/:385;prepareCall :824;stream :985)、<code>src/types.ts</code>(StreamChunk :312)、<code>src/retry-policy.ts</code>、<code>packages/llm/llm-deepseek/src/index.ts</code></td>
+</tr>
+<tr>
+<td>Credentials</td>
+<td><code>packages/credentials/credentials-local/src/index.ts</code>(resolve :617;describe :627)</td>
+</tr>
+<tr>
+<td>SDK / ACP 前端</td>
+<td><code>packages/sdk/server/src/server.ts</code>、<code>packages/acp/acp/src/index.ts</code></td>
+</tr>
+<tr>
+<td>Agent team(实验)</td>
+<td><code>packages/experimental/agent-team/src/index.ts</code>、<code>roster.ts</code>(:91-121)</td>
+</tr>
+</tbody>
+</table></div>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-08-25-2d58bdcedf8255d3352add512e8c7d47.html" rel="canonical">https://iintothewind.github.io/posts/2026-08-25-2d58bdcedf8255d3352add512e8c7d47.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+<!-- Post footer placeholder: empty for now; add agent-camouflage markup here later if needed. -->
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

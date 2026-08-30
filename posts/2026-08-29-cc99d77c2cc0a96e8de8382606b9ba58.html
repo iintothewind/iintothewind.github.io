@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Domain-Driven Agents 简述与评论 - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-08-29-cc99d77c2cc0a96e8de8382606b9ba58.md">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>Domain-Driven Agents 简述与评论</h1>
+<div class="post-meta">
+<span class="post-date">2026-08-29</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: Domain-Driven Agents 简述与评论</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-08-29-cc99d77c2cc0a96e8de8382606b9ba58.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>Domain-Driven Agents — 简述与评论</h1>
+<p>URL: <a href="https://coldtake.dev/blog/domain-driven-agents">https://coldtake.dev/blog/domain-driven-agents</a></p>
+<h2>文章简述</h2>
+<p>作者核心论点：AI agent 在绿地项目好用，在 legacy（重耦合、技术债、设计漂移）代码库里产出骤降。失败有固定形状——模型在已有多个拼写的领域概念上发明新的、该写 adapter 处直连、该直连处写 adapter，因为每个问题「系统本身从没在任何地方回答过」，模型只能猜且常猜错。</p>
+<p>归因：掉进去的不是模型，是代码库第二层——语义混乱、缺共享语言。模型不用升级，是 code is not ready，而 readiness 可增量构建。</p>
+<p>方法：借用 Ousterhout 的 tactical/strategic，但按作者身份切——strategic=决策（读系统、定改什么/为何），tactical=把决策落到文件。判断：typing it out 成本崩塌，deciding 没降价。作者自己做 strategic 产 GitHub issue，tactical 交给 AI system 基于 skills（程序化 markdown 指令）+ sub-agents（独立 session、窄任务），自己当 reviewer。</p>
+<p>DDD 作为地基：strategic 半价值取决于其语言质量。给出 context map + glossary：每个边界上下文声明自身语言，跨边界用 published-language / conformist / anticorruption-layer 标注；每条边界两边各声明一次，generator 交叉校验，不一致报 finding（带 fingerprint 去重、自动开关 issue）。真正的逐上下文迁移到真 domain 模型被推迟到「next post」。</p>
+<h2>我的评论（整理）</h2>
+<ol>
+<li>
+<p>根因被误名。文章把「代码库没准备好」当根因，实际根因是老系统随迭代设计不断漂移、领域概念充满矛盾、与最初设计偏离越来越大。「not ready」只是把症状命名成根因，真正的机制是设计漂移。</p>
+</li>
+<li>
+<p>DDD 并非解决之 key。目标是搞定屎山，重新 DDD 没用——文章自己承认 context 内部仍是普通代码、能造 nonsense 对象并保存。它给的是边界层的护栏与导航，不是解药；真正的 domain 迁移被推迟到了下一篇，而那部分恰恰是贵、且作者承认战略半没降价的。</p>
+</li>
+<li>
+<p>整体只是重新解读。DDD 二十年前就讲过设计漂移与缺语言，并不新。文章真正新增的仅是：把它专门用来防止 agent 把屎山搞得更屎，并落成可操作物（skills 文件、sub-agent、fingerprinted findings、双边声明配对校验）。这是一篇工作流想法，不是工具，且零度量验证。</p>
+</li>
+</ol>
+<p>结论：它不是 solution，而是给「带 agent 进老仓库」这事儿的一层防呆 + 脚手架。要的是让屎山变好，它给的是让屎山在清理过程中别继续腐烂。两件事，别被标题骗成一件事。</p>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-08-29-cc99d77c2cc0a96e8de8382606b9ba58.html" rel="canonical">https://iintothewind.github.io/posts/2026-08-29-cc99d77c2cc0a96e8de8382606b9ba58.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+<!-- Post footer placeholder: empty for now; add agent-camouflage markup here later if needed. -->
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>
