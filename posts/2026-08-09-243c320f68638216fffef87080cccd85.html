@@ -68,20 +68,27 @@
 <blockquote>
 <p><strong>参考实现（已验证）</strong>：omp（<code>can1357/oh-my-pi</code>）已经把本文第 3 节的大部分机制工程化落地，
 分析见 <a href="https://gist.github.com/iintothewind/168f4cd49504e3aa8f7cdf86e8a0bbbd">omp 上下文管理设计解析：与官方 Pi 的对比</a>。
-本文第 1、2 节是对 ZeroClaw 现状的独立源码分析（仍然有效）；第 3 节的优化路线据此从「从零设计」修正为「移植 omp 已验证机制」。</p>
+本文第 1、2 节是对 ZeroClaw 现状的独立源码分析；第 3 节的优化路线据此从「从零设计」修正为「移植 omp 已验证机制」。</p>
+<p><strong>复核</strong>：2026-08-31 @ HEAD <code>4b73b37</code>（当日 pull 19 个提交，未触及上下文管理区域）。
+相对初版两处事实修正：① 裁剪是<strong>双路径</strong>（A 路径当前 token 的 2/3，B 路径配置窗口的 90%），初版只写了 A 路径；
+② provider 配置的 <code>context_window</code> 字段已可读，但自动 per-model 解析四个 PR 仍未合并。</p>
 </blockquote>
 <h2>1. 现状（源码证据）</h2>
-<h3>1.1 裁剪：溢出后被动触发，无脑砍 1/3</h3>
+<h3>1.1 裁剪：溢出后被动触发，两条路径预算不一致</h3>
+<p>两条路径<strong>都只在 provider 返回 <code>context_window_exceeded</code> 之后才触发</strong>，没有任何发送前预算检查：</p>
 <ul>
-<li>仅在 provider 返回 <code>context_window_exceeded</code> 之后才触发（<code>context_recovery.rs</code>），而不是发送前预算。</li>
-<li>触发时预算 = 当前 token 的 <strong>2/3</strong>（<code>tokens_now * 2 / 3</code>）——不是按模型窗口留余量，是砍三分之一。</li>
-<li>裁完插入 breadcrumb 并重试一次。长会话反复「溢出 → 砍 1/3 → 重试」。</li>
+<li><strong>A 路径</strong>（<code>context_recovery.rs:59</code> <code>try_recover_context_overflow</code>）：
+预算 = <strong>当前 token 的 2/3</strong>（<code>context_recovery.rs:81</code>，<code>tokens_now.saturating_mul(2) / 3</code>）——不是按模型窗口留余量，是无差别砍三分之一。</li>
+<li><strong>B 路径</strong>（交互式循环 <code>loop_.rs:2638</code>）：
+预算 = <strong>配置窗口的 90%</strong>（<code>eff_model_context_window * 9 / 10</code>，窗口值来自 <code>loop_.rs:1248</code> 的 <code>agent.resolved.model_context_window</code>）——数字上更合理，但仍是被动触发，且依赖 1.2 那个不真实的窗口数字。</li>
 </ul>
-<h3>1.2 窗口：32k 硬顶是配置默认值，不是模型真实窗口</h3>
+<p>两条路径的裁剪动作相同：整轮丢弃最老 turn（不拆 tool_use/tool_result 对）→ 插入 model-visible breadcrumb → 重试一次。长会话反复「溢出 → 砍 → 重试」。</p>
+<h3>1.2 窗口：32k 默认值，无模型真实窗口的自动解析</h3>
 <ul>
-<li><code>max_context_tokens</code> 默认 <strong>32_000</strong>（<a href="http://schema.rs">schema.rs</a> 默认值），即使模型窗口 200k 也卡在 32k。</li>
-<li>#7100 的 per-model <code>context_window</code> 解析（#9535/#9854/#9083/#8966）均未合并，runtime 对「模型窗口到底多大」没有可靠信息。</li>
-<li>窗口数字本身不是真的，谈何用满。</li>
+<li><code>max_context_tokens</code> / <code>model_context_window</code> 默认值均为 <strong>32_000</strong>（<code>schema.rs:3535-3536</code>），未配置时的 fallback 常量同样是 32_000（<code>schema.rs:4692</code>）。</li>
+<li>provider 配置字段 <code>context_window</code> 已可读取（<code>effective_model_context_window</code>，<code>schema.rs:4198</code>）——B 路径的 90% 至少是配置过的数字；但手动不配，仍是 32k 硬顶。</li>
+<li>自动 per-model <code>context_window</code> 解析（#7100 线：#9535/#9854/#9083/#8966）<strong>截至 2026-08-31 全部 open 未合并</strong>。runtime 对「模型窗口到底多大」仍没有可靠信息。</li>
+<li>窗口数字本身不是模型事实，谈何用满。</li>
 </ul>
 <h3>1.3 缓存：仅 Anthropic 主动标记，runtime 无缓存友好约束</h3>
 <ul>
@@ -112,19 +119,19 @@
 <tr>
 <td>P1</td>
 <td>裁剪是溢出后被动触发，不是发送前预算管理</td>
-<td>context_recovery.rs:71,80</td>
+<td>context_recovery.rs:59；loop_.rs:2631-2638</td>
 <td>窗口利用率低、延迟感知差（先报错才补救）</td>
 </tr>
 <tr>
 <td>P2</td>
-<td>预算 = 当前 2/3，与模型窗口无关</td>
-<td>context_recovery.rs:80</td>
+<td>两条裁剪路径预算不一致：当前 token 的 2/3 / 配置窗口的 90%，均与模型真实窗口脱节</td>
+<td>context_recovery.rs:81；loop_.rs:2638</td>
 <td>该用满的窗口没用满；该多砍的没砍够</td>
 </tr>
 <tr>
 <td>P3</td>
-<td>默认窗口 32k 硬编码，per-model 解析未合</td>
-<td><a href="http://schema.rs:3430">schema.rs:3430</a>, #7100</td>
+<td>32k 默认窗口，per-model 自动解析未合（#9535/#9854/#9083/#8966 open）</td>
+<td>schema.rs:3535-3536, 4198, 4692；#7100 线</td>
 <td>大窗口模型白费</td>
 </tr>
 <tr>
@@ -149,14 +156,14 @@
 </blockquote>
 <h3>R1（前置）：真实窗口解析落地 → omp：promotion / 恢复路径</h3>
 <ul>
-<li>合并 #7100 线的 per-model <code>context_window</code> 解析，runtime 以此为准。</li>
+<li>合并 #7100 线的 per-model <code>context_window</code> 解析（#9535/#9854/#9083/#8966，截至 2026-08-31 全部 open），runtime 以此为准。</li>
 <li>无真实窗口，后续预算优化都在错误数字上做文章。</li>
 </ul>
 <h3>R2：缓存经济学基建：稳定前缀 + 追加日志 → omp：StablePrefix / AppendOnlyLog</h3>
 <ul>
 <li><strong>StablePrefix</strong>（<code>append-only-context.ts</code>）：system prompt + 工具规格只计算一次并冻结，跨轮字节完全相同；仅 MCP 重连等事件 <code>invalidate()</code> 重建。</li>
 <li><strong>AppendOnlyLog</strong>：消息只增不改，唯一改写口 <code>replaceTail()</code> 预留给压缩。</li>
-<li>直接替代 P4 的根因：现在的「砍最老 1/3」是前缀删除，反着来的。</li>
+<li>直接替代 P4 的根因：现在的「砍最老整轮」是前缀删除，反着来的。</li>
 </ul>
 <h3>R3：发送前预算 + 多相位触发 → omp：多相位触发</h3>
 <ul>
@@ -196,7 +203,7 @@
 <hr>
 <h2>5. 一句话总结</h2>
 <blockquote>
-<p>ZeroClaw 现状：溢出 → 无差别砍最老 1/3 → 重试，窗口 32k 硬顶没用满，前缀裁剪自废缓存。
+<p>ZeroClaw 现状：溢出 → 被动砍最老整轮（两条路径：当前 token 的 2/3 / 配置窗口的 90%）→ 重试，窗口 32k 默认顶没用满，前缀裁剪自废缓存。
 正确路径不是重新发明，而是<strong>移植 omp 已验证机制</strong>：稳定前缀 + 追加日志（R2）→ 发送前多相位触发（R3）→ 工具结果分类（R4）→ 缓存多道闸修剪（R5）→ 统一预算管线（R6），前置仍是真实窗口解析（R1）。
 若要比 omp 更进一步，唯一空位是「按价值取舍」的语义层（omp 明确放弃的位置）。</p>
 </blockquote>

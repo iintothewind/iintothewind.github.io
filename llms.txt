@@ -9,7 +9,8 @@ Blog: https://iintothewind.github.io
 ## Agent-readable Markdown mirrors
 Each post is also published as Markdown for automated readers:
 
-## Posts (49)
+## Posts (50)
+- [严防资本外逃](https://iintothewind.github.io/posts/2026-09-06-493a17a31e6ab04014da64b049c2e4d7.md) — 严防「资本外逃」 一年出走1万亿美元，富途老虎被罚之后，如何实现财富自由? 去炒A股?? 来源: https://www.bilibili.com/video/BV1N1t36JEZL 如果炒股能赚钱
 - [博弈论遇上真人：从 100 块钱开始的三道裂缝](https://iintothewind.github.io/posts/2026-08-29-6a851042e585784fe0e41ec80957de10.md) — 博弈论遇上真人：从 100 块钱开始的三道裂缝 整理自视频字幕 · 出处：词越复沉 假设我给你 100 块钱，但有个条件：你必须和一个陌生人分。怎么分由你决定，对方只有两个选择——接受或者拒绝。他接受
 - [Domain-Driven Agents 简述与评论](https://iintothewind.github.io/posts/2026-08-29-cc99d77c2cc0a96e8de8382606b9ba58.md) — Domain-Driven Agents — 简述与评论 URL: https://coldtake.dev/blog/domain-driven-agents 文章简述 作者核心论点：AI agen
 - [Agent-native database access: why GUI clients are the wrong abstraction for AI-driven data workflows](https://iintothewind.github.io/posts/2026-08-28-341258a0aad3f94ff4536280294a6fa3.md) — Agent-Native Database Access: A Different Take Source: V2EX #1237986 — "公司不让装 Navicat 了，就自己写了一个数据库客户
