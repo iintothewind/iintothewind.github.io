@@ -64,148 +64,177 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>ZeroClaw 上下文管理现状分析与优化路线（RFC 草稿）</h1>
+<h1>ZeroClaw 上下文管理现状分析与优化路线（RFC 草稿 v2）</h1>
 <blockquote>
-<p><strong>参考实现（已验证）</strong>：omp（<code>can1357/oh-my-pi</code>）已经把本文第 3 节的大部分机制工程化落地，
-分析见 <a href="https://gist.github.com/iintothewind/168f4cd49504e3aa8f7cdf86e8a0bbbd">omp 上下文管理设计解析：与官方 Pi 的对比</a>。
-本文第 1、2 节是对 ZeroClaw 现状的独立源码分析；第 3 节的优化路线据此从「从零设计」修正为「移植 omp 已验证机制」。</p>
-<p><strong>复核</strong>：2026-08-31 @ HEAD <code>4b73b37</code>（当日 pull 19 个提交，未触及上下文管理区域）。
-相对初版两处事实修正：① 裁剪是<strong>双路径</strong>（A 路径当前 token 的 2/3，B 路径配置窗口的 90%），初版只写了 A 路径；
-② provider 配置的 <code>context_window</code> 字段已可读，但自动 per-model 解析四个 PR 仍未合并。</p>
+<p><strong>v2 复核</strong>：2026-09-09 @ <strong>zerolite <code>ac36fd0e2</code></strong>。v1 复核的是 2026-08-31 的 master（<code>4b73b37</code>），
+zerolite 已把 v1 的多项「现状」与「待办」变成既成事实——<strong>v1 的 1.1 / 1.2 / P1 / P3 / R1 / R7 对 zerolite 已过时</strong>，本版逐条重述并附 HEAD 上的源码证据。
+参考实现仍是 omp（<code>can1357/oh-my-pi</code>），但本版的核心修正是：<strong>omp 的条目级修剪模型与 zerolite 的头部整轮截断模型不兼容，R4/R5 的移植前提不成立</strong>，
+真正的剩余优化在别处（见第 5 节 ROI 排序）。</p>
 </blockquote>
-<h2>1. 现状（源码证据）</h2>
-<h3>1.1 裁剪：溢出后被动触发，两条路径预算不一致</h3>
-<p>两条路径<strong>都只在 provider 返回 <code>context_window_exceeded</code> 之后才触发</strong>，没有任何发送前预算检查：</p>
+<h2>1. 现状（zerolite <code>ac36fd0e2</code> 源码证据）</h2>
+<h3>1.1 裁剪：已是发送前预算 + 单内核，动作是「整轮截断到低水位」</h3>
 <ul>
-<li><strong>A 路径</strong>（<code>context_recovery.rs:59</code> <code>try_recover_context_overflow</code>）：
-预算 = <strong>当前 token 的 2/3</strong>（<code>context_recovery.rs:81</code>，<code>tokens_now.saturating_mul(2) / 3</code>）——不是按模型窗口留余量，是无差别砍三分之一。</li>
-<li><strong>B 路径</strong>（交互式循环 <code>loop_.rs:2638</code>）：
-预算 = <strong>配置窗口的 90%</strong>（<code>eff_model_context_window * 9 / 10</code>，窗口值来自 <code>loop_.rs:1248</code> 的 <code>agent.resolved.model_context_window</code>）——数字上更合理，但仍是被动触发，且依赖 1.2 那个不真实的窗口数字。</li>
+<li>单一决策内核 <code>plan_pre_send_trim</code>（<code>turn/context_pipeline.rs</code>）：三条路径（轮界预防、reported-budget enforce、溢出恢复）共用，v1 时代「三处各自推导、语义漂移」已不存在。</li>
+<li>token 计数已用 provider 权威值锚定：<code>ContextCalibration</code>（<code>history_trim.rs</code>）以 provider 报告的 prompt 大小为锚，本地启发式只为「已 append 未计费尾部」补价——omp <code>calculateContextTokens</code> 的 Rust 等价物。</li>
+<li>溢出恢复保留唯一的更激进档：强制收缩到当前 2/3（<code>plan_pre_send_trim</code> 的 <code>forced_shrink</code>），语义正确——provider 已拒绝，next-fit 到预算线不够深。</li>
+<li><strong>裁剪动作 = <code>trim_to_recent_turns</code>：只保留最近 N 个完整 turn</strong>（默认 5，clamp 1..10），不看裁后 token 数。这是<strong>有意的低水位设计</strong>，理由见 1.3。</li>
 </ul>
-<p>两条路径的裁剪动作相同：整轮丢弃最老 turn（不拆 tool_use/tool_result 对）→ 插入 model-visible breadcrumb → 重试一次。长会话反复「溢出 → 砍 → 重试」。</p>
-<h3>1.2 窗口：32k 默认值，无模型真实窗口的自动解析</h3>
+<h3>1.2 窗口：per-model 解析已落地（v1 的 P3 关闭）</h3>
+<p>三级链（<code>schema.rs:4222</code> <code>effective_model_context_window</code>）：</p>
+<ol>
+<li>显式 provider <code>context_window</code>（config）永远优先；</li>
+<li>本地表 <code>context_window.rs::MODEL_CONTEXT_WINDOWS</code>：按归一化 model id 最长前缀匹配，记录的是<strong>保守下界</strong>（同族取最窄可得值）；</li>
+<li><code>UNCONFIGURED_CONTEXT_WINDOW_FALLBACK = 32_000</code>（<code>schema.rs:4721</code>）仅作最后兜底。</li>
+</ol>
+<p>v1 追的 #7100 线四个 PR 不再是 zerolite 的前置依赖。</p>
+<h3>1.3 缓存：追加日志已接线，头部截断的经济学已经自洽</h3>
 <ul>
-<li><code>max_context_tokens</code> / <code>model_context_window</code> 默认值均为 <strong>32_000</strong>（<code>schema.rs:3535-3536</code>），未配置时的 fallback 常量同样是 32_000（<code>schema.rs:4692</code>）。</li>
-<li>provider 配置字段 <code>context_window</code> 已可读取（<code>effective_model_context_window</code>，<code>schema.rs:4198</code>）——B 路径的 90% 至少是配置过的数字；但手动不配，仍是 32k 硬顶。</li>
-<li>自动 per-model <code>context_window</code> 解析（#7100 线：#9535/#9854/#9083/#8966）<strong>截至 2026-08-31 全部 open 未合并</strong>。runtime 对「模型窗口到底多大」仍没有可靠信息。</li>
-<li>窗口数字本身不是模型事实，谈何用满。</li>
+<li><strong><code>AppendOnlyLog</code> 已接入主 loop</strong>（<code>turn/mod.rs</code> 的 <code>provider_log</code>）：按<strong>位置</strong>存 FNV-1a digest，<code>sync</code> 保最长字节稳定前缀；列表变短（= 任何裁剪/压缩）直接 <code>clear()</code> 重建（<code>log.rs:100-117</code>）。</li>
+<li>这条实现细节就是设计依据的物证：<strong>头部删一条，<code>messages[0]</code> 的 digest 立刻对不上，稳定前缀归零——任何头部删除都要为剩余后缀付一次完整 cacheWrite</strong>。「少删点」不「少付点」。</li>
+<li>因此 <strong>v1 设想的浅裁高频触发是纯亏</strong>：对几乎不变大的后缀反复重写。zerolite 收敛到「单高水位触发、一次深裁到 keep_recent_turns」是<strong>该模型下的正确终态</strong>：一次重写换 K 轮便宜追加。</li>
+<li>Anthropic 标记照旧：system 块 / tools / 最后一条消息 <code>cache_control: ephemeral</code>（<code>anthropic.rs:620,632,1406</code> 等）。<strong><code>CacheControl</code> 无 <code>ttl</code> 字段 → 全程默认 5 分钟 ephemeral</strong>，1 小时扩展缓存未使用。</li>
+<li><strong><code>StablePrefix</code>（<code>prefix.rs</code>）未接线</strong>：机制完整（指纹冻结 / <code>invalidate</code> / version 计数 / 所有权断开），runtime 零调用点。见 R2。</li>
 </ul>
-<h3>1.3 缓存：仅 Anthropic 主动标记，runtime 无缓存友好约束</h3>
+<h3>1.4 根因更新：v1 的三块里两块已经有人负责了</h3>
 <ul>
-<li>Anthropic：system 前缀、最后一条消息、最后一个 tool 定义均标 <code>cache_control: ephemeral</code>（<code>anthropic.rs:358-421</code>）——provider 层照抄最佳实践，runtime 无参与。</li>
-<li>OpenAI：仅读取 <code>cached_tokens</code> 计费（<code>openai.rs:596</code>），客户端不标记（provider 自动缓存，合理）。</li>
-<li>Bedrock：<code>should_cache_system</code> 只在 system &gt; 3072 token 时缓存。</li>
-<li><strong>核心冲突</strong>：Anthropic 缓存是<strong>前缀缓存</strong>。每次溢出裁掉最老整轮 → 前缀变化 → 缓存全失效 → 重试 = 缓存重写 + 重试双倍成本。修剪越频繁，缓存命中率越低，甚至更贵。</li>
+<li>「裁剪只为单次正确性兜底」不再成立：现在有发送前预算、有 provider 权威计数、裁剪深度有缓存经济学理由。</li>
+<li>「窗口是配置默认值不是模型事实」不再成立。</li>
+<li><strong>仍然成立的一条：头部字节每轮被原地重建</strong>。<code>sys_msg.content = build_system_prompt_for_turn(...)</code> 在每个 iteration 里执行（<code>loop_.rs:1909</code>、<code>2466</code> 两处）。它抖不抖取决于重建输入（见 R2 的漂移源清单）。</li>
 </ul>
-<h3>1.4 根因：三块都为「单次请求正确性」兜底，无一块为「长会话连续性/经济性」负责</h3>
-<ul>
-<li>裁剪是 safety net（不崩、不产生幻觉替代物），设计输入里没有「利用率」「缓存命中率」。</li>
-<li>窗口是配置默认值，不是模型事实。</li>
-<li>缓存是 provider 自带的，runtime 无约束。</li>
-<li>#8196 砍掉 LLM summary 后，「确定性裁剪」成为唯一幸存者——最简单、最不易错，代价就是窗口空置 + 缓存自废。</li>
-</ul>
-<hr>
-<h2>2. 问题清单</h2>
+<h2>2. 问题清单（v2 状态）</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
 <th>#</th>
 <th>问题</th>
+<th>v1 状态 → v2</th>
 <th>证据</th>
-<th>影响</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>P1</td>
-<td>裁剪是溢出后被动触发，不是发送前预算管理</td>
-<td>context_recovery.rs:59；loop_.rs:2631-2638</td>
-<td>窗口利用率低、延迟感知差（先报错才补救）</td>
+<td>溢出后被动触发</td>
+<td><strong>已修</strong></td>
+<td><code>context_pipeline.rs</code>；<code>enforce_reported_budget</code>（<code>turn/mod.rs:260</code>）</td>
 </tr>
 <tr>
 <td>P2</td>
-<td>两条裁剪路径预算不一致：当前 token 的 2/3 / 配置窗口的 90%，均与模型真实窗口脱节</td>
-<td>context_recovery.rs:81；loop_.rs:2638</td>
-<td>该用满的窗口没用满；该多砍的没砍够</td>
+<td>两条路径预算不一致</td>
+<td><strong>已修</strong>（单内核）；残余=轮数粒度的低水位在超大轮次会话里每轮丢最老一轮，<code>MIN_KEEP_RECENT_TURNS=1</code> 后无处可退——<strong>轮粒度约束，非水位定义问题</strong></td>
+<td><code>history_trim.rs</code>；<code>scattered_types.rs:170-176</code></td>
 </tr>
 <tr>
 <td>P3</td>
-<td>32k 默认窗口，per-model 自动解析未合（#9535/#9854/#9083/#8966 open）</td>
-<td>schema.rs:3535-3536, 4198, 4692；#7100 线</td>
-<td>大窗口模型白费</td>
+<td>32k 硬顶</td>
+<td><strong>已修</strong></td>
+<td><code>schema.rs:4222</code>；<code>context_window.rs</code></td>
 </tr>
 <tr>
 <td>P4</td>
-<td>前缀裁剪破坏 Anthropic 前缀缓存</td>
-<td><a href="http://anthropic.rs">anthropic.rs</a> 缓存标记 + history_trim</td>
-<td>缓存命中率低，重试 + 重写双倍成本</td>
+<td>前缀裁剪自废缓存</td>
+<td><strong>设计上接受</strong>：任何头部删除都全灭，故深裁摊薄重写成本；剩余可优化的是<strong>触发频率</strong>（窗口利用）与<strong>头部本身稳定性</strong>（R2）</td>
+<td><code>log.rs:100-117</code> 位置化 digest + shrink 即 clear</td>
 </tr>
 <tr>
 <td>P5</td>
-<td>无统一预算管线：窗口/缓存/裁剪互不知情</td>
-<td>三文件各自独立</td>
-<td>无法做「缓存友好裁剪」「稳定前缀」等优化</td>
+<td>工具结果无分类</td>
+<td><strong>重定义</strong>：在头部截断模型下「分类指导裁谁」无消费者（trim 无力豁免单条消息）；有价值的是<strong>入口时</strong>处置（见 R4 降级说明）</td>
+<td><code>results_collect.rs</code>（name 在作用域）→ <code>history_append.rs</code>（<code>individual_results</code> 丢 name）</td>
+</tr>
+<tr>
+<td><strong>P6（新）</strong></td>
+<td><strong>成本账系统性低估前缀重写代价</strong></td>
+<td><code>cache_creation_input_tokens</code> 在 <code>anthropic.rs:1836-1846</code> 被折进 <code>input_tokens</code> 总数后丢弃；<code>cost.rs</code> 只有 read(0.1x)+其余(1x) 两档，现实是三档（<strong>write 1.25x</strong>）。被抹掉的差额恰好等于 trim/前缀抖动的全部代价——RFC 所有决策本该用这个数说话，现在这个数是错的</td>
+<td><code>anthropic.rs:1835-1846</code>；<code>cost.rs:312-365</code></td>
 </tr>
 </tbody>
 </table></div>
-<hr>
-<h2>3. 优化路线：以 omp 为已验证参考实现的移植路径</h2>
+<h2>3. 路线项状态（v2）</h2>
+<h3>R1：真实窗口解析 — ✅ 已落地</h3>
+<p>见 1.2。v1 本节及其对 1.2 的批评删除。</p>
+<h3>R2：稳定前缀 + 追加日志 — ◐ 半落地，收尾是<strong>有条件项</strong></h3>
+<ul>
+<li>AppendOnlyLog 已接线；StablePrefix 未接线。</li>
+<li>StablePrefix 不增加缓存覆盖面（history 增量靠 Anthropic 断点自动走），它唯一的事是<strong>保证/暴露头部字节跨轮不变</strong>。接线本身不产生收益：若头部每轮合法地变，接上去只会如实记录 <code>version++</code>。</li>
+<li><strong>头部漂移源清单（实测）</strong>：
+<ul>
+<li>日期：<code>## Current Date</code> 是 <code>%Y-%m-%d</code> <strong>天级</strong>（<code>system_prompt.rs:455-459</code>）→ 日内稳定，跨午夜抖一次。</li>
+<li><code>tool_filter_groups</code> dynamic 模式：MCP 工具集<strong>按当条消息关键词</strong>过滤，同时喂 system prompt 工具段与 provider tool specs（<code>loop_.rs:419-439,489</code>）→ 配了它的会话前缀每轮买断。<strong>这是显式 opt-in、默认空</strong>（<code>schema.rs:5916-5927,3604</code>），本意是「没命中的轮次少付几万 token 的 MCP 定义费」换「翻转轮重写前缀（1.25x）」——对挂着大 MCP 的用户是划算的取舍，不是无收益设计；缺的是文档写明它烧前缀缓存。</li>
+<li>MCP 重连 / skill 激活 / 模型切换：<strong>该</strong> invalidate 的合法事件。</li>
+<li>（<strong>推断，未核</strong>）deferred tool 激活（<code>ActivatedToolSet</code> 进 tool specs）是否在中途改变工具段字节 → 激活轮的前缀买断。</li>
+</ul>
+</li>
+<li><strong>结论</strong>：接线前先答「你的部署配 <code>tool_filter_groups</code> 吗 / R7 数据显示头部每轮买断吗」，否则优先级低。</li>
+</ul>
+<h3>R3：发送前预算 + 多相位触发 — ✅ 实质落地</h3>
+<p>单内核 + provider 权威计数 + 溢出强制深裁。omp 的 mid-turn / post-agent-end 分相在头部截断模型下增益很小：越线即裁没有「挑时机」余地，未采。<strong>结案，不再追。</strong></p>
+<h3>R4：工具结果分类 — <strong>降级为「入口时子集」，sidecar map 设计整体推迟</strong></h3>
+<ul>
+<li>v1 设计纪要（<code>Map&lt;tool_call_id, MessageClass&gt;</code>、四条硬不变量）<strong>存档不实施</strong>。理由：map 的存在理由是<strong>事后 trim 侧消费者</strong>（按 class 豁免/挑选），而当前 trim 是整轮保留、&quot;never cut a turn in half&quot;，<strong>protectedTools 没有消费者</strong>；且 skill 内容在 system prompt（稳定前缀）里，protected 的对象本身所剩无几。</li>
+<li>有价值的子集是<strong>入口时</strong>的 supersede（同文件重复 read 留最新）与 useless 剔除（零匹配 grep→stub）：两者都在 append 边界决策，而 name/args 在 <code>results_collect.rs</code> <strong>本来就在作用域</strong>——把 name 带进 <code>append_tool_round_to_history</code> 即可，零 sidecar、零对齐不变量、零缓存代价（消息未入历史，谈不上污染前缀）。</li>
+<li>入口处已有无差别的 <code>max_tool_result_chars</code> 截断兜底单条体积；子集收益取决于「重复 read / 空结果在真实会话的 token 占比」——<strong>先测量再动手</strong>（第 5 节 #5）。</li>
+<li>复活条件：条目级修剪立项的那天，map 与其四条不变量按 v1 纪要原样启用（分类规则与载体分离的设计保留）。</li>
+</ul>
+<h3>R5：多道闸修剪 — <strong>对当前模型重分类：四道闸三道空转</strong></h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>闸</th>
+<th>在头部整轮截断模型下</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>温区守卫（不动最近 ~8k）</td>
+<td><strong>空转</strong>——只删头部，天然不碰尾部</td>
+</tr>
+<tr>
+<td>compaction boundary</td>
+<td><strong>空转</strong>——#8196 后无 compaction</td>
+</tr>
+<tr>
+<td>minimumSavings</td>
+<td><strong>空转</strong>——越线必须立刻裁，无「省不够不动手」选项</td>
+</tr>
+<tr>
+<td>idle 冷窗（90min）</td>
+<td>唯一勉强成立，但 zerolite 的 TTL 是<strong>默认 5 分钟</strong>（无 <code>ttl</code> 字段），omp 的 90 分钟是按 1h 扩展缓存算的；5 分钟下缓存本就冷得频繁，且代价反向：深裁那一次经常<strong>热着</strong>付费</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>结论修正</strong>：v1 说「R4 不落地 ⇒ R5 依赖未满足」——更准确的是 <strong>R5 是条目级修剪（改中间某条）的配套装置</strong>（管「改太贵，挑便宜时机改」），zeroclaw 的动作是头部整体截断，不存在「便宜时机」。此前 coding agent 半程后长成原管线补丁，<strong>是架构模型不匹配的必然，不是执行质量问题</strong>。条目级修剪立项之日 R5 随其复活，届时含：wire bytes 级前缀对齐（任何中间删除改写其后全部字节，<code>log.rs</code> 只是如实反映）、TTL 感知的改写时机。</p>
+<h3>R6：统一预算管线 — ◐ 已实质大半</h3>
+<p><code>context_pipeline.rs</code> 单内核 + <code>zeroclaw-context</code> 独立 crate（机制与策略分离、可单测）已是该管线的雏形。剩余（provider cache 标记收编）收益低，不排期。</p>
+<h3>R7：命中率报表 — ✅ 采集链已存在（v1 高估了工作量）</h3>
+<ul>
+<li>OpenAI 兼容（含 vLLM）：<code>prompt_tokens_details.cached_tokens</code> → <code>cached_input_tokens</code>（<code>openai.rs:612,698</code>）；<strong>vLLM 侧需 <code>--enable-prompt-tokens-details</code> 启动</strong>，否则整个 details 缺席。</li>
+<li>Anthropic：<code>cache_read_input_tokens</code> → <code>cached_input_tokens</code>（<code>anthropic.rs:1846</code>）。</li>
+<li>下游：<code>cost.rs</code> 按 <code>cached_rate</code> 折扣计费；OTel 属性 <code>zeroclaw.usage.cached_input_tokens</code>（<code>otel.rs:644</code>）；Prometheus <strong><code>zeroclaw_tokens_cached_input_total{model_provider,model}</code></strong>（<code>prometheus.rs:87</code>，注释明确与 response cache 分开）。</li>
+<li><strong>命中率报表 = PromQL 面板，不是代码</strong>：<code>rate(zeroclaw_tokens_cached_input_total) / rate(tokens_input_total)</code> 按 model 分组。</li>
+</ul>
+<h2>4. 移植风险与权衡（v2 修订）</h2>
+<ul>
+<li>语言差异一条保留（结论不变：机制可移植，Rust 下更便宜）。</li>
+<li>provider 缓存模型一条<strong>加重要限定</strong>：omp 经济学的 idle/冷窗假设按 1h 扩展缓存定价；zerolite 固定 5 分钟 TTL，同一套闸门的时间常数全部失效。移植任何「挑时机改写」机制前，先决定是否给 <code>CacheControl</code> 加 <code>ttl</code>。</li>
+<li>「语义层是 omp 空位」一条保留，但挂在条目级模型立项之后才有意义。</li>
+<li>新增回归面备忘：<code>tool_filter_groups</code> 的行为若为缓存稳定性而改（如改 per-session sticky），会改变「按轮少付 MCP token」的成本结构，须带着 P6 修复后的三档计费重估。</li>
+</ul>
+<h2>5. 高 ROI 待办（按性价比排序，2026-09-09）</h2>
+<ol>
+<li><strong>P6 修复：<code>cache_creation_input_tokens</code> 透传 + 三档计费</strong>。<code>TokenUsage</code> 加字段（<code>anthropic.rs</code> 映射处已有现成变量），<code>cost.rs</code> 加 write 档（1.25x）。改动最小，且它是后面每一项的<strong>计量地基</strong>——不修，前缀重写的代价在账本上永远是零。</li>
+<li><strong>PromQL 命中率面板（零代码）</strong>。回答三个悬案：web 聊天前缀跨轮真实命中率；深裁一次重写有多贵；5 分钟 TTL 下热态实际存活率。所有后续决策的读数来源。</li>
+<li><strong>TTL 决策</strong>（依赖 #2 数据）：<code>CacheControl</code> 加 <code>ttl</code>，评估 1h 扩展缓存（写入 2x、读 0.1x 的定价）对聊天节奏是否翻本。数据前不动。</li>
+<li><strong>StablePrefix 接线</strong>（依赖 #2 显示头部确实每轮买断，且先裁决 <code>tool_filter_groups</code> / deferred 激活两个漂移源）。裁决方向：per-message 工具过滤改成缓存中性做法，或书面承认它是按轮买断的 opt-in 特性（补文档）。</li>
+<li><strong>工具结果入口时子集</strong>（依赖测量）：带 name 进 append 边界，supersede + 空结果 stub，几十行；触发条件 = #2/#7 数据显示重复 read/空结果占比可观。sidecar map <strong>不做</strong>。</li>
+<li><strong>P2 残余（轮粒度）不动</strong>：唯一解是轮内压缩（需要被 #8196 砍掉的 summary 层），记录为开放问题，不排期。</li>
+</ol>
+<p><strong>明确不做</strong>：R4 全量 sidecar 设计；token 低水位线（与轮数低水位语义重叠且受同一粒度约束，退不回比 1 轮更浅）；R5 在当前模型上的任何 retrofit；为 <code>tool_filter_groups</code> 缓存问题而移除 MCP（该路径对未配置用户根本不存在）。</p>
+<h2>6. 一句话总结</h2>
 <blockquote>
-<p>omp 在 Pi 的 entry 投影模型之上，用 <strong>StablePrefix + AppendOnlyLog + 常开轻 prune + 互斥重型策略</strong> 重建了同一套问题，
-核心洞察：<strong>上下文管理 ≈ 缓存管理</strong>。以下 R 项标注其对应的 omp 实现（详见参考 gist），ZeroClaw 无需重新设计，照搬 + Rust 化即可。</p>
-</blockquote>
-<h3>R1（前置）：真实窗口解析落地 → omp：promotion / 恢复路径</h3>
-<ul>
-<li>合并 #7100 线的 per-model <code>context_window</code> 解析（#9535/#9854/#9083/#8966，截至 2026-08-31 全部 open），runtime 以此为准。</li>
-<li>无真实窗口，后续预算优化都在错误数字上做文章。</li>
-</ul>
-<h3>R2：缓存经济学基建：稳定前缀 + 追加日志 → omp：StablePrefix / AppendOnlyLog</h3>
-<ul>
-<li><strong>StablePrefix</strong>（<code>append-only-context.ts</code>）：system prompt + 工具规格只计算一次并冻结，跨轮字节完全相同；仅 MCP 重连等事件 <code>invalidate()</code> 重建。</li>
-<li><strong>AppendOnlyLog</strong>：消息只增不改，唯一改写口 <code>replaceTail()</code> 预留给压缩。</li>
-<li>直接替代 P4 的根因：现在的「砍最老整轮」是前缀删除，反着来的。</li>
-</ul>
-<h3>R3：发送前预算 + 多相位触发 → omp：多相位触发</h3>
-<ul>
-<li>omp 触发时机：每轮 stale prune（无条件）→ 条件年龄 prune → pre-prompt / mid-turn / post-agent-end 阈值检查；handoff 策略 post-turn <strong>defer</strong>、mid-turn <strong>suppress</strong>；overflow / incomplete 恢复路径<strong>强制 inline</strong>。</li>
-<li>替代现在的「只等溢出错误」：每轮先跑轻 prune，压缩时机按相位与策略分派，而不是一刀切。</li>
-</ul>
-<h3>R4：工具结果分类管理 → omp：工具结果语义分级</h3>
-<ul>
-<li><strong>受保护工具</strong>（protectedTools：<code>skill</code>、plan 文件 read）、<strong>超驰</strong>（同一文件多次 read 只留最新）、<strong>useless 剔除</strong>（工具自标，如零匹配 grep）。</li>
-<li>替代 P5 的「无分类」：让大块 tool_result 在入上下文前就有分级处置。</li>
-</ul>
-<h3>R5：缓存友好的「多道闸」修剪 → omp：温区守卫 + idle 冷窗 + boundary + minimumSavings</h3>
-<ul>
-<li><strong>后缀温区守卫（~8k）</strong>：埋在已发送缓存深处的消息，改写 = 重写整段后缀（cacheWrite 溢价），跳过。</li>
-<li><strong>idle 冷窗（90min）</strong>：深度清理只在缓存已冷（TTL 1h 过后）才做，重写免费。</li>
-<li><strong>compaction boundary</strong>：已压缩掉的消息跳过，mutate 纯浪费。</li>
-<li><strong>收益门槛</strong>：省不够阈值不动手，防「为省 1 token 重写一遍缓存」。</li>
-<li>这四道闸直接回应 P4：每轮跑 ≠ 每轮改，多数轮次零 mutation、零缓存失效。</li>
-</ul>
-<h3>R6：统一预算管线（架构层）</h3>
-<ul>
-<li>三块代码（history_trim / context_recovery / provider cache 标记）收敛为单一 <code>ContextBudget</code> 层：输入窗口（R1）、system floor、工具定义、缓存断点、历史；输出「该不该裁、裁到哪个边界、走哪条策略通道」。</li>
-<li>omp 的形态可作参照：<code>compaction/</code> 子系统 + <code>append-only-context.ts</code> + <code>session-maintenance.ts</code> 编排层。</li>
-</ul>
-<h3>R7（可选，经济性闭环）</h3>
-<ul>
-<li>按轮记录 <code>cache_read_input_tokens</code> / <code>cache_creation_input_tokens</code>，出命中率报表验证 R2/R5 效果。</li>
-</ul>
-<hr>
-<h2>4. 移植风险与权衡</h2>
-<ul>
-<li><strong>语言差异</strong>：omp 是 TS 编排层（Rust 内核），ZeroClaw 全 Rust。StablePrefix/AppendOnlyLog/多相位触发均可直接移植为 Rust 结构；omp 的「每轮扫 session entries」廉价性在 Rust 下只会更好。</li>
-<li><strong>provider 缓存模型</strong>：Anthropic 前缀缓存（cacheWrite 溢价）是 omp 经济学的核心假设，ZeroClaw 主要 provider 一致；OpenAI 靠自动缓存（只读计费），Bedrock 有 system 阈值——差异策略仍按每家对齐，但主干机制（稳定前缀）与 provider 无关、通用。</li>
-<li><strong>omp 的边界（已知空位）</strong>：omp 明确<strong>不做</strong>「按信息价值取舍」的语义层——价值场景相关、无法预测，语义分级要么靠用户输入（可见性 + 心智负担两难），要么引入不可预测性。ZeroClaw 若想超越 omp，可考虑这层（用户侧「这条保留」的显式标记），但这不是移植阻点，而是后续增量。</li>
-<li><strong>回归风险</strong>：R2 的前缀冻结要求 system/tools 序列化确定性；MCP 工具集动态变化时需显式 invalidate 路径（omp 已处理）。</li>
-</ul>
-<hr>
-<h2>5. 一句话总结</h2>
-<blockquote>
-<p>ZeroClaw 现状：溢出 → 被动砍最老整轮（两条路径：当前 token 的 2/3 / 配置窗口的 90%）→ 重试，窗口 32k 默认顶没用满，前缀裁剪自废缓存。
-正确路径不是重新发明，而是<strong>移植 omp 已验证机制</strong>：稳定前缀 + 追加日志（R2）→ 发送前多相位触发（R3）→ 工具结果分类（R4）→ 缓存多道闸修剪（R5）→ 统一预算管线（R6），前置仍是真实窗口解析（R1）。
-若要比 omp 更进一步，唯一空位是「按价值取舍」的语义层（omp 明确放弃的位置）。</p>
+<p>zerolite 现状：per-model 窗口 ✅、发送前单内核预算 ✅、追加日志 ✅、深裁低水位（模型内自洽）✅。
+v1 路线里 R3/R7 已经做掉，R1 已做掉；R4 降级为入口时子集（先测量），R5 随条目级模型立项才有意义，StablePrefix 接线取决于头部漂移是否真实存在。
+当前最高回报的动作不是任何上下文策略，而是<strong>把 cacheWrite 的 1.25x 记进账本（P6）</strong>，然后用一个 PromQL 面板让数据决定下一个动谁。</p>
 </blockquote>
 
 <!--

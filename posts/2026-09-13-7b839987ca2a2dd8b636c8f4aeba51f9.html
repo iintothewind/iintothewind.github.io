@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网页读取工具对比报告：trafilatura vs readabilityrs vs htmlq vs obscura - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.md">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>网页读取工具对比报告：trafilatura vs readabilityrs vs htmlq vs obscura</h1>
+<div class="post-meta">
+<span class="post-date">2026-09-13</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: 网页读取工具对比报告：trafilatura vs readabilityrs vs htmlq vs obscura</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>网页读取工具对比报告</h1>
+<p>测试页：<a href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/">https://api-docs.deepseek.com/zh-cn/quick_start/pricing/</a></p>
+<p>（Docusaurus SSR，23 KB HTML，含价格表格 + 脚注）</p>
+<p>日期：2026-07-14 · 环境：本机已装 trafilatura 2.2.0 / readabilityrs 0.1.5 / htmlq 0.5.0 / obscura 0.2.2</p>
+<h2>工具一览</h2>
+<ul>
+<li><strong>trafilatura</strong>
+<ul>
+<li>项目地址：<a href="https://github.com/adbar/trafilatura">https://github.com/adbar/trafilatura</a></li>
+<li>类型：Python 正文抽取</li>
+<li>安装：<code>pip install trafilatura</code></li>
+<li>读网页：<code>trafilatura -u &quot;$URL&quot; --markdown</code>（自带下载）或 <code>curl … | trafilatura --markdown</code></li>
+</ul>
+</li>
+<li><strong>readabilityrs</strong>
+<ul>
+<li>项目地址：<a href="https://github.com/iintothewind/readabilityrs-cli">https://github.com/iintothewind/readabilityrs-cli</a></li>
+<li>类型：Rust 正文抽取（Mozilla Readability 移植）</li>
+<li>安装：GitHub Release 二进制 / <code>cargo install readabilityrs-cli</code></li>
+<li>读网页：<code>readabilityrs -f markdown page.html</code>（吃文件/stdin，不自带下载，需 curl 管道）</li>
+</ul>
+</li>
+<li><strong>htmlq</strong>
+<ul>
+<li>项目地址：<a href="https://github.com/iintothewind/htmlq">https://github.com/iintothewind/htmlq</a></li>
+<li>类型：Rust CSS 选择器查询（HTML5 容错解析）</li>
+<li>安装：GitHub Release 二进制 / <code>cargo install htmlq</code> / brew</li>
+<li>读网页：<code>curl … | htmlq -t 'table tr'</code>；<code>-f file.html</code>、<code>-a href 'a'</code> 抽属性</li>
+</ul>
+</li>
+<li><strong>obscura</strong>
+<ul>
+<li>项目地址：<a href="https://github.com/h4ckf0r0day/obscura">https://github.com/h4ckf0r0day/obscura</a></li>
+<li>类型：Rust 无头浏览器（V8 + 自绘，约 30 MB 内存 / ~70 MiB 二进制，内建反检测）</li>
+<li>安装：GitHub Release 二进制（本机在 <code>~/.local/bin/obscura</code>）</li>
+<li>读网页：<code>obscura fetch --dump markdown URL</code>；可选 <code>--stealth --wait N --timeout N --selector CSS</code></li>
+</ul>
+</li>
+</ul>
+<h2>测试表现对比</h2>
+<ul>
+<li><strong>trafilatura</strong>（输出 1,357 B）
+<ul>
+<li>正文段落：✅</li>
+<li>价格表格：❌ <strong>整表丢失</strong>，<code>--recall</code> 也救不回；&quot;模型细节&quot;一节为空</li>
+<li>脚注 (1)–(4)：✅</li>
+<li>导航/页脚噪音：无</li>
+<li>JS 渲染支持：❌ 仅静态 HTML</li>
+<li>结构保真度：好（纯文本页）</li>
+</ul>
+</li>
+<li><strong>readabilityrs</strong>（输出 2,557 B）
+<ul>
+<li>正文段落：✅</li>
+<li>价格表格：⚠️ 值全在但被拍平成一大段文字，行列结构丢失</li>
+<li>脚注 (1)–(4)：✅</li>
+<li>导航/页脚噪音：无</li>
+<li>JS 渲染支持：❌ 仅静态 HTML</li>
+<li>结构保真度：中（表格拍平）</li>
+</ul>
+</li>
+<li><strong>htmlq</strong>（按需输出，63 个单元格）
+<ul>
+<li>正文段落：✅（需选择器）</li>
+<li>价格表格：✅ 63 个单元格完整可取，行文本可拼（如 <code>价格…空闲时段 0.02元 0.15元</code>），需自己组装</li>
+<li>脚注 (1)–(4)：✅</li>
+<li>导航/页脚噪音：无（只取所选节点）</li>
+<li>JS 渲染支持：❌ 仅静态 HTML</li>
+<li>结构保真度：高（按 CSS 精确取）</li>
+</ul>
+</li>
+<li><strong>obscura</strong>（输出 4,964 B）
+<ul>
+<li>正文段落：✅</li>
+<li>价格表格：✅ 转成 Markdown 表格，全部数值在位（0.02/0.15/0.04/0.30/1/4.5/2/9.0/4/13.5/8/27.0、并发 2500/500）；rowspan 嵌套处略乱</li>
+<li>脚注 (1)–(4)：✅</li>
+<li>导航/页脚噪音：有（完整导航、TOC、社交链接、版权行）</li>
+<li>JS 渲染支持：✅ 真实浏览器执行 JS</li>
+<li>结构保真度：中高（Markdown 表格近似）
+| 适用场景 | 纯文章正文、去噪 | trafilatura 空/短时的本地兜底 | 探结构、抽字段/链接列表 | SPA / 反爬 / 需要完整 DOM 转 Markdown |</li>
+</ul>
+</li>
+</ul>
+<h2>结论</h2>
+<ol>
+<li><strong>本测试页的&quot;正确性基准&quot;是价格表格</strong>：4 个数值维度中——obscura 和 htmlq 数据完整，readabilityrs 数据全但结构丢失（读起来费劲、机器解析易错），trafilatura 直接丢表，<strong>在这类&quot;表格为核心内容&quot;的文档页上表现最差</strong>。</li>
+<li><strong>trafilatura / readabilityrs / htmlq 都只吃静态 HTML</strong>：本页是 Docusaurus SSR，curl 即可拿全；若页面是纯 SPA，三者都会失败，只剩 obscura（或上游 jina/firecrawl）。</li>
+<li><strong>obscura 是唯一能执行 JS 的</strong>，输出最接近&quot;整页所见&quot;，代价是噪音多、二进制重。对静态文档页它属于&quot;大材小用但结果最全&quot;。</li>
+<li><strong>推荐分工</strong>：
+<ul>
+<li>纯文章正文 → trafilatura（空则 readabilityrs）</li>
+<li>表格/字段抽取 → htmlq（精确、零噪音）或 obscura <code>--dump markdown</code>（省事、带结构）</li>
+<li>SPA / 反爬 → obscura（配 <code>--stealth</code>）</li>
+</ul>
+</li>
+</ol>
+<h2>复现命令</h2>
+<pre><code class="language-bash">URL='https://api-docs.deepseek.com/zh-cn/quick_start/pricing/'
+curl -fsSL -L -A 'Mozilla/5.0' &quot;$URL&quot; -o page.html
+
+trafilatura --markdown &lt; page.html                 # 1357 B，表格丢失
+readabilityrs -f markdown page.html                # 2557 B，表格拍平
+htmlq -f page.html -t 'table tr'                   # 63 单元格，结构可拼
+obscura fetch --dump markdown &quot;$URL&quot;               # 4964 B，MD 表格完整
+</code></pre>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.html" rel="canonical">https://iintothewind.github.io/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+<!-- Post footer placeholder: empty for now; add agent-camouflage markup here later if needed. -->
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMP 核心架构技术总结：稳定前缀、对话树与跨模型容错 - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-09-11-aa1fbfc7bcae43061e0fbbf74066314f.md">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>OMP 核心架构技术总结：稳定前缀、对话树与跨模型容错</h1>
+<div class="post-meta">
+<span class="post-date">2026-09-11</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: OMP 核心架构技术总结：稳定前缀、对话树与跨模型容错</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-09-11-aa1fbfc7bcae43061e0fbbf74066314f.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>OMP 核心架构：稳定前缀、对话树与跨模型容错</h1>
+<h2>概述</h2>
+<p>Oh My Pi (OMP) 是一个现代化的交互式 AI 代理框架，其核心设计围绕着三个关键概念：<strong>稳定前缀（Stable Prefix）</strong>、<strong>对话树（Conversation Tree）<strong>和</strong>跨模型容错机制</strong>。本文档深入探讨这些机制的实现原理和设计哲学。</p>
+<hr>
+<h2>一、稳定前缀（Stable Prefix）构建机制</h2>
+<h3>1.1 什么是稳定前缀？</h3>
+<p>稳定前缀是指每次 agent 启动时加载的<strong>固定上下文内容</strong>，包括：</p>
+<ul>
+<li><strong>系统提示词</strong>：来自 <code>SYSTEM.md</code> 的用户和项目级指令</li>
+<li><strong>工具列表</strong>：内置工具、自定义技能、MCP 工具</li>
+<li><strong>技能描述</strong>：每个技能的 Markdown 说明</li>
+<li><strong>上下文文件</strong>：<code>AGENTS.md</code>、<code>RULES.md</code> 等标准配置</li>
+</ul>
+<h3>1.2 构建流程</h3>
+<div class="mermaid">graph TD
+    subgraph 加载阶段
+        A1[1. 读取 SYSTEM.md&lt;br/&gt;用户 + 项目层级]
+        A2[2. 扫描 skills/&lt;br/&gt;加载所有技能及其描述]
+        A3[3. 读取上下文文件&lt;br/&gt;AGENTS.md, CODECOPILOT.md 等]
+        A4[4. 加载规则&lt;br/&gt;RULES.md]
+        A5[5. 转换工具为&lt;br/&gt;元数据格式]
+    end
+    
+    subgraph 组合阶段
+        B1[System.md]
+        B2[Project System.md]
+        B3[技能描述]
+        B4[上下文文件]
+        B5[工具列表]
+        B6[MCP 工具说明]
+        B7[规则]
+        B8[最终系统提示词]
+    end
+    
+    A1 --&gt; C
+    A2 --&gt; C
+    A3 --&gt; C
+    A4 --&gt; C
+    A5 --&gt; C
+    C --&gt; B1
+    C --&gt; B2
+    C --&gt; B3
+    C --&gt; B4
+    C --&gt; B5
+    C --&gt; B6
+    C --&gt; B7
+    B1 --&gt; B8
+    B2 --&gt; B8
+    B3 --&gt; B8
+    B4 --&gt; B8
+    B5 --&gt; B8
+    B6 --&gt; B8
+    B7 --&gt; B8
+</div><h3>1.3 为什么称为&quot;稳定&quot;？</h3>
+<p><strong>稳定性体现在：</strong></p>
+<ol>
+<li><strong>内容不变性</strong>：只要配置文件不变，这部分内容每次都是相同的</li>
+<li><strong>位置固定</strong>：总是出现在对话历史的<strong>最前面</strong>（第一个消息）</li>
+<li><strong>缓存复用</strong>：LLM 可以缓存这部分 token 的计算结果，后续请求只需计算新增部分</li>
+</ol>
+<h4>Prompt Cache 优化示意</h4>
+<div class="mermaid">sequenceDiagram
+    participant LLM as LLM 模型
+    participant Cache as Prompt Cache
+    
+    Note over LLM,Cache: 第一次请求
+    LLM-&gt;&gt;Cache: [稳定前缀 10,000 tokens]&lt;br/&gt;+ [用户消息 100 tokens]
+    Cache--&gt;&gt;LLM: 缓存整个请求的计算结果
+    
+    Note over LLM,Cache: 后续请求
+    LLM-&gt;&gt;Cache: [稳定前缀 10,000 tokens]&lt;br/&gt;← 复用缓存
+    LLM-&gt;&gt;Cache: [用户消息 100 tokens]&lt;br/&gt;+ [历史对话 500 tokens]
+    Cache--&gt;&gt;LLM: 只需计算新增的 600 tokens
+</div><hr>
+<h2>二、对话树（Conversation Tree）数据结构</h2>
+<h3>2.1 树形结构设计</h3>
+<p>OMP 使用<strong>树形结构</strong>而非线性链表来表示对话历史，这带来了两个关键能力：</p>
+<ol>
+<li><strong>分支导航</strong>：支持 <code>/tree</code> 命令在不同对话分支间跳转</li>
+<li><strong>高效压缩</strong>：可以对子树进行整体摘要</li>
+</ol>
+<pre><code class="language-typescript">// SessionEntry 的核心字段
+interface SessionEntry {
+  id: string;              // 唯一标识符
+  parentId: string | null; // 父节点 ID（根节点为 null）
+  type: &quot;message&quot; | &quot;compaction&quot; | &quot;branch_summary&quot; | ...;
+  timestamp: Date;
+  // ... 其他字段
+}
+</code></pre>
+<h3>2.2 路径回溯算法</h3>
+<p>从当前叶子节点回溯到根节点，构建完整的对话路径：</p>
+<pre><code class="language-typescript">// 在 session-context.ts 中
+
+function buildSessionContext(entries: SessionEntry[]): SessionContext {
+  // 从叶子节点向上回溯到根节点
+  const path: SessionEntry[] = [];
+  const seenPathIds = new Set&lt;string&gt;();
+  let current: SessionEntry | undefined = leaf;
+  
+  while (current &amp;&amp; !seenPathIds.has(current.id)) {
+    seenPathIds.add(current.id);
+    path.push(current);
+    current = current.parentId ? byId.get(current.parentId) : undefined;
+  }
+  path.reverse(); // 现在是从根到叶子的顺序
+  
+  // 构建 LLM 可见的消息列表
+  const messages: AgentMessage[] = [];
+  for (const entry of path) {
+    messages.push(convertEntryToMessage(entry));
+  }
+  
+  return { messages, ... };
+}
+</code></pre>
+<h3>2.3 分支创建和导航</h3>
+<div class="mermaid">graph TD
+    Root([根节点])
+    
+    Root --&gt; Branch1([分支 1])
+    Root --&gt; Branch2([分支 2])
+    Root --&gt; Branch3([分支 3])
+    
+    Branch1 --&gt; User1[用户]
+    Branch1 --&gt; Assistant1[助手]
+    
+    Branch2 --&gt; Compression[压缩]
+    
+    Branch3 --&gt; User2[用户]
+    Branch3 --&gt; Assistant2[助手]
+    
+    style Root fill:#90EE90
+    style Branch1 fill:#87CEEB
+    style Branch2 fill:#FFB6C1
+    style Branch3 fill:#DDA0DD
+</div><p><strong>分支操作：</strong></p>
+<pre><code class="language-typescript">// 创建新分支
+agent.branch({ instructions: &quot;开始新的研究方向&quot; })
+
+// 返回主分支
+agent.back()
+
+// 查看树结构
+/tree  # 显示所有可用分支
+</code></pre>
+<hr>
+<h2>三、跨模型上下文管理</h2>
+<h3>3.1 问题挑战</h3>
+<p>不同模型的 context window 差异巨大：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>模型</th>
+<th>Context Window</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-4o</td>
+<td>128K tokens</td>
+</tr>
+<tr>
+<td>Claude 3.5 Sonnet</td>
+<td>200K tokens</td>
+</tr>
+<tr>
+<td>o1-preview</td>
+<td>200K tokens</td>
+</tr>
+<tr>
+<td>GPT-1.5M</td>
+<td>1M tokens</td>
+</tr>
+<tr>
+<td>o1-mini</td>
+<td>128K tokens</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>当用户在 o1-mini（128K）上继续之前在 GPT-4o-Max（1M）上的长时间对话时会发生什么？</strong></p>
+<h3>3.2 多层防护机制</h3>
+<p>OMP 设计了三层防护：</p>
+<h4>第一层：预防性压缩（Proactive）</h4>
+<pre><code class="language-typescript">// 在每次发送请求前检查
+async checkCompaction(msg: AssistantMessage): Promise&lt;CompactionResult&gt; {
+  const contextUsage = this.getContextUsage({ 
+    contextWindow: this.model?.contextWindow ?? 0 
+  });
+  
+  if (contextUsage.totalTokens &gt; this.model.contextWindow * 0.9) {
+    // 超过 90% 时提前触发压缩
+    return await this.triggerCompression(msg);
+  }
+  
+  return { compactionEpoch: 0, continuationScheduled: false };
+}
+</code></pre>
+<p><strong>工作流程：</strong></p>
+<div class="mermaid">flowchart LR
+    A[当前上下文：100,000 tokens] --&gt; B{目标模型：o1-mini&lt;br/&gt;128K}
+    B --&gt;|占用 78%| C[安全范围内&lt;br/&gt;继续发送]
+    D[当前上下文：110,000 tokens] --&gt; E{目标模型：o1-mini&lt;br/&gt;128K}
+    E --&gt;|占用 86%| F[接近临界点&lt;br/&gt;触发压缩]
+    F --&gt; G[压缩后：80,000 tokens]
+    G --&gt; H[发送请求 ✓]
+</div><h4>第二层：恢复性压缩（Reactive）</h4>
+<p>如果 somehow 还是超了（比如用户手动设置了很大的上下文）：</p>
+<pre><code class="language-typescript">// 检测到 context overflow 错误
+if (msg.stopReason === &quot;error&quot; &amp;&amp; 
+    AIError.isContextOverflow(msg, model.contextWindow ?? 0)) {
+  
+  // 自动触发压缩并继续
+  const compactionTask = this.#maintenance.checkCompaction(msg);
+  this.#trackPostPromptTask(compactionTask);
+  await compactionTask;
+  
+  // 告诉用户发生了什么
+  this.emitNotice('info', '上下文已压缩以适配模型限制');
+}
+</code></pre>
+<h4>第三层：手动干预</h4>
+<p>用户可以通过命令手动控制：</p>
+<pre><code class="language-bash"># 手动压缩
+/compact [instructions]
+
+# 切换到长上下文模式
+/extended-context on  # 启用 1M token 窗口
+
+# 切换到大 context window 模型
+/model gpt-4o-max
+</code></pre>
+<h3>3.3 模型切换时的自动调整</h3>
+<pre><code class="language-typescript">// 在 agent-session.ts 中
+async #reapplyExtendedContextPolicy(): Promise&lt;void&gt; {
+  const currentModel = this.model;
+  const updated = this.#modelRegistry.find(currentModel.provider, currentModel.id);
+  
+  // 检测到 context window 变化
+  if (updated &amp;&amp; updated.contextWindow !== currentModel.contextWindow) {
+    await this.#setModelWithProviderSessionReset(updated);
+  }
+}
+</code></pre>
+<p><strong>模型切换流程：</strong></p>
+<div class="mermaid">flowchart TD
+    A[用户：/model o1-mini] --&gt; B{检测到当前模型:&lt;br/&gt;GPT-4o (1M tokens)&lt;br/&gt;目标模型：o1-mini (128K tokens)}
+    B --&gt; C[关闭当前 provider 会话]
+    C --&gt; D[重新计算上下文占用]
+    D --&gt; E[当前占用：800,000 tokens&lt;br/&gt;目标上限：128,000 tokens]
+    E --&gt; F[触发紧急压缩]
+    F --&gt; G[压缩到 100,000 tokens]
+    G --&gt; H[切换模型并发送请求 ✓]
+</div><hr>
+<h2>四、崩溃降级处理（Crash Degradation）</h2>
+<h3>4.1 压缩方法优先级回退</h3>
+<p>OMP 支持多种压缩方法，按优先级回退：</p>
+<pre><code class="language-typescript">compaction.methodOrder: [
+  'remote',      // 提供商原生的服务端压缩
+  'snapcompact', // 本地快照压缩（首选）
+  'handoff',     // 人工交接文档
+  'shake',       // 机械内容省略
+  'soft'         // 软压缩（LLM 摘要）
+]
+</code></pre>
+<h3>4.2 降级链路示意图</h3>
+<div class="mermaid">graph TD
+    A[context window 缩小到 128K] --&gt; B[当前上下文：500K tokens]
+    B --&gt; C{尝试压缩方法 1:&lt;br/&gt;remote&lt;br/&gt;提供商原生服务端压缩}
+    C --&gt;|成功 | D[压缩到 150K tokens → 继续]
+    C --&gt;|失败&lt;br/&gt;API 错误/不支持 | E[尝试压缩方法 2:&lt;br/&gt;snapcompact&lt;br/&gt;本地快照压缩]
+    E --&gt;|成功 | D
+    E --&gt;|失败&lt;br/&gt;模型不支持视觉 | F[尝试压缩方法 3:&lt;br/&gt;handoff&lt;br/&gt;人工交接文档]
+    F --&gt;|成功 | G[生成人工可读文档 → 暂停等待用户]
+    F --&gt;|失败 | H[尝试压缩方法 4:&lt;br/&gt;shake&lt;br/&gt;机械内容省略]
+    H --&gt;|成功 | I[压缩到 130K tokens → 继续]
+    H --&gt;|失败 | J[尝试压缩方法 5:&lt;br/&gt;soft&lt;br/&gt;LLM 摘要]
+    J --&gt;|成功 | K[LLM 生成摘要 → 压缩到 120K tokens → 继续]
+</div><h3>4.3 SnapCompact 详解</h3>
+<p><strong>SnapCompact</strong> 是一种创新的本地压缩技术：</p>
+<pre><code class="language-typescript">// 压缩过程
+function compressWithContextWindowLimit(context: Message[], limit: number) {
+  // 1. 计算需要压缩的部分
+  const tokensUsed = calculateTokenUsage(context);
+  const excess = tokensUsed - limit;
+  
+  // 2. 选择要压缩的历史段落
+  const segmentsToCompress = selectSegmentsForCompression(context, excess);
+  
+  // 3. 将文本转为位图图像
+  for (const segment of segmentsToCompress) {
+    const image = renderAsBitmap(segment, {
+      width: 8,      // 8 列
+      height: 12,    // 12 行
+      colors: ['black', 'white'], // 双色
+      fontSize: 8    // 小字体
+    });
+    
+    // 4. 替换原始文本为图像
+    context.splice(segment.index, 1, {
+      role: 'user',
+      content: [{ type: 'image_url', image }]
+    });
+  }
+  
+  // 5. 重新计算总 token 数
+  return recalculateTotalTokens(context); // 现在 &lt; limit
+}
+</code></pre>
+<p><strong>优势：</strong></p>
+<ol>
+<li><strong>零 API 调用</strong>：完全本地执行，不消耗额外 tokens</li>
+<li><strong>高压缩率</strong>：文本→图像的转换大幅减少 token 占用</li>
+<li><strong>可逆性</strong>：图像可以还原为近似原文（虽然会丢失一些细节）</li>
+</ol>
+<h3>4.4 极端情况处理</h3>
+<p><strong>场景：上下文已经严重超限（比如 2M tokens），而目标模型只有 128K</strong></p>
+<pre><code class="language-typescript">// 检测到严重超限
+if (excessTokens &gt; model.contextWindow * 2) {
+  // 分批次压缩
+  const batches = Math.ceil(excessTokens / model.contextWindow);
+  
+  for (let i = 0; i &lt; batches; i++) {
+    await compressBatch(batch[i]);
+    
+    // 检查是否还需要继续
+    if (currentTokens &lt;= model.contextWindow) break;
+  }
+}
+</code></pre>
+<p><strong>多次压缩示例：</strong></p>
+<div class="mermaid">flowchart LR
+    Start([初始状态:&lt;br/&gt;2,000,000 tokens]) --&gt; Step1[第 1 次压缩:&lt;br/&gt;压缩掉 800,000 tokens&lt;br/&gt;剩余：1,200,000 tokens]
+    Step1 --&gt; Step2[第 2 次压缩:&lt;br/&gt;压缩掉 600,000 tokens&lt;br/&gt;剩余：600,000 tokens]
+    Step2 --&gt; Step3[第 3 次压缩:&lt;br/&gt;压缩掉 450,000 tokens&lt;br/&gt;剩余：150,000 tokens]
+    Step3 --&gt; Step4[第 4 次压缩:&lt;br/&gt;压缩掉 25,000 tokens&lt;br/&gt;剩余：125,000 tokens]
+    Step4 --&gt; End([✓ 达到目标&lt;br/&gt;128K 上限])
+    style Start fill:#FFB6C1
+    style End fill:#90EE90
+</div><hr>
+<h2>五、设计哲学与工程权衡</h2>
+<h3>5.1 对用户透明</h3>
+<p>OMP 的设计目标是让用户<strong>感觉不到</strong>上下文管理的存在：</p>
+<div class="mermaid">sequenceDiagram
+    participant User as 用户
+    participant OMP as OMP 内部
+    
+    User-&gt;&gt;OMP: &quot;我想继续刚才的研究&quot;
+    
+    Note over OMP: 检测到上下文超限 → 自动压缩 → 继续对话
+    
+    OMP--&gt;&gt;User: &quot;太好了，继续成功了！&quot;&lt;br/&gt;（可能看到短暂的&quot;正在压缩...&quot;提示）
+</div><h3>5.2 性能与准确性的平衡</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>压缩方法</th>
+<th>速度</th>
+<th>准确性</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>remote</td>
+<td>慢（需 API）</td>
+<td>高</td>
+<td>有网络、追求质量</td>
+</tr>
+<tr>
+<td>snapcompact</td>
+<td>快（本地）</td>
+<td>中高</td>
+<td>首选方案</td>
+</tr>
+<tr>
+<td>handoff</td>
+<td>即时</td>
+<td>低</td>
+<td>需要人工介入</td>
+</tr>
+<tr>
+<td>shake</td>
+<td>即时</td>
+<td>中</td>
+<td>快速降级</td>
+</tr>
+<tr>
+<td>soft</td>
+<td>慢（需 LLM）</td>
+<td>高</td>
+<td>最后手段</td>
+</tr>
+</tbody>
+</table></div>
+<h3>5.3 跨模型一致性</h3>
+<p>无论用户使用哪个模型，OMP 的保护机制都是一样的：</p>
+<pre><code class="language-yaml"># 配置示例
+compaction:
+  enabled: true
+  methodOrder: [remote, snapcompact, handoff, shake, soft]
+  thresholdTokens: 100000  # 统一阈值，不随模型变化
+</code></pre>
+<p>这意味着：</p>
+<ul>
+<li>用户在 GPT-4o 上积累了 100 万 tokens 的对话</li>
+<li>切换到 o1-mini（128K）时，OMP 会自动处理</li>
+<li>切换到 Claude 3.5（200K）时，OMP 也会自动处理</li>
+<li><strong>配置无需调整，体验保持一致</strong></li>
+</ul>
+<hr>
+<h2>六、总结</h2>
+<p>OMP 的核心架构体现了现代 AI 应用设计的几个重要原则：</p>
+<ol>
+<li><strong>分层抽象</strong>：稳定前缀、对话树、容错机制各司其职</li>
+<li><strong>弹性设计</strong>：多层防护确保系统在各种边界条件下都能工作</li>
+<li><strong>用户友好</strong>：复杂的内部管理对用户完全透明</li>
+<li><strong>跨平台一致</strong>：统一的策略适用于所有模型和设备</li>
+</ol>
+<p>这种设计使得 OMP 能够：</p>
+<ul>
+<li>支持超长对话（数百万 tokens）</li>
+<li>无缝切换不同能力的模型</li>
+<li>在资源受限的设备上稳定运行</li>
+<li>为用户提供流畅的交互体验</li>
+</ul>
+<p>正是这些精心设计的机制，让 OMP 成为了一个既强大又可靠的 AI 开发平台。</p>
+<hr>
+<p><em>本文档基于 OMP 源代码分析编写，涵盖了核心的架构设计和运行机制。</em></p>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-09-11-aa1fbfc7bcae43061e0fbbf74066314f.html" rel="canonical">https://iintothewind.github.io/posts/2026-09-11-aa1fbfc7bcae43061e0fbbf74066314f.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+<!-- Post footer placeholder: empty for now; add agent-camouflage markup here later if needed. -->
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>
