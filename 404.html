@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 Not Found - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+
+<meta name="robots" content="noindex">
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post not-found">
+<h1>404 — page not found</h1>
+<p>The requested page does not exist on this site.</p>
+
+<!--
+agent-route: this path did not resolve.
+GET /posts.json → array of { title, url, slug, date } — match on title or slug.
+GET /llms.txt   → complete post index with Markdown mirror URLs.
+GET /llms-full.txt → the whole corpus in one file.
+Do not retry this path; choose a real URL from one of the above instead.
+-->
+<div class="not-found-agent-hint">
+<p>For automated readers: this URL does not exist. Fetch <a href="/posts.json">/posts.json</a> and search by title, or read <a href="/llms.txt">/llms.txt</a> for the full index.</p>
+</div>
+
+<h2>Posts</h2>
+<ul class="not-found-list">
+<li><a href="/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.html">网页读取工具对比报告：trafilatura vs readabilityrs vs htmlq vs obscura</a> <span class="post-date">2026-09-13</span></li>
+<li><a href="/posts/2026-09-11-aa1fbfc7bcae43061e0fbbf74066314f.html">OMP 核心架构技术总结：稳定前缀、对话树与跨模型容错</a> <span class="post-date">2026-09-11</span></li>
+<li><a href="/posts/2026-09-06-7664ad8304a2635f64ae3d00b329b655.html">外汇储备全球第一，为什么你的钱却出不去？</a> <span class="post-date">2026-09-06</span></li>
+<li><a href="/posts/2026-09-06-493a17a31e6ab04014da64b049c2e4d7.html">严防资本外逃</a> <span class="post-date">2026-09-06</span></li>
+<li><a href="/posts/2026-08-29-6a851042e585784fe0e41ec80957de10.html">博弈论遇上真人：从 100 块钱开始的三道裂缝</a> <span class="post-date">2026-08-29</span></li>
+<li><a href="/posts/2026-08-29-cc99d77c2cc0a96e8de8382606b9ba58.html">Domain-Driven Agents 简述与评论</a> <span class="post-date">2026-08-29</span></li>
+<li><a href="/posts/2026-08-28-341258a0aad3f94ff4536280294a6fa3.html">Agent-native database access: why GUI clients are the wrong abstraction for AI-driven data workflows</a> <span class="post-date">2026-08-28</span></li>
+<li><a href="/posts/2026-08-26-aa9a8c258e6a7262bad4600add8a6b75.html">DeepSeek Harness Core Mechanisms Review Notes</a> <span class="post-date">2026-08-26</span></li>
+<li><a href="/posts/2026-08-25-2d58bdcedf8255d3352add512e8c7d47.html">DeepSeek Harness 核心机制调研笔记</a> <span class="post-date">2026-08-25</span></li>
+<li><a href="/posts/2026-08-09-243c320f68638216fffef87080cccd85.html">ZeroClaw Context Budget: analysis + omp-based migration roadmap (RFC draft)</a> <span class="post-date">2026-08-09</span></li>
+<li><a href="/posts/2026-08-06-e571fa220ffba96569749364d7feda9e.html">上下文语义投毒研究：从《时代》杂志的 AI 广告到间接提示注入</a> <span class="post-date">2026-08-06</span></li>
+<li><a href="/posts/2026-08-05-168f4cd49504e3aa8f7cdf86e8a0bbbd.html">omp上下文管理设计解析: 对比官方Pi</a> <span class="post-date">2026-08-05</span></li>
+<li><a href="/posts/2026-08-04-7ab5e2940beb35b769ad9bf0e40d7428.html">Algolia 调查笔记 + HN Search API 实例解析</a> <span class="post-date">2026-08-04</span></li>
+<li><a href="/posts/2026-08-04-5094443dd9cb12b24554b7605d633914.html">思维链不重要：AI 推理的公开层与私有层</a> <span class="post-date">2026-08-04</span></li>
+<li><a href="/posts/2026-08-04-f8e3f3cb470d7cd02b1f2e4755d85419.html">数字钱包安全分析：弱熵攻击的四个样本 2023-2026</a> <span class="post-date">2026-08-04</span></li>
+<li><a href="/posts/2026-08-02-3474dbaa807b54028c3411f18827c7da.html">潍坊中上层收入群体研究：能力、资本与资源如何决定阶层稳定性</a> <span class="post-date">2026-08-02</span></li>
+<li><a href="/posts/2026-08-02-170ade4083c0f613e5c2454a681c76e3.html">知乎 AI 时代的内容生态与审核困境（@ivar 观点）</a> <span class="post-date">2026-08-02</span></li>
+<li><a href="/posts/2026-08-02-0f99ca1369e95024c4343bc2b4af80c1.html">从「众程序员重建 BAT」的脑洞帖看技术人的单维度幻觉</a> <span class="post-date">2026-08-02</span></li>
+<li><a href="/posts/2026-07-27-77606ee5b16d4679a27f16414f30f4dc.html">《深入理解 AI Agent》阅读评估笔记 — 兼论 SubAgent 编排与多 Agent 交互的工程现状</a> <span class="post-date">2026-07-27</span></li>
+<li><a href="/posts/2026-07-26-42c548ab93d3b6022c0ebbbe986abd5f.html">2026 云喜剧：裁员 → AI → 崩盘 → 用户误操作</a> <span class="post-date">2026-07-26</span></li>
+</ul>
+
+<p class="not-found-links">
+<a href="/index.html">Home</a> ·
+<a href="/llms.txt">llms.txt</a> ·
+<a href="/feed.xml">RSS</a> ·
+<a href="/feed.json">JSON Feed</a>
+</p>
+
+<div id="not-found-suggestions"></div>
+
+<script>
+// Progressive enhancement only: the static list above is what agents and
+// no-JS readers get. This just narrows it down using the requested path.
+document.addEventListener("DOMContentLoaded", function () {
+  var base = window.BASE_URL || "";
+  var box = document.getElementById("not-found-suggestions");
+  if (!box) return;
+  var tail = decodeURIComponent(location.pathname || "").split("/").pop().replace(/\.html?$/i, "").toLowerCase();
+  if (!tail) return;
+  fetch(base + "/posts.json")
+    .then(function (r) { return r.json(); })
+    .then(function (posts) {
+      var hits = (posts || []).filter(function (p) {
+        return String(p.title || "").toLowerCase().indexOf(tail) >= 0
+          || String(p.slug || "").toLowerCase().indexOf(tail) >= 0;
+      });
+      if (!hits.length) return;
+      var h2 = document.createElement("h2");
+      h2.textContent = "Possibly related";
+      var ul = document.createElement("ul");
+      hits.slice(0, 10).forEach(function (p) {
+        var li = document.createElement("li");
+        var a = document.createElement("a");
+        a.href = base + "/" + p.url;
+        // textContent, not innerHTML: titles are author-supplied text.
+        a.textContent = p.title || p.slug;
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+      box.appendChild(h2);
+      box.appendChild(ul);
+    })
+    .catch(function () { /* offline or missing index: the static list stands */ });
+});
+</script>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -8,6 +8,14 @@
 <link rel="stylesheet" href="/katex/katex.min.css">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="mysqld在安装完成以后会生成一个随机的root密码, 但需要在登录之后马上修改密码, 比较繁琐. 更好的创建账号权限的步骤如下,">
+<meta property="og:title" content="create user and grant permissions after installing mysqld">
+<meta property="og:description" content="mysqld在安装完成以后会生成一个随机的root密码, 但需要在登录之后马上修改密码, 比较繁琐. 更好的创建账号权限的步骤如下,">
+<meta property="og:url" content="https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.html">
+
 </head>
 <body>
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
@@ -107,7 +115,8 @@ select version(), @@sql_mode;SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_
   </p>
 </div>
 
-<!-- Post footer placeholder: empty for now; add agent-camouflage markup here later if needed. -->
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
 
 </div>
 </article>

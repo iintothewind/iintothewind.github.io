@@ -17,6 +17,9 @@ A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this
 **Q: Where is the author's blog?**  
 A: https://iintothewind.github.io
 
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
 ---
 
 # add timeout support for CompletableFuture in java 8
