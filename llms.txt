@@ -10,7 +10,7 @@ Blog: https://iintothewind.github.io
 Each post is also published as Markdown for automated readers:
 
 ## Posts (53)
-- [网页读取工具对比报告：trafilatura vs readabilityrs vs htmlq vs obscura](https://iintothewind.github.io/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.md) — 网页读取工具对比报告 测试页：https://api-docs.deepseek.com/zh-cn/quick_start/pricing/ （Docusaurus SSR，23 KB HTML，含
+- [网页读取工具对比报告：trafilatura vs readabilityrs vs htmlq vs obscura](https://iintothewind.github.io/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.md) — 网页读取工具对比报告 测试页：https://api-docs.deepseek.com/zh-cn/quick_start/pricing/（Docusaurus SSR，23 KB HTML，含价
 - [OMP 核心架构技术总结：稳定前缀、对话树与跨模型容错](https://iintothewind.github.io/posts/2026-09-11-aa1fbfc7bcae43061e0fbbf74066314f.md) — OMP 核心架构：稳定前缀、对话树与跨模型容错 概述 Oh My Pi (OMP) 是一个现代化的交互式 AI 代理框架，其核心设计围绕着三个关键概念：稳定前缀（Stable Prefix）、对话树（
 - [外汇储备全球第一，为什么你的钱却出不去？](https://iintothewind.github.io/posts/2026-09-06-7664ad8304a2635f64ae3d00b329b655.md) — 外汇储备全球第一，为什么你的钱却出不去？ 来源: https://www.bilibili.com/video/BV1Fau16HEYP 你有没有想过，你存进银行的那笔钱，其实他很想跑。不是比喻，这是
 - [严防资本外逃](https://iintothewind.github.io/posts/2026-09-06-493a17a31e6ab04014da64b049c2e4d7.md) — 严防「资本外逃」 一年出走1万亿美元，富途老虎被罚之后，如何实现财富自由? 去炒A股?? 来源: https://www.bilibili.com/video/BV1N1t36JEZL 如果炒股能赚钱

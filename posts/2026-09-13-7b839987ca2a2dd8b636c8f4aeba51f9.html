@@ -65,9 +65,8 @@
 </p>
 
 <h1>网页读取工具对比报告</h1>
-<p>测试页：<a href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/">https://api-docs.deepseek.com/zh-cn/quick_start/pricing/</a></p>
-<p>（Docusaurus SSR，23 KB HTML，含价格表格 + 脚注）</p>
-<p>日期：2026-07-14 · 环境：本机已装 trafilatura 2.2.0 / readabilityrs 0.1.5 / htmlq 0.5.0 / obscura 0.2.2</p>
+<p>测试页：<a href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/%EF%BC%88Docusaurus">https://api-docs.deepseek.com/zh-cn/quick_start/pricing/（Docusaurus</a> SSR，23 KB HTML，含价格表格 + 脚注）
+日期：2026-07-14 · 环境：本机已装 trafilatura 2.2.0 / readabilityrs 0.1.5 / htmlq 0.5.0 / obscura 0.2.2</p>
 <h2>工具一览</h2>
 <ul>
 <li><strong>trafilatura</strong>
@@ -160,6 +159,24 @@
 </ul>
 </li>
 </ol>
+<h2>补充：命令行读页只留 obscura 够吗？</h2>
+<p><strong>功能上 obscura 是超集</strong>（实测 v0.2.2）：</p>
+<ul>
+<li><code>--dump</code> 支持 <code>markdown / text / links / html / original / assets / cookies</code>，从整页 MD 到二进制原样抓取全覆盖</li>
+<li><code>--dump text --selector 'h1, h2'</code> 可按 CSS 选择器抽文本（覆盖 htmlq 的主要场景）；<strong>注意：markdown dump 会忽略 selector，只有 text dump 生效</strong></li>
+<li><code>scrape</code> 子命令支持 <code>--eval</code> JS 求值、批量并发（默认 10）、<code>--obey-robots</code></li>
+</ul>
+<p><strong>但仍建议保留其他工具：</strong></p>
+<ol>
+<li><strong>成熟度 / 单点故障</strong>：obscura 是 0.2.2，很年轻；trafilatura / readabilityrs / htmlq 都稳定多年。本地档只剩一个工具时，它崩溃、回归或被某站反制就没有退路（unifetch 的分层降级正是为此设计）。</li>
+<li><strong>输出噪音</strong>：测试页上 obscura markdown 带完整导航、TOC、社交链接、版权行（4,964 B vs trafilatura 1,357 B）；喂 LLM 时噪音就是白烧 token，纯文章正文场景 trafilatura / readabilityrs 是专门做去噪的。</li>
+<li><strong>精确结构化抽取</strong>：obscura 表格转换在 rowspan 嵌套处会乱（本测试&quot;价格&quot;行被拍平）；htmlq 按 CSS 拿单元格逐字精确，批量抽字段更可预测。</li>
+</ol>
+<p><strong>结论：</strong></p>
+<ul>
+<li>日常交互式读页：<strong>只留 obscura 当默认没问题</strong>，功能够用且是唯一能跑 JS 的</li>
+<li>工具链建议：<code>obscura</code>（主力）+ <code>htmlq</code>（精确抽取 / 探结构）两个就够；trafilatura / readabilityrs 降级为可选兜底，体积小、留着不亏</li>
+</ul>
 <h2>复现命令</h2>
 <pre><code class="language-bash">URL='https://api-docs.deepseek.com/zh-cn/quick_start/pricing/'
 curl -fsSL -L -A 'Mozilla/5.0' &quot;$URL&quot; -o page.html
