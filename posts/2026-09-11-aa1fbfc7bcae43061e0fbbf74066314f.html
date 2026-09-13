@@ -310,13 +310,13 @@ async #reapplyExtendedContextPolicy(): Promise&lt;void&gt; {
 </code></pre>
 <p><strong>模型切换流程：</strong></p>
 <div class="mermaid">flowchart TD
-    A[用户：/model o1-mini] --&gt; B{检测到当前模型:&lt;br/&gt;GPT-4o (1M tokens)&lt;br/&gt;目标模型：o1-mini (128K tokens)}
-    B --&gt; C[关闭当前 provider 会话]
-    C --&gt; D[重新计算上下文占用]
-    D --&gt; E[当前占用：800,000 tokens&lt;br/&gt;目标上限：128,000 tokens]
-    E --&gt; F[触发紧急压缩]
-    F --&gt; G[压缩到 100,000 tokens]
-    G --&gt; H[切换模型并发送请求 ✓]
+    A[&quot;用户：/model o1-mini&quot;] --&gt; B{&quot;检测到当前模型:&lt;br/&gt;GPT-4o (1M tokens)&lt;br/&gt;目标模型：o1-mini (128K tokens)&quot;}
+    B --&gt; C[&quot;关闭当前 provider 会话&quot;]
+    C --&gt; D[&quot;重新计算上下文占用&quot;]
+    D --&gt; E[&quot;当前占用：800,000 tokens&lt;br/&gt;目标上限：128,000 tokens&quot;]
+    E --&gt; F[&quot;触发紧急压缩&quot;]
+    F --&gt; G[&quot;压缩到 100,000 tokens&quot;]
+    G --&gt; H[&quot;切换模型并发送请求 ✓&quot;]
 </div><hr>
 <h2>四、崩溃降级处理（Crash Degradation）</h2>
 <h3>4.1 压缩方法优先级回退</h3>
