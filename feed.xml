@@ -18,10 +18,47 @@
       <content:encoded><![CDATA[<h1>从 Chat Completions 到 Responses API: Agent底层接口知识梳理</h1>
 <blockquote>
 <p>最近在设计一个 agent 应用，选接口时发现自己对底层传输、协议与 API 形态的理解有一串缺口，索性从 Chat Completions 一路追问到 Responses API，把认知补齐。这篇是我梳理后的笔记，给同样在做接口/agent 选型的读者。</p>
+<p>全文按&quot;先讲清两套接口本体（请求怎么组装、响应怎么流式回来），再讲传输架构的账，最后讲自托管与选型&quot;的顺序展开。</p>
 <p>标注约定：<strong>【事实】</strong>＝官方文档或可验证来源；<strong>【厂商宣称】</strong>＝OpenAI 单方数字，无第三方复现；<strong>【推断】</strong>＝我的推理，欢迎指正。</p>
 </blockquote>
+<h2>目录</h2>
+<ul>
+<li><strong>总览</strong>：两套接口的差异地图</li>
+<li><strong>一、Chat Completions API：无状态的消息循环</strong>
+<ul>
+<li>1.1 request 怎么组装：简单对话 / 复杂对话（工具调用）/ 多轮</li>
+<li>1.2 response 与流式 chunk：delta 里到底有什么</li>
+<li>1.3 官方示例页的五类&quot;配置开关&quot;</li>
+</ul>
+</li>
+<li><strong>二、Responses API：items、服务端状态与 response id</strong>
+<ul>
+<li>2.1 input 的完整形态：item 联合类型与全量回放</li>
+<li>2.2 为什么推出 Responses 替代 Completions</li>
+<li>2.3 response id 细节：作用域、保留期、链式引用</li>
+<li>2.4 有状态 vs 无状态：两种都支持</li>
+</ul>
+</li>
+<li><strong>三、流式传输：为什么选 SSE</strong>
+<ul>
+<li>3.1 SSE 语义：一次连接，多次发送</li>
+<li>3.2 为什么不是 WebSocket</li>
+<li>3.3 请求级 vs 会话级连接：横向扩展的架构账</li>
+<li>3.4 长连接的资源账</li>
+<li>3.5 顺带纠正自己的一个误区：异步不是用来&quot;释放连接&quot;的</li>
+</ul>
+</li>
+<li><strong>四、推理框架与自托管：vLLM 支持到什么程度</strong></li>
+<li><strong>五、Agent 设计中的接口选型</strong>
+<ul>
+<li>5.1 接口与模型训练是两件事</li>
+<li>5.2 决策框架与一页速查</li>
+</ul>
+</li>
+<li><strong>参考官方文档</strong></li>
+</ul>
 <hr>
-<h2>一、两套接口到底差在哪</h2>
+<h2>总览：两套接口的差异地图</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -74,7 +111,66 @@
 </tbody>
 </table></div>
 <p>【事实】官方迁移文档明确：&quot;Chat Completions remains supported, Responses is recommended for all new projects&quot;；字段映射为 <code>messages→input</code>、<code>max_tokens→max_output_tokens</code>、<code>response_format→text.format</code>。</p>
-<h2>二、Chat Completions 文档里的五类示例是什么</h2>
+<p>下面先深入两套接口本体，再回到这张表里每一行的来龙去脉。</p>
+<h2>一、Chat Completions API：无状态的消息循环</h2>
+<h3>1.1 request 怎么组装</h3>
+<p>CC 的请求核心就是一个 <code>messages[]</code> 数组，每个元素是 <code>{role, content}</code>。三种典型场景：</p>
+<p><strong>简单对话</strong>——system 定人设，user 提问：</p>
+<pre><code class="language-json">POST /v1/chat/completions
+{
+  &quot;model&quot;: &quot;gpt-4o&quot;,
+  &quot;messages&quot;: [
+    {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;你是一个严谨的助手&quot;},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;你好&quot;}
+  ]
+}
+</code></pre>
+<p><strong>复杂对话（工具调用）</strong>——请求里声明 <code>tools</code>，模型返回&quot;调用意图&quot;而不是答案：</p>
+<pre><code class="language-json">{
+  &quot;model&quot;: &quot;gpt-4o&quot;,
+  &quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;北京今天天气怎么样？&quot;}],
+  &quot;tools&quot;: [{&quot;type&quot;: &quot;function&quot;, &quot;function&quot;: {&quot;name&quot;: &quot;get_weather&quot;, &quot;parameters&quot;: {&quot;type&quot;: &quot;object&quot;, &quot;properties&quot;: {&quot;city&quot;: {&quot;type&quot;: &quot;string&quot;}}}}}]
+}
+</code></pre>
+<p>响应的 <code>choices[0].message.tool_calls</code> 带 <code>call_id</code>、<code>name</code>、<code>arguments</code>。客户端自己执行工具，然后把<strong>调用意图 + 执行结果</strong>都追加进 messages，重新发一次请求：</p>
+<pre><code class="language-json">{
+  &quot;messages&quot;: [
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;北京今天天气怎么样？&quot;},
+    {&quot;role&quot;: &quot;assistant&quot;, &quot;tool_calls&quot;: [{&quot;id&quot;: &quot;call_123&quot;, &quot;function&quot;: {&quot;name&quot;: &quot;get_weather&quot;, &quot;arguments&quot;: &quot;{\&quot;city\&quot;:\&quot;北京\&quot;}&quot;}}]},
+    {&quot;role&quot;: &quot;tool&quot;, &quot;tool_call_id&quot;: &quot;call_123&quot;, &quot;content&quot;: &quot;{\&quot;temp_c\&quot;: 25}&quot;},
+    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;适合穿什么？&quot;}
+  ]
+}
+</code></pre>
+<p>【事实】工具结果必须放在 <code>role: &quot;tool&quot;</code> 的消息里，用 <code>tool_call_id</code> 与调用意图关联；模型要的&quot;最终答案&quot;要等下一轮响应才出现。</p>
+<p><strong>多轮场景</strong>——服务端不保存任何历史，每一轮都由客户端把之前所有轮次（user 消息、assistant 回复、tool 消息）重发一遍。【事实】这是 CC 无状态设计的本质：状态完全在客户端手里。</p>
+<h3>1.2 response 与流式 chunk</h3>
+<p>非流式响应取 <code>choices[0].message</code>（<code>content</code> 或 <code>tool_calls</code>），<code>finish_reason</code> 标明结束原因：<code>stop</code> / <code>tool_calls</code> / <code>length</code>。</p>
+<p>流式（<code>stream: true</code>）时返回 SSE，每条 <code>data:</code> 是一个 <code>chat.completion.chunk</code>，内容在 <code>choices[0].delta</code> 里增量到达：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>delta 字段</th>
+<th>装什么</th>
+<th>拼完后是什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>delta.content</code></td>
+<td>正文文本增量</td>
+<td>assistant 的最终回答（final answer）</td>
+</tr>
+<tr>
+<td><code>delta.tool_calls</code></td>
+<td>工具调用分片（<code>index</code>/<code>call_id</code>/<code>name</code>/<code>arguments</code> 逐段到达）</td>
+<td>完整的 <code>tool_calls</code> 结构</td>
+</tr>
+</tbody>
+</table></div>
+<p>最后一条 chunk 用 <code>finish_reason</code> 收尾（<code>stop</code> 或 <code>tool_calls</code>），然后连接关闭。</p>
+<p>【事实】值得专门指出：<strong>OpenAI 官方 CC 的 chunk 里没有 reasoning 内容项</strong>。推理模型（o 系列等）的思考过程不流式返回，只在 <code>usage.completion_tokens_details.reasoning_tokens</code> 里报 token 计数。&quot;chunk 里含 reasoning&quot;是 Responses API 的行为——它的 output 里有独立的 <code>reasoning</code> item，流式事件也是 item 级语义事件（见第二节）。这是我最初把两套接口的流式行为混在一起的一个点。</p>
+<h3>1.3 官方示例页的五类&quot;配置开关&quot;</h3>
 <p>我一开始把官方示例页的 Default / Functions / Image input / Logprobs / Streaming 当成了五种接口，实际上它们<strong>都是 request body 的配置开关</strong>：示例页演示的是&quot;开启某能力时，请求怎么写、响应会长什么样&quot;。</p>
 <div class="table-scroll"><table>
 <thead>
@@ -119,7 +215,83 @@
 </tbody>
 </table></div>
 <p>这些开关可以自由组合——比如 Functions + Streaming + Image input 同时开。</p>
-<h2>三、Streaming：一次连接，多次发送</h2>
+<h2>二、Responses API：items、服务端状态与 response id</h2>
+<h3>2.1 input 的完整形态：item 联合类型与全量回放</h3>
+<p><code>input</code> 是联合类型，三种写法【事实】：</p>
+<ol>
+<li><strong>单个字符串</strong>（快捷写法）：<code>input: &quot;tell me a joke&quot;</code></li>
+<li><strong>message 对象数组</strong>：<code>[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;...&quot;}, {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;...&quot;}]</code>——和 CC 的 <code>messages[]</code> 对位</li>
+<li><strong>item 数组</strong>（完整形态）：除 message 外还接受 <code>function_call</code>、<code>function_call_output</code>、<code>reasoning</code>、<code>item_reference</code> 等 item 类型</li>
+</ol>
+<p>所以&quot;复杂对话能不能一次传全量历史&quot;的答案是：<strong>能，和 CC 完全同效</strong>。官方 function calling 示例就是这个模式——把上一轮响应的 <code>output</code> 原样放回 <code>input</code>，再补上工具结果：</p>
+<pre><code class="language-python"># 下一轮请求：把上一轮完整 output 原样放回 input
+input_messages += response.output          # 含 message、reasoning、function_call item
+
+for tool_call in response.output:
+    if tool_call.type != &quot;function_call&quot;:
+        continue
+    result = call_function(tool_call.name, json.loads(tool_call.arguments))
+    input_messages.append({
+        &quot;type&quot;: &quot;function_call_output&quot;,
+        &quot;call_id&quot;: tool_call.call_id,      # 用 call_id 与调用意图关联
+        &quot;output&quot;: json.dumps(result),
+    })
+</code></pre>
+<p>与 CC 的差别不在&quot;能不能装下&quot;，而在 <strong>item 粒度更细</strong>：<code>reasoning</code> item、<code>item_reference</code> 是 CC <code>messages[]</code> 里没有的（CC 连 reasoning 内容都不暴露，见 1.2）。</p>
+<h3>2.2 为什么推出 Responses 替代 Completions</h3>
+<p>范式演进：从&quot;对话补全&quot;（一问一答的文本生成器）到&quot;agent 原语&quot;（把状态、工具、循环内置到 API 层）。</p>
+<p>【事实】Responses 带来的新增能力：</p>
+<ul>
+<li><strong>服务端状态</strong>：<code>store</code>（默认存储）+ <code>previous_response_id</code> / Conversations，多轮不用自己搬历史</li>
+<li><strong>内置工具</strong>：web_search、file_search、code_interpreter、computer use、远程 MCP——在服务端 agent loop 里执行</li>
+<li><strong>推理项一等公民</strong>：<code>reasoning</code> item、<code>reasoning_effort</code>、加密推理（跨轮携带推理上下文而不暴露内容）</li>
+<li><strong>结构化流事件</strong>：item 级语义事件替代裸 delta</li>
+</ul>
+<p>【事实】接口确实影响能力释放，官方原文：<em>&quot;Reasoning models have a richer experience in the Responses API with improved tool usage. <strong>Starting with GPT-5.4, Chat Completions does not support tool calling with <code>reasoning_effort</code> values other than <code>none</code>.</strong>&quot;</em> ——推理模型的工具调用能力，在 CC 接口上被硬性砍掉了。</p>
+<p>【厂商宣称，未验证】OpenAI 称推理模型在 Responses 上 SWE-bench +3%，前缀缓存利用使成本降 40–80%。这是 OpenAI 内部数字，无第三方复现，我持保留态度。</p>
+<p>【事实】Chat Completions <strong>仍在支持中</strong>，官方只说&quot;新项目推荐 Responses&quot;，<strong>没有公布任何弃用时间表</strong>。</p>
+<h3>2.3 response id 细节：作用域、保留期、链式引用</h3>
+<p>围绕 response id 我澄清过四个问题，答案都收在这里：</p>
+<p><strong>谁来生成？</strong>【事实】response id（<code>resp_</code> 前缀）由服务端创建 Response 时生成并随响应返回，客户端从不生成。id 的生成与去重机制文档没有描述，属服务端实现细节——但客户端无需也无从关心。</p>
+<p><strong>作用域是什么？</strong>【事实】一个 Response 对象 = <strong>一次 API 调用的完整产物</strong>：<code>output[]</code> 里聚合了这一轮产出的全部 item（message、reasoning、function_call…）加上 usage 等元数据。&quot;一个 turn 产生一个 response id&quot;成立。流式场景要分两层：SSE 传输时收到的是 delta/语义事件，客户端把它们归并成 item；最终落账的仍是 response 对象及其 output items——事件是传输形态，item 是语义单位，response id 指向的是后者所在的整体。</p>
+<p><strong>服务端存什么？</strong>【事实】<code>store: true</code>（默认）时，Response 对象在服务端保存 <strong>30 天</strong>：dashboard 可查，<code>GET /v1/responses/{id}</code> 可取回。下一轮请求带 <code>previous_response_id: &lt;上一轮 id&gt;</code>，服务端自动把这条链上的历史拼进上下文，客户端只发增量输入。另有第三条路 <strong>Conversations API</strong>：把 messages、tool calls、tool outputs 存成一个跨会话的持久对象，有自己的 durable id，适合多设备/多任务共享同一份对话。</p>
+<p><strong>省不省 token？</strong>【事实】不省。官方明说：即使走 <code>previous_response_id</code> 链，链上之前所有轮次的 input token 照常计入 input 计费。服务端记历史省的是客户端代码，不是上下文。</p>
+<h3>2.4 有状态 vs 无状态：两种都支持</h3>
+<p>【事实】无状态是一等公民：设 <code>store: false</code>，响应不落库，多轮上下文由客户端手动放进 <code>input</code>——和 CC 同一玩法。官方无状态示例就是&quot;把上一轮 <code>response.output</code>（含加密 reasoning item）整体追加回 <code>input</code>，再发下一轮&quot;。</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th></th>
+<th>有状态</th>
+<th>无状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>参数</td>
+<td><code>store: true</code> + <code>previous_response_id</code></td>
+<td><code>store: false</code> + 客户端自己拼 <code>input</code></td>
+</tr>
+<tr>
+<td>历史在哪</td>
+<td>服务端（保存 30 天）</td>
+<td>客户端</td>
+</tr>
+<tr>
+<td>推理模型注意</td>
+<td>reasoning 由服务端自动带上</td>
+<td>必须原样回放全部 output（含加密 reasoning item），否则链路断裂</td>
+</tr>
+<tr>
+<td>适合</td>
+<td>快速原型、单服务单链路</td>
+<td>自管历史/自建压缩、多网关、不想被 30 天窗口绑住</td>
+</tr>
+</tbody>
+</table></div>
+<p>【推断】所以选 Responses 并不意味着&quot;接受服务端托管状态&quot;——两种模式都在，真正的差别是<strong>历史放在谁手里</strong>：CC 只能客户端拼，Responses 给了&quot;放服务端&quot;这个选项，且放服务端也不省 token。</p>
+<h2>三、流式传输：为什么选 SSE</h2>
+<h3>3.1 SSE 语义：一次连接，多次发送</h3>
 <p>【事实】<code>stream: true</code> 时，返回的是 <strong>SSE（Server-Sent Events）</strong>：单次 HTTP 请求 + 响应式持续推送。没有第二协议，就是一条 HTTP 响应不结束，服务器往里持续写 <code>data: {...}</code> 行。</p>
 <div class="mermaid">sequenceDiagram
     accTitle: 一次 SSE 流式请求的生命周期
@@ -133,69 +305,7 @@
     S--&gt;&gt;C: data: finish_reason=stop
     S-&gt;&gt;C: 关闭连接，释放资源
 </div><p>要点：<strong>1 次请求连接，N 次推送</strong>；每个 delta 是生成中的增量 token；<code>finish_reason</code> 是结束信号。</p>
-<h2>四、长连接的资源账</h2>
-<p>一个绕不开的问题：SSE 后端一直维持连接，资源什么时候释放？高并发怎么办？</p>
-<p>【事实】TCP 连接存活期间必然占用：文件描述符、内核收发缓冲区、socket 状态。<strong>连接不关，这些不释放</strong>——这与同步/异步无关，是操作系统层的事实。</p>
-<p>所以高并发下真正要治理的是：</p>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>风险</th>
-<th>治理手段</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>僵尸连接（客户端早断了）</td>
-<td>写失败即感知（TCP 会报错），配合心跳/空闲超时清理</td>
-</tr>
-<tr>
-<td>慢生成占住连接</td>
-<td>单请求时长上限，超时主动断开</td>
-</tr>
-<tr>
-<td>连接数打爆 FD 上限</td>
-<td>服务器级并发上限，超限返回 503 或排队</td>
-</tr>
-<tr>
-<td>异常拖住不释放</td>
-<td>出错立即断开（快速失败），而不是等生成结束</td>
-</tr>
-</tbody>
-</table></div>
-<h2>五、一个我自己的认知误区：异步不是用来&quot;释放连接&quot;的</h2>
-<p>我最初的理解是&quot;异步 SSE 更安全&quot;，后来发现这个表述不成立，值得单独写一节。</p>
-<p><strong>误区</strong>：以为异步能帮助&quot;回收连接、释放资源&quot;。
-<strong>事实</strong>：连接占用的资源（FD、缓冲区、内核态）跟异步没有任何关系，异步不能回收连接。</p>
-<p>异步的真正价值在另一处：</p>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th></th>
-<th>同步阻塞（一线程一连接）</th>
-<th>异步（事件循环 + 协程）</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>一个挂起的流式连接占用什么</td>
-<td>整个线程（默认栈常达 MB 级）</td>
-<td>一个挂起的协程（KB 级）</td>
-</tr>
-<tr>
-<td>其他新请求能否被处理</td>
-<td>工作线程被占满时，新请求排队甚至被拒</td>
-<td>事件循环继续接受、分发新请求</td>
-</tr>
-<tr>
-<td>并发密度</td>
-<td>受限于线程数</td>
-<td>受限于内存与 FD 上限</td>
-</tr>
-</tbody>
-</table></div>
-<p>【推断】准确的说法是：<strong>异步提高的是&quot;同时挂起大量半完成连接&quot;的并发密度，并保证单个慢连接不阻塞新请求的接受与处理</strong>；而&quot;连接占用的资源最终能释放&quot;靠的是超时、上限、快速失败这些治理措施（见 §4），不是异步本身。两者配合，SSE 才能在生产上扛高并发。</p>
-<h2>六、为什么 OpenAI 选 SSE 而不是 WebSocket</h2>
+<h3>3.2 为什么不是 WebSocket</h3>
 <p>同样是长连接协议，为什么不是 WebSocket？【事实/推断，方向可靠】</p>
 <ol>
 <li><strong>通信方向匹配</strong>：文本生成是&quot;客户端发一次请求 → 服务器单向推流&quot;。WebSocket 的双向能力在这里是冗余设计。</li>
@@ -203,8 +313,8 @@
 <li><strong>基础设施免费兼容</strong>：SSE 天然过现有 HTTP 栈——鉴权用 HTTP Header，CDN/代理/负载均衡/限流都按 HTTP 语义工作；WebSocket 在每一层都需要显式配置 Upgrade 透传。</li>
 </ol>
 <p>反过来，需要双向实时（协同编辑、游戏、语音通话）的场景，WebSocket 仍是正确选型。</p>
-<h2>七、无状态 vs 有状态：对横向扩展的影响</h2>
-<p>顺着 §6 再挖一层：<strong>SSE 的&quot;连接&quot;是请求级生命周期（分钟级、结束即释放），WebSocket 的&quot;连接&quot;是会话级生命周期（长存、绑定节点）</strong>。这个差异对扩展性是架构级的。</p>
+<h3>3.3 请求级 vs 会话级连接：横向扩展的架构账</h3>
+<p>顺着 3.2 再挖一层：<strong>SSE 的&quot;连接&quot;是请求级生命周期（分钟级、结束即释放），WebSocket 的&quot;连接&quot;是会话级生命周期（长存、绑定节点）</strong>。这个差异对扩展性是架构级的。</p>
 <div class="mermaid">flowchart LR
     accTitle: 请求级连接与会话级连接的扩展差异
     accDescr: 上方路径显示 SSE 请求完成后即释放，任意节点可处理任意请求，扩缩容零成本；下方路径显示 WebSocket 连接长期绑定单一节点，需要粘滞会话且节点故障即断连
@@ -244,19 +354,69 @@
 </tbody>
 </table></div>
 <p>【推断】需要诚实补充：sticky session + 状态外置是成熟方案（IM/游戏服务都这么跑），说 WebSocket &quot;不能横向扩展&quot;不成立；准确说法是<strong>扩展复杂度和故障恢复成本更高</strong>。</p>
-<h2>八、为什么又推出 Responses 来替代 Completions</h2>
-<p>范式演进：从&quot;对话补全&quot;（一问一答的文本生成器）到&quot;agent 原语&quot;（把状态、工具、循环内置到 API 层）。</p>
-<p>【事实】Responses 带来的新增能力：</p>
-<ul>
-<li><strong>服务端状态</strong>：<code>store</code>（默认存储）+ <code>previous_response_id</code> / Conversations，多轮不用自己搬历史</li>
-<li><strong>内置工具</strong>：web_search、file_search、code_interpreter、computer use、远程 MCP——在服务端 agent loop 里执行</li>
-<li><strong>推理项一等公民</strong>：<code>reasoning</code> item、<code>reasoning_effort</code>、加密推理（跨轮携带推理上下文而不暴露内容）</li>
-<li><strong>结构化流事件</strong>：item 级语义事件替代裸 delta</li>
-</ul>
-<p>【事实】接口确实影响能力释放，官方原文：<em>&quot;Reasoning models have a richer experience in the Responses API with improved tool usage. <strong>Starting with GPT-5.4, Chat Completions does not support tool calling with <code>reasoning_effort</code> values other than <code>none</code>.</strong>&quot;</em> ——推理模型的工具调用能力，在 CC 接口上被硬性砍掉了。</p>
-<p>【厂商宣称，未验证】OpenAI 称推理模型在 Responses 上 SWE-bench +3%，前缀缓存利用使成本降 40–80%。这是 OpenAI 内部数字，无第三方复现，我持保留态度。</p>
-<p>【事实】Chat Completions <strong>仍在支持中</strong>，官方只说&quot;新项目推荐 Responses&quot;，<strong>没有公布任何弃用时间表</strong>。</p>
-<h2>九、自托管：vLLM 支持到什么程度</h2>
+<h3>3.4 长连接的资源账</h3>
+<p>一个绕不开的问题：SSE 后端一直维持连接，资源什么时候释放？高并发怎么办？</p>
+<p>【事实】TCP 连接存活期间必然占用：文件描述符、内核收发缓冲区、socket 状态。<strong>连接不关，这些不释放</strong>——这与同步/异步无关，是操作系统层的事实。</p>
+<p>所以高并发下真正要治理的是：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>风险</th>
+<th>治理手段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>僵尸连接（客户端早断了）</td>
+<td>写失败即感知（TCP 会报错），配合心跳/空闲超时清理</td>
+</tr>
+<tr>
+<td>慢生成占住连接</td>
+<td>单请求时长上限，超时主动断开</td>
+</tr>
+<tr>
+<td>连接数打爆 FD 上限</td>
+<td>服务器级并发上限，超限返回 503 或排队</td>
+</tr>
+<tr>
+<td>异常拖住不释放</td>
+<td>出错立即断开（快速失败），而不是等生成结束</td>
+</tr>
+</tbody>
+</table></div>
+<h3>3.5 异步不是用来&quot;释放连接&quot;的</h3>
+<p>我最初的理解是&quot;异步 SSE 更安全&quot;，后来发现这个表述不成立。</p>
+<p><strong>误区</strong>：以为异步能帮助&quot;回收连接、释放资源&quot;。
+<strong>事实</strong>：连接占用的资源（FD、缓冲区、内核态）跟异步没有任何关系，异步不能回收连接。</p>
+<p>异步的真正价值在另一处：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th></th>
+<th>同步阻塞（一线程一连接）</th>
+<th>异步（事件循环 + 协程）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一个挂起的流式连接占用什么</td>
+<td>整个线程（默认栈常达 MB 级）</td>
+<td>一个挂起的协程（KB 级）</td>
+</tr>
+<tr>
+<td>其他新请求能否被处理</td>
+<td>工作线程被占满时，新请求排队甚至被拒</td>
+<td>事件循环继续接受、分发新请求</td>
+</tr>
+<tr>
+<td>并发密度</td>
+<td>受限于线程数</td>
+<td>受限于内存与 FD 上限</td>
+</tr>
+</tbody>
+</table></div>
+<p>【推断】准确的说法是：<strong>异步提高的是&quot;同时挂起大量半完成连接&quot;的并发密度，并保证单个慢连接不阻塞新请求的接受与处理</strong>；而&quot;连接占用的资源最终能释放&quot;靠的是超时、上限、快速失败这些治理措施（见 3.4），不是异步本身。两者配合，SSE 才能在生产上扛高并发。</p>
+<h2>四、推理框架与自托管：vLLM 支持到什么程度</h2>
 <p>【事实，vLLM 官方文档 OpenAI-Compatible Server 页】<code>vllm serve</code> 原生支持：</p>
 <ul>
 <li><code>/v1/responses</code></li>
@@ -264,15 +424,16 @@
 <li><code>/v1/responses/{response_id}/cancel</code></li>
 </ul>
 <p>【推断】自托管 vLLM 的 Responses 与 OpenAI 云端不等价：web_search、code_interpreter、file_search 这些是 <strong>OpenAI 托管服务</strong>，vLLM 上要么没有、要么要自己接；<code>previous_response_id</code> 式状态存储的完整度也以官方文档为准。选自托管时，预期应放在&quot;接口形状兼容&quot;，而不是&quot;内置工具全家桶照搬&quot;。</p>
-<h2>十、接口影响模型性能吗？需要为接口单独训练吗？</h2>
+<p>【未知】开源模型在 vLLM 上跑 <code>/v1/responses</code> 与 <code>/v1/chat/completions</code> 的 agentic 表现差异，官方没有公开评测。若在意，应在自己的任务集上 A/B。</p>
+<h2>五、Agent 设计中的接口选型</h2>
+<h3>5.1 接口与模型训练是两件事</h3>
 <p>分三层回答：</p>
 <ol>
 <li><strong>模型权重不受接口影响</strong>【事实】：两接口调同一模型，接口是编排层封装。模型看到的最终输入，都会渲染成训练时的 chat template 序列。</li>
-<li><strong>接口影响的是&quot;编排质量&quot;而非&quot;模型智力&quot;</strong>【事实+推断】：CC 模式下多轮工具循环由客户端拼装，历史遗漏、截断、格式错误都是应用层 bug 的来源；Responses 把循环和状态放服务端，等价于消除了整类人为编排错误。GPT-5.4 起 CC 上推理模型工具调用被禁用（§8），则是接口直接决定&quot;能力可用集&quot;的硬证据。</li>
+<li><strong>接口影响的是&quot;编排质量&quot;而非&quot;模型智力&quot;</strong>【事实+推断】：CC 模式下多轮工具循环由客户端拼装，历史遗漏、截断、格式错误都是应用层 bug 的来源；Responses 把循环和状态放服务端，等价于消除了整类人为编排错误。GPT-5.4 起 CC 上推理模型工具调用被禁用（见 2.2），则是接口直接决定&quot;能力可用集&quot;的硬证据。</li>
 <li><strong>是否需要针对接口做训练？</strong>【推断】：不需要&quot;为接口&quot;单独训练——不存在独立的接口适配层要学。需要的是<strong>面向 agentic 任务域的训练</strong>（工具选择、多步规划、结果回读），这类训练成果两种接口都受益。</li>
 </ol>
-<p>【未知】开源模型在 vLLM 上跑 <code>/v1/responses</code> 与 <code>/v1/chat/completions</code> 的 agentic 表现差异，官方没有公开评测。若在意，应在自己的任务集上 A/B。</p>
-<h2>十一、我的接口选型决策框架</h2>
+<h3>5.2 决策框架与一页速查</h3>
 <p>结论先行：<strong>选哪个接口是 agent 设计阶段的决策</strong>，且它与&quot;模型训练&quot;分属两个责任面——前者是应用开发者对编排方式/可用能力集的选择，后者是模型供应商对权重的优化，两者解耦。</p>
 <div class="mermaid">flowchart TD
     accTitle: Agent 设计期的接口选择决策
@@ -288,12 +449,14 @@
 <ul>
 <li><strong>用 CC</strong>：接第三方兼容网关（vLLM/OpenRouter 等）、自己管理历史、简单生成、要 <code>n</code> 多候选</li>
 <li><strong>用 Responses</strong>：新项目 + OpenAI 直连、要内置工具/托管循环/服务端状态、推理模型 + 工具调用（GPT-5.4 后仅此路）</li>
-<li><strong>无论选哪个</strong>：流式按 SSE 语义理解；并发治理靠超时/上限/快速失败；异步框架解决的是并发密度而非连接释放</li>
+<li><strong>无论选哪个</strong>：含 tool_call 的复杂历史都能一次传全量；流式按 SSE 语义理解；并发治理靠超时/上限/快速失败；异步框架解决的是并发密度而非连接释放</li>
 </ul>
 <hr>
 <h2>参考官方文档</h2>
 <ul>
 <li>OpenAI — Migrate to the Responses API（含 GPT-5.4 工具调用限制、字段映射、store 默认值）: <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses">https://developers.openai.com/api/docs/guides/migrate-to-responses</a></li>
+<li>OpenAI — Conversation state（previous_response_id / store / Conversations API / 30 天保留 / 链式计费）: <a href="https://developers.openai.com/api/docs/guides/conversation-state">https://developers.openai.com/api/docs/guides/conversation-state</a></li>
+<li>OpenAI — Function calling（function_call_output + call_id 回传、output 全量回放示例）: <a href="https://developers.openai.com/api/docs/guides/function-calling">https://developers.openai.com/api/docs/guides/function-calling</a></li>
 <li>OpenAI Developers 文档首页: <a href="https://developers.openai.com/api/docs/">https://developers.openai.com/api/docs/</a></li>
 <li>Microsoft Learn — 从 Azure OpenAI Chat Completions 迁移到 Responses API: <a href="https://learn.microsoft.com/en-us/azure/developer/ai/how-to/azure-openai-to-responses">https://learn.microsoft.com/en-us/azure/developer/ai/how-to/azure-openai-to-responses</a></li>
 <li>vLLM — OpenAI-Compatible Server（Supported APIs 列表，含 /v1/responses 端点）: <a href="https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server">https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server</a></li>
