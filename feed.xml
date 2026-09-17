@@ -23,9 +23,9 @@
 <ol>
 <li><a href="#%E8%83%8C%E6%99%AF">背景：什么是幻觉，为什么它和&quot;知识容量&quot;有关</a></li>
 <li><a href="#q1">问题一：小模型比大模型更容易幻觉吗？</a></li>
-<li><a href="#q2">问题二：4bit 以下的量化幻觉更严重，是必然结果吗？</a></li>
-<li><a href="#q3">交叉难题：9B-Q8 vs 27B-Q2，谁更靠谱？</a></li>
-<li><a href="#q4">问题四：同参数量，Dense 比 MoE 幻觉率更低吗？</a></li>
+<li><a href="#q2.1">问题二：4bit 以下的量化幻觉更严重，是必然结果吗？</a></li>
+<li><a href="#q2.2">交叉难题：9B-Q8 vs 27B-Q2，谁更靠谱？</a></li>
+<li><a href="#q3">问题三：同参数量，Dense 比 MoE 幻觉率更低吗？</a></li>
 <li><a href="#practice">实践建议</a></li>
 <li><a href="#refs">参考文献</a></li>
 </ol>
@@ -89,7 +89,7 @@
 </tbody>
 </table></div>
 <hr>
-<h2>3. 问题二：4bit 以下的量化幻觉更严重，是必然结果吗？ {#q2}</h2>
+<h2>3. 问题二：4bit 以下的量化幻觉更严重，是必然结果吗？ {#q2.1}</h2>
 <p><strong>结论：量化确实会加重幻觉，但不是线性&quot;必然&quot;，而是存在阈值效应——低于某档位后退化从&quot;均匀的小误差&quot;突变为&quot;结构性的行为畸变&quot;。</strong></p>
 <h3>文献证据</h3>
 <p><strong>知识容量的直接测量</strong>（<a href="https://arxiv.org/abs/2404.05405">arXiv:2404.05405</a>，Result 8）：</p>
@@ -131,12 +131,12 @@
 <ul>
 <li><strong>量化方法</strong>：Dynamic 混合精度 &gt; AWQ &gt; GPTQ &gt; 裸 uniform（[2409.11055] 实测 AWQ &gt; GPTQ）</li>
 <li><strong>imatrix 校准数据</strong>：用你实际的任务分布做校准，能保住关键路径的精度</li>
-<li><strong>架构</strong>：MoE 抗量化优于同规模 dense（见问题四）</li>
+<li><strong>架构</strong>：MoE 抗量化优于同规模 dense（见问题三）</li>
 <li><strong>模型规模</strong>：大模型冗余度高，同样的比特损失占比更小</li>
 </ul>
 <p><strong>精炼表述：低于质量阈值后，量化退化从&quot;均匀小误差&quot;变成&quot;结构性畸变&quot;，知识准确性和结构化输出是最先崩溃的两个维度。阈值本身取决于方法、校准和架构，不是固定比特数。</strong></p>
 <hr>
-<h2>4. 交叉难题：9B-Q8 vs 27B-Q2，谁更靠谱？ {#q3}</h2>
+<h2>4. 交叉难题：9B-Q8 vs 27B-Q2，谁更靠谱？ {#q2.2}</h2>
 <p>这是三股力量的对撞：小模型的容量缺口 vs 大模型的量化损伤。<strong>文件体积相同 ≠ 有效知识量相同。</strong> 先看坐标数字：</p>
 <div class="table-scroll"><table>
 <thead>
@@ -180,7 +180,7 @@
 <p><strong>诚实声明：我没有&quot;9B-Q8 vs 27B-Q2&quot;的直接 benchmark 数据，现有量化论文都在测同模型不同比特的 PPL/MMLU 下降，跨规模交叉对比是文献空白。</strong> 上面的排序是机制推断，不是实验结论。想真正验证的话：固定事实问答集 + tool-call 任务，温度 0，各跑 5 次采样，用 LLM-as-judge 分别评事实正确率、置信度-正确率校准曲线、schema 合法率。</p>
 <p>另外注意：这个估算用的&quot;每参数有效知识&quot;是<strong>受控合成数据</strong>下的理论上限；真实模型的预训练数据质量参差，两个模型实际存的量可能都远低于上限，实际对比还叠加了数据质量变量。</p>
 <hr>
-<h2>5. 问题四：同参数量，Dense 比 MoE 幻觉率更低吗？ {#q4}</h2>
+<h2>5. 问题三：同参数量，Dense 比 MoE 幻觉率更低吗？ {#q3}</h2>
 <p><strong>结论：没有稳健实证支持&quot;dense 系统性幻觉更低&quot;。现有证据是间接对比；机制上有两股方向相反的力，谁赢取决于对齐哪个轴。</strong></p>
 <h3>先拆&quot;同参数量&quot;的三种含义</h3>
 <div class="table-scroll"><table>
