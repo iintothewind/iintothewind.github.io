@@ -1,5 +1,18 @@
 [
   {
+    "title": "LLM 幻觉三问：模型规模、量化与 Dense/MoE 架构 — 基于文献的知识分享",
+    "date": "2026-09-16T23:56:38.000Z",
+    "formattedDate": "2026-09-16",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-09-16-8c7c0f76bec5a47e0fe44d3a6295fe9c",
+    "url": "posts/2026-09-16-8c7c0f76bec5a47e0fe44d3a6295fe9c.html",
+    "excerpt": "LLM 幻觉三问：模型规模、量化、Dense vs MoE 整理自一次围绕 LLM 幻觉的技术讨论。三个问题层层递进：小模型是否比大模型更容易幻觉？低比特量化是否必然加重幻觉？同等条件下 Dense "
+  },
+  {
     "title": "从 Chat Completions 到 Responses API 流式接口知识梳理",
     "date": "2026-09-16T17:54:45.000Z",
     "formattedDate": "2026-09-16",

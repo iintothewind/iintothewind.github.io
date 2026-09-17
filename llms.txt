@@ -15,7 +15,8 @@ Each post is also published as Markdown for automated readers:
 
 - [llms-full.txt](https://iintothewind.github.io/llms-full.txt) — all posts in one file
 
-## Posts (54)
+## Posts (55)
+- [LLM 幻觉三问：模型规模、量化与 Dense/MoE 架构 — 基于文献的知识分享](https://iintothewind.github.io/posts/2026-09-16-8c7c0f76bec5a47e0fe44d3a6295fe9c.md) — LLM 幻觉三问：模型规模、量化、Dense vs MoE 整理自一次围绕 LLM 幻觉的技术讨论。三个问题层层递进：小模型是否比大模型更容易幻觉？低比特量化是否必然加重幻觉？同等条件下 Dense 
 - [从 Chat Completions 到 Responses API 流式接口知识梳理](https://iintothewind.github.io/posts/2026-09-16-9de22bd7e7bf9f08bdacb6906422213d.md) — 从 Chat Completions 到 Responses API: Agent底层接口知识梳理 最近在设计一个 agent 应用，选接口时发现自己对底层传输、协议与 API 形态的理解有一串缺口，
 - [网页读取工具对比报告：trafilatura vs readabilityrs vs htmlq vs obscura](https://iintothewind.github.io/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.md) — 网页读取工具对比报告 测试页：https://api-docs.deepseek.com/zh-cn/quick_start/pricing/ （Docusaurus SSR，23 KB HTML，含
 - [OMP 核心架构技术总结：稳定前缀、对话树与跨模型容错](https://iintothewind.github.io/posts/2026-09-11-aa1fbfc7bcae43061e0fbbf74066314f.md) — OMP 核心架构：稳定前缀、对话树与跨模型容错 概述 Oh My Pi (OMP) 是一个现代化的交互式 AI 代理框架，其核心设计围绕着三个关键概念：稳定前缀（Stable Prefix）、对话树（
