@@ -6,6 +6,522 @@ Individual mirrors remain available under posts/<slug>.md.
 
 ---
 
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-09-18-fec9ae92c7bc121f0aec69e709a8ab23.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/2026-09-18-fec9ae92c7bc121f0aec69e709a8ab23.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# Cloudflare 开发者文档高效读取方法（Agent 版）
+
+> Published: 2026-09-18 · Tags: gist, summary
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# Cloudflare 开发者文档高效读取方法（Agent 版）
+
+> 写给自己和其他 agent 复用。目标：读 `developers.cloudflare.com` 时少花 token、少踩坑。
+> 实测时间：2026-09。所有 URL 我都 curl 验证过，`200` 才写进去，`404` 的坑也标了。
+
+## TL;DR
+
+**一句话：Cloudflare 是"多产品 + OpenAPI"站，结构最丰富。Workers Runtime API 有完整 OpenAPI JSON（25.5MB，2207 paths，11035 operations），机器可读首选 jq 查询；各产品指南用 `<产品>/llms.txt`；单页用 `Accept: text/markdown` 隐藏技巧取 Markdown。**
+
+效率排序：
+
+```
+openapi.json (jq 查 Workers API)   >  <产品>/llms.txt (索引)   >  Accept: text/markdown (单页)   >  爬 HTML
+```
+
+- **Workers Runtime API（查接口/参数）** → `/openapi.json` + `jq`（25.5MB，2207 paths，11035 operations）
+- **读某个产品指南** → `<产品>/llms.txt`（每个产品有自己的索引，官方推荐）
+- **读单篇** → `curl -H "Accept: text/markdown" <页面URL>`（隐藏技巧，任意页面返回 Markdown）
+- **wrangler CLI** → 用官方 skill（wrangler 那个确实好用，文档站反而是次要的）
+
+## 四种形态（都实测）
+
+| 形态 | URL | 状态 | 用途 |
+|---|---|---|---|
+| **OpenAPI JSON** | `/openapi.json` | ✅ 25.5MB | Workers Runtime API 完整机器可读参考 |
+| **根索引** | `/llms.txt` | ✅ text/plain | 所有产品入口 |
+| **产品索引** | `<产品>/llms.txt` | ✅ 各产品独立 | 单产品文档导航（官方推荐） |
+| **Markdown 单页** | 任意页面 + `Accept: text/markdown` | ✅ 隐藏技巧 | 取单篇正文 |
+| `.md` twin | `<页面>.md` | ❌ 404 | 不存在 |
+| GitHub raw | — | ❌ 404 | docs 不提交源码 |
+
+## URL 模式（精确，可直接粘）
+
+**1. Workers Runtime API（机器可读，用 jq）**
+
+```bash
+# 取整个 spec（25.5MB，先缓存到本地）
+curl -sL https://developers.cloudflare.com/openapi.json -o openapi.json
+
+# 列所有 path
+jq -r '.paths | keys_unsorted[]' openapi.json
+
+# 数 operations
+jq '[.paths[]? | (.get,.post,.put,.delete,.patch)] | length' openapi.json   # 11035
+
+# 查某个 path 的所有方法 + summary
+jq '.paths["/accounts"] | to_entries | map({method: .key, summary: .value.summary})' openapi.json
+
+# 查某个 operation 的参数 schema
+jq '.paths["/accounts"] | .get.parameters' openapi.json
+```
+
+**2. 根索引（所有产品入口）**
+
+```
+https://developers.cloudflare.com/llms.txt   →  每个产品链接到自己的 llms.txt
+```
+
+**3. 产品索引（官方推荐，单产品导航）**
+
+```bash
+# Workers（最常用）
+https://developers.cloudflare.com/workers/llms.txt   →  526 行，链接到各页 .md
+
+# 其他产品都同理
+https://developers.cloudflare.com/cache/llms.txt
+https://developers.cloudflare.com/dns/llms.txt
+https://developers.cloudflare.com/api-shield/llms.txt
+```
+
+**4. 单页（隐藏技巧：Accept: text/markdown）**
+
+```bash
+# 关键：不带 .md 后缀，但发 Accept: text/markdown header
+curl -s -H "Accept: text/markdown" https://developers.cloudflare.com/workers/
+# → 200, text/markdown, 6916B，干净正文
+
+# 嵌套路径同理
+curl -H "Accept: text/markdown" https://developers.cloudflare.com/workers/tutorials/hello-world/
+```
+
+**⚠️ 已知 404 陷阱：**
+- `.md` twin：`/workers/index.md` 直接 curl 会 404（需要 `Accept: text/markdown` header）
+- 错误路径：`/workers/tutorials/hello-world/` → 404（真实路径在 llms.txt 里）
+
+## Agent 工作流
+
+**查 Workers Runtime API 接口（最常见）：**
+1. `curl -L https://developers.cloudflare.com/openapi.json -o openapi.json`（缓存一次，25.5MB）
+2. `jq` 定位 path / operation / 参数 / schema
+3. 需要说明性文字时，`curl -H "Accept: text/markdown" <页面URL>` 取正文
+
+**读某个产品指南：**
+1. `curl -L <产品>/llms.txt` → 该产品文档索引
+2. 从索引挑页，`curl -H "Accept: text/markdown" <页面URL>` 取正文
+
+## 工具怎么选
+
+| 工具 | 用在哪 |
+|---|---|
+| `curl` + `jq` | **Workers API 首选**。openapi.json + jq 定位接口/参数，零 HTML 解析 |
+| `curl -H "Accept: text/markdown"` | 取单篇正文（官方隐藏技巧，比 .md 后缀更通用） |
+| `web_fetch` | 兜底，但不如 curl + header 干净 |
+| unifetch | 不划算 |
+
+## 常见误区
+
+1. **别找 `.md` twin**：Cloudflare 页面 `.md` 后缀 curl 直接 404。要用 `Accept: text/markdown` header。
+2. **别整段喂 openapi.json（25.5MB）**：11035 个 operation，token 爆炸。正确做法：先 `jq` 定位 path/operation，再针对性查字段。
+3. **wrangler 优先用官方 skill**：CF 的 wrangler CLI 有官方 skill，比翻文档站更高效。文档站主要给"理解接口/指南"用。
+4. **api-catalog 不是完整目录**：`/.well-known/api-catalog` 只是个 linkset（指向 openapi.json），别指望它是结构化 API 目录。
+
+---
+
+*来源：developers.cloudflare.com（实测 2026-09）。Cloudflare 用 OpenAPI JSON + `Accept: text/markdown` + 各产品 llms.txt 给 AI 提供友好形态。*
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# vLLM 文档高效读取方法（Agent 版）
+
+> Published: 2026-09-18 · Tags: gist, summary
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# vLLM 文档高效读取方法（Agent 版）
+
+> 写给自己和其他 agent 复用。目标：读 `docs.vllm.ai` 时少花 token、少踩坑。
+> 实测时间：2026-09。所有 URL 我都 curl 验证过，`200` 才写进去，`404` 的坑也标了。
+
+## TL;DR
+
+**一句话：vLLM 文档是 MkDocs 生成站，没有 llms.txt、没有 .md twin、GitHub 上也没有 .md 源码。** 唯一干净的读法是 `web_fetch` 取单页，目录靠 `sitemap.xml`。
+
+效率排序：
+
+```
+web_fetch(<页面>)          >>  sitemap.xml（2686 页索引）  >  爬 HTML 剥 nav  >  GitHub raw（无 .md，404）
+```
+
+- **读一篇** → `web_fetch` 单页（自动剥 nav，正文干净）
+- **查"有哪些"** → `sitemap.xml`（2686 个 URL）
+- **GitHub raw** → 别试，docs 是构建时生成的，仓库里只有 `.meta.yml`，没有 `.md`（返回 404）
+- **unifetch / 爬 HTML** → 能用但脏，`web_fetch` 已自动剥 nav，优先用它
+
+## 为什么不用 .md / llms.txt
+
+实测全部 404：
+
+- `/llms.txt` → 404
+- `/llms-full.txt` → 404
+- 任意 `.md` twin（`/index.md`、`/en/latest/features/tool_calling.md`）→ 404
+- GitHub raw `docs/api/vllm/README.md` 等 → 404（README 能取是因为它是真文件，docs 页面不是）
+
+**根因**：vLLM 用 MkDocs Material + 每个页面对应一个 `.meta.yml` 配置，`.md` 正文是**构建时生成**的，不提交到仓库。所以没有现成的 `.md` 可取——只能拿 HTML 或走 web_fetch。
+
+## URL 模式（精确，可直接粘）
+
+**索引（唯一官方索引）：**
+
+```
+https://docs.vllm.ai/sitemap.xml   →  2686 个 URL（<loc> 标签）
+```
+
+**单页（web_fetch 直接取，用服务 URL）：**
+
+```
+# 首页
+https://docs.vllm.ai/en/latest/
+
+# API
+https://docs.vllm.ai/en/latest/api/
+
+# 示例：Serving / Tool Calling
+https://docs.vllm.ai/en/latest/serving/openai_compatible_server/
+
+# 文档分区（sitemap 里都有）
+/en/latest/api        /en/latest/benchmarking
+/en/latest/cli        /en/latest/configuration
+/en/latest/deployment /en/latest/features
+```
+
+**⚠️ 路径注意**：服务 URL 是 `/en/latest/<section>/`（带版本）。sitemap 里全是这种完整 URL，直接解析 `<loc>` 用即可，不用自己拼。
+
+## Agent 工作流
+
+1. **要"有哪些"**：`curl sitemap.xml` → 解析 `<loc>`（2686 个 URL）→ 决定读哪页。
+2. **读单篇**：`web_fetch https://docs.vllm.ai/<loc>` → 自动剥 nav，返回干净正文。
+3. **要全量**：sitemap 2686 页，没有 35MB 全量导出。正确做法：sitemap 取 TOC → `web_fetch` 逐篇取需要的。
+
+## 工具怎么选
+
+| 工具 | 用在哪 |
+|---|---|
+| `web_fetch` | **首选**。自动剥 nav，返回干净正文，适合这种生成站 |
+| `unifetch` | 不划算——`web_fetch` 已自动剥 nav |
+| `curl` | 只用来取 `sitemap.xml`（纯 XML，无 nav） |
+| GitHub raw | 别用，docs 是生成的，无 .md |
+
+## 常见误区
+
+1. **别找 llms.txt / .md twin**：vLLM 没有。这两个站（OpenAI、Claude）有的，vLLM 没有。
+2. **别抓 GitHub 源码**：docs 是构建时生成的，仓库里只有 `.meta.yml`，`.md` 是 404。
+3. **没有 35MB 全量**：别指望 `llms-full.txt`。要全量只能 sitemap + 逐篇 web_fetch。
+4. **sitemap 才是索引**：vLLM 唯一官方索引就是 `sitemap.xml`。
+
+---
+
+*来源：docs.vllm.ai（实测 2026-09）。MkDocs Material 生成站，docs 正文不提交到仓库。*
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-09-18-ecf12face2154f17ed6d4a051c1fe18f.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/2026-09-18-ecf12face2154f17ed6d4a051c1fe18f.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# Claude 平台文档高效读取方法（Agent 版）
+
+> Published: 2026-09-18 · Tags: gist, summary
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# Claude 平台文档高效读取方法（Agent 版）
+
+> 写给自己和其他 agent 复用。目标：读 `platform.claude.com/docs` 时少花 token、少踩坑。
+> 实测时间：2026-09。所有 URL 我都 curl 验证过，`200` 才写进去，`404` 的坑也标了。
+
+## TL;DR
+
+**一句话：Claude 文档站是重定向 SPA，根路径没有 `.md` twin。读文档走 `.md` / `llms.txt`，别在浏览器里导航。**
+
+效率排序：
+
+```
+docs/<语言>/<路径>.md          >  llms.txt（英文索引）  >  llms-full.txt（英文全量，35MB）  >  爬 HTML
+```
+
+- **读一篇** → 取 `.md`（干净、小、无导航）
+- **查"有哪些"** → 取 `llms.txt`（629 页英文索引，链接已给全）
+- **读全站** → 英文可用 `llms-full.txt`（**35MB**，太大，别整段塞上下文）
+- **中文** → 没有索引，只能逐页取 `docs/zh-CN/<路径>.md`
+- **unifetch** 只留给"没有 `.md`/`llms.txt` 的第三方站"
+
+## 为什么不用 html 爬
+
+实测 `web_fetch` / `unifetch` 抓 `platform.claude.com/docs`：返回的是 SPA 壳 + 客户端 JS，正文由前端组装。**curl 直接取 `.md` / `llms.txt`** 才是干净正文。
+
+## URL 模式（精确，可直接粘）
+
+**通用规则：`/docs/<语言>/<完整路径>.md`，语言段必填。**
+
+```
+# 英文单页（根路径 /docs/x.md 会 404，必须带语言段）
+https://platform.claude.com/docs/en/get-started.md          ✅
+https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview.md   ✅
+
+# 中文单页（同样要带语言段）
+https://platform.claude.com/docs/zh-CN/agents-and-tools/tool-use/overview.md  ✅
+https://platform.claude.com/docs/zh-TW/agents-and-tools/tool-use/overview.md  ✅
+
+# 支持的语言段
+en / zh-CN / zh-TW / de / es / fr / it / ja / ko / pt-BR / ru / id
+```
+
+**⚠️ 已知 404 陷阱**：
+- 根路径 `.md` 无 twin：`/docs/get-started.md` → 404（缺语言段）
+- 截断子路径：`/docs/en/tools/overview.md` → 404（要完整路径 `agents-and-tools/tool-use/overview.md`）
+- 非英文语言没有 `llms.txt`：`/docs/zh-CN/llms.txt` → 404
+
+**索引页（英文，AI-native）：**
+
+```
+# 英文索引（68KB，列 629 页，链接已给全）
+https://platform.claude.com/llms.txt
+
+# 英文全量导出（35MB，单文件）
+https://platform.claude.com/llms-full.txt
+```
+
+**⚠️ 没有**：各语言 `llms.txt`、各语言全量导出、`llms.json`。
+
+## Agent 工作流
+
+**英文（有索引）：**
+1. `curl llms.txt` → 629 页英文索引，链接已给全。
+2. 从索引里挑页，直接 `curl` 对应 `.md` URL。
+3. 要"全量"时才用 `llms-full.txt`——但 35MB，token 爆炸，**别整段塞上下文**。
+
+**中文（无索引）：**
+1. 没有中文 `llms.txt`，无法一键列目录。
+2. 只能逐页取 `docs/zh-CN/<路径>.md`，路径从英文 llms.txt 或网页面包屑推断。
+3. 中文全量没有 35MB 版，只能按需逐篇抓。
+
+## 工具怎么选
+
+| 工具 | 用在哪 |
+|---|---|
+| `curl` / `http_request` | 直接取 `.md` / `.txt`（最快，零解析） |
+| `unifetch` | 没有 `.md`/`llms.txt` 的第三方站；Claude 站反而不划算 |
+| `web_fetch` | 会拿 SPA 壳，既然有 `.md` 就优先 `.md`，不必 |
+
+## 常见误区
+
+1. **platform API ≠ 文档站**：`api.anthropic.com` / `platform.claude.com`（无 `/docs`）是真 API，调模型/账号用；`platform.claude.com/docs` 是文档站，独立存在。
+2. **没有 JSON API**：不要指望 `llms.json` 或页面 `.json`。文档就是 `.md`。
+3. **35MB 的 `llms-full.txt` 不适合整段喂**：629 页 × 全量约 35MB，token 爆炸。正确做法是 `llms.txt` 取 TOC → 按需取 `.md`。
+4. **中文没有索引**：别指望 `/docs/zh-CN/llms.txt`，中文只能逐页读。
+
+---
+
+*来源：platform.claude.com/docs（实测 2026-09）。Anthropic 用重定向 SPA + `.md`/`llms.txt` 给 AI 提供友好形态。*
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# OpenAI 官方文档高效读取方法（Agent 版）
+
+> Published: 2026-09-18 · Tags: gist, summary
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# OpenAI 官方文档高效读取方法（Agent 版）
+
+> 写给自己和其他 agent 复用。目标：读 `developers.openai.com` 时少花 token、少踩坑。
+> 实测时间：2026-09。所有 URL 我都 curl 验证过，`200` 才写进去，`404` 的坑也标了。
+
+## TL;DR
+
+**一句话：OpenAI 文档站不是 JSON API，不要爬 HTML。** 它是 Astro 静态站，高效路径是「取 `.md` / `.txt`」。
+
+效率排序（实测）：
+
+```
+<任意文档页>.md          >  llms.txt（索引）      >  llms-full.txt（全站导出）  >  unifetch 爬 HTML
+```
+
+- **读一篇** → 取 `.md`（干净、小、无导航）
+- **查"有哪些"** → 取 `llms.txt`（索引页）
+- **读全站 / 做调研** → 取 `llms-full.txt`（12 万行单文件，喂给 LLM 摘要）
+- **unifetch** 只留给"没有 `.md`/`llms.txt` 的第三方站"
+
+## 为什么不用 html 爬
+
+实测 `web_fetch` / `unifetch` 抓 `…/guides/xxx.html`：返回的是**整页导航树 + 重复面包屑**，正文被淹没，还要自己剥 nav。而 `.md` twin 是纯正文 Markdown，直接能喂。
+
+## URL 模式（精确，可直接粘）
+
+**通用规则：任意官方文档页 URL，直接追加 `.md`。**
+
+```
+# 指南
+https://developers.openai.com/api/docs/guides/migrate-to-responses
+→ https://developers.openai.com/api/docs/guides/migrate-to-responses.md   ✅
+
+# 参考页（注意：子路径要完整）
+https://developers.openai.com/api/reference/chat-completions/overview
+→ https://developers.openai.com/api/reference/chat-completions/overview.md ✅
+```
+
+**索引页（AI-native，别自己爬）：**
+
+```
+# docs 级索引（263 行，全站主题导航）
+https://developers.openai.com/api/docs/llms.txt
+
+# docs 级全站导出（119892 行，单文件 Markdown）
+https://developers.openai.com/api/docs/llms-full.txt
+
+# reference 级也有各自的
+https://developers.openai.com/api/reference/llms.txt
+https://developers.openai.com/api/reference/llms-full.txt
+```
+
+**⚠️ 已知 404 陷阱**：`/api/reference/<name>.md`（截断子路径）会 404。要完整子路径：`/api/reference/chat-completions/overview.md` 才行。
+
+## Agent 工作流（推荐顺序）
+
+1. **先问"有什么"**：`curl llms.txt` → 263 行主题索引 → 决定读哪篇。
+2. **读单篇**：`curl <page>.md`（比 html 干净一个数量级）。
+3. **读全站 / 跨文档调研**：`curl llms-full.txt` → 喂 LLM 摘要。
+4. **非 OpenAI 的第三方站**：才用 unifetch，且让它剥 nav。
+
+**别整段塞 `llms-full.txt`（12 万行）进一个上下文。** 正确做法：先读 `llms.txt` 定位主题 → 再取对应 `.md` → 逐篇喂。只有要"全量"时才用 full。
+
+## 工具怎么选
+
+| 工具 | 用在哪 |
+|---|---|
+| `curl` / `http_request` | 直接取 `.md` / `.txt`（最快，零解析） |
+| `unifetch` | 没有 `.md`/`llms.txt` 的第三方站；OpenAI 站反而不划算 |
+| `web_fetch` | 会剥 nav，但既然有 `.md` 就优先 `.md`，不必 |
+
+## 常见误区
+
+1. **platform API ≠ 文档站**：`platform.openai.com/api/v1/...` 是真 API，只能调模型/查账号，**不是文档**。文档站是 `developers.openai.com`，独立存在。
+2. **没有"文档查询接口"**：不要指望 `GET /docs?q=...` 这类。文档站就是静态文件，.md/.txt 是它给 AI 的友好形态。
+3. **reference 没有干净 JSON 下载**：API reference 是 SSR 内嵌数据，没有独立 `.json`。查参数就取 `.md`。
+
+---
+
+*来源：developers.openai.com（GPT-6 Astra 版本，2026-09 实测）。llms.txt / llms-full.txt 是官方为 AI 提供的导出格式。*
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
 <!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-09-16-8c7c0f76bec5a47e0fe44d3a6295fe9c.html" -->
 
 ## Source metadata (for automated readers)
@@ -322,6 +838,8 @@ source: https://iintothewind.github.io/
 - **五、Agent 设计中的接口选型**
   - 5.1 接口与模型训练是两件事
   - 5.2 决策框架与一页速查
+- **六、一次完整 turn 的时序**：user / agent / llm 三视图
+- **七、tool_call vs subagent**：区别与设计取舍
 - **参考官方文档**
 
 ---
@@ -336,7 +854,7 @@ source: https://iintothewind.github.io/
 | 多轮状态 | 无状态，每轮重发完整历史 | 可用 `store` + `previous_response_id`（或 Conversations）由服务端串联 |
 | 工具编排 | 只返回调用意图，循环由客户端自己写 | 服务端 agent loop：一次请求内模型可多轮调用内置工具（web_search、file_search、code_interpreter、computer use、远程 MCP）及自定义 function |
 | 输出取值 | `choices[].message.content` | `output[]` + 便捷字段 `output_text` |
-| 已移除参数 | — | `n`（多候选）、`seed` |
+| 已移除参数 | — | `n`（多候选，迁移映射表明确）；`seed`（【推断】：Responses 只有单生成，种子无复用意义；三篇官方页未逐字标注"移除"） |
 | 流式事件 | `chat.completion.chunk` 增量片段 | 结构化语义事件（item 级、delta 级） |
 
 【事实】官方迁移文档明确："Chat Completions remains supported, Responses is recommended for all new projects"；字段映射为 `messages→input`、`max_tokens→max_output_tokens`、`response_format→text.format`。
@@ -460,6 +978,8 @@ for tool_call in response.output:
 
 【事实】接口确实影响能力释放，官方原文：*"Reasoning models have a richer experience in the Responses API with improved tool usage. **Starting with GPT-5.4, Chat Completions does not support tool calling with `reasoning_effort` values other than `none`.**"* ——推理模型的工具调用能力，在 CC 接口上被硬性砍掉了。
 
+【版本漂移·2026-09 官方文档】OpenAI 官方文档现已把最新推理模型更新为 **GPT-6 Astra**（示例与选型都以 `gpt-6-astra` 为准），上段 GPT-5.4 的限制仍是历史事实且仍在生效。做选型或自测时以 `gpt-6-astra` 实测为准，别把 5.4 当最新模型。
+
 【厂商宣称，未验证】OpenAI 称推理模型在 Responses 上 SWE-bench +3%，前缀缓存利用使成本降 40–80%。这是 OpenAI 内部数字，无第三方复现，我持保留态度。
 
 【事实】Chat Completions **仍在支持中**，官方只说"新项目推荐 Responses"，**没有公布任何弃用时间表**。
@@ -473,6 +993,10 @@ for tool_call in response.output:
 **作用域是什么？**【事实】一个 Response 对象 = **一次 API 调用的完整产物**：`output[]` 里聚合了这一轮产出的全部 item（message、reasoning、function_call…）加上 usage 等元数据。"一个 turn 产生一个 response id"成立。流式场景要分两层：SSE 传输时收到的是 delta/语义事件，客户端把它们归并成 item；最终落账的仍是 response 对象及其 output items——事件是传输形态，item 是语义单位，response id 指向的是后者所在的整体。
 
 **服务端存什么？**【事实】`store: true`（默认）时，Response 对象在服务端保存 **30 天**：dashboard 可查，`GET /v1/responses/{id}` 可取回。下一轮请求带 `previous_response_id: <上一轮 id>`，服务端自动把这条链上的历史拼进上下文，客户端只发增量输入。另有第三条路 **Conversations API**：把 messages、tool calls、tool outputs 存成一个跨会话的持久对象，有自己的 durable id，适合多设备/多任务共享同一份对话。
+
+> 【事实·补充，2026-09 官方文档】两条常被忽略的细节：
+> 1. **Conversations API 的 item 不受 30 天 TTL 约束**——挂在 Conversation 对象上的 item 会永久保存，而 `previous_response_id` 链上的 Response 仍是 30 天。要长期共享对话，选 Conversations。
+> 2. **`previous_response_id` 不带顶层 `instructions`**——用链式引用时，稳定的 `instructions` 仍需在每轮重发，否则系统提示会丢失。
 
 **省不省 token？**【事实】不省。官方明说：即使走 `previous_response_id` 链，链上之前所有轮次的 input token 照常计入 input 计费。服务端记历史省的是客户端代码，不是上下文。
 
@@ -627,6 +1151,220 @@ flowchart TD
 
 ---
 
+## 六、一次完整 turn 的时序：user / agent / llm 三视图
+
+> 本节补充：把"一个 user turn"从开启到收尾的完整时序拆开，明确 **user / agent（客户端·执行侧）/ llm（服务端·推理侧）** 三个角色在每个节点做什么。标注约定同前：**【事实】**＝官方文档可验证；**【推断】**＝我的推理。
+
+### 6.1 先定义两个粒度：turn 与 request
+
+**【事实】** 这是最易混淆、也最关键的一刀：
+
+| 粒度 | 定义 | 边界 |
+|---|---|---|
+| **user turn（对话轮）** | 用户发一条消息 → agent 最终回一条答案 | 由 **多次** LLM 调用组成 |
+| **request（请求）** | 一次 `POST /v1/chat/completions` 或 `/v1/responses` | ＝ **一个** assistant turn |
+
+一句话：**user turn ⊃ request**。所谓"一个完整 turn 里 LLM 的 response 包含 reasoning / message / tool_calls / final_answer"，是**逻辑上的合并视图**；落到 API 上，它们是**多个** response 拼出来的：
+
+- **一个 request 的响应 ＝ 一个 assistant turn**：要么 `content`（message），要么 `tool_calls`，**不会同时**给出最终答案和"还要继续调用"的意图。
+- **final_answer 是最后一个 request 的响应**，不在产生 `tool_calls` 的那一次里。
+- **reasoning** 是单次响应的内部产出：Responses 里作为独立的 `reasoning` item 出现在 `output[]`（可选 `summary`，无状态模式带 `encrypted_content`）；CC 里 OpenAI **不返回**推理 token（隐藏）。
+
+### 6.2 三个角色
+
+| 角色 | 位置 | 职责 |
+|---|---|---|
+| **User（用户）** | 人 | 发消息开启 turn；消费最终答案 |
+| **Agent（客户端·执行侧）** | 应用代码 | **跑循环**：拼请求 → 发请求 → 执行工具 → 把结果塞回下一次请求 → 判断何时结束 |
+| **LLM（服务端·推理侧）** | OpenAI / vLLM 等 | **只做一次前向**：吃当前 context，产出一个 assistant turn（`content` 或 `tool_calls`） |
+
+**【事实】** "谁跑循环"是核心分野：OpenAI 五步工具流明确 *execute code on the application side*；vLLM 文档也把 *handle the tool calls in your application logic* 列为 caller 责任。**LLM 从不执行工具，也不拼下一次请求。**
+
+### 6.3 完整时序（含并行工具调用）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as User（人）
+    participant A as Agent（客户端·执行侧）
+    participant L as LLM（服务端·推理侧）
+
+    Note over U,L: ── 一个 user turn 开始 ──
+    U->>A: user message（开启 turn）
+
+    A->>L: request #1：messages/input + tools
+    Note over L: 前向推理（reasoning tokens）
+    L-->>A: response #1 ＝ assistant turn：tool_calls × N（可并行）
+    Note over A: 无最终答案；此刻 LLM 还没看到任何工具结果
+
+    par 客户端墙钟并发执行（非协议并发）
+        A->>A: 执行 tool A（call_id_1）
+    and
+        A->>A: 执行 tool B（call_id_2）
+    end
+
+    A->>L: request #2：历史 + N 条 tool 结果（按 call_id 绑定）
+    Note over L: 现在才"看到"上一轮的工具结果
+    L-->>A: response #2 ＝ assistant turn：content（final_answer）
+
+    A-->>U: final_answer ── 一个 user turn 结束 ──
+```
+
+**【事实】** 图里三条要点都有官方依据：
+
+1. **并行＝"单轮多个 tool_call"**：官方原话 *"The model may choose to call multiple functions in a single turn"*；`parallel_tool_calls:false` 可强制零或一个。
+2. **工具结果在"下一次请求"才进模型**：官方五步流的第 3、4 步——应用侧执行 → *第二次请求*带上 tool output。模型永远滞后一轮才看到结果。
+3. **绑定靠 `call_id`**：Responses 把 `function_call_output{call_id, output}` 追加进 `input`；CC 用 `role:"tool"` + `tool_call_id`。顺序/并行由执行侧决定，**协议层是串行的**。
+
+### 6.4 每个节点，三个角色分别做什么
+
+| 节点 | User | Agent（客户端） | LLM（服务端） |
+|---|---|---|---|
+| ① 开启 | 发 user message | 组装 request #1（历史 + tools 全量打包） | — |
+| ② 推理 | — | 等待 | 前向推理，产出 reasoning（内部/可选摘要） |
+| ③ 出调用 | — | 收到 `tool_calls × N` | 输出 N 个调用意图（可并行），**不含最终答案** |
+| ④ 执行 | — | **并行执行** N 个工具，收集输出 | —（此刻无感知） |
+| ⑤ 回填 | — | 拼 request #2：历史 + 按 `call_id` 绑定的工具结果 | — |
+| ⑥ 出答案 | — | 收到 `content` | 看到上一轮工具结果，产出 final_answer |
+| ⑦ 收尾 | 消费答案 | 结束循环（或继续下一轮工具） | — |
+
+**【推断】** ③–⑥ 会按需重复：只要 response 里还有 `tool_calls`，agent 就回到 ④。**终止条件**＝"某次 response 只有 `content`、没有 `tool_calls`"。
+
+### 6.5 CC vs Responses：时序一样，循环归属不同
+
+| 维度 | CC（`/v1/chat/completions`） | Responses（`/v1/responses`） |
+|---|---|---|
+| 循环归属 | **客户端**（agent 自己写） | 可**服务端托管**（内置工具 / agent loop） |
+| 历史维护 | 客户端攒 `messages[]`，每轮全量重发 | `store:true` + `previous_response_id`，或手动回传 `output[]` |
+| 工具结果形态 | `role:"tool"` + `tool_call_id` | `function_call_output{call_id, output}` |
+| reasoning 回传 | OpenAI 不返回推理 token | **官方建议**把 reasoning item 一起回传（可用 `previous_response_id`） |
+
+**【事实】** "谁跑循环"变了，"对模型逐轮调用"没变。即便 Responses 服务端托管，模型侧仍是"一次一个 assistant turn、工具结果下一轮才进"。
+
+### 6.6 一页速记
+
+- **user turn** 由 **多个 request** 组成；**request ＝ 一个 assistant turn**。
+- **LLM 只产一个 turn**：`content` 或 `tool_calls`，二者不同时给出最终答案。
+- **工具执行 100% 在 agent 侧**；结果**滞后一轮请求**才进模型。
+- **并行＝单轮内多个 `tool_call` + 客户端并发执行**，协议层始终串行。
+- **终止**＝某次 response 只有 `content`。
+
+## 七、tool_call vs subagent：区别与设计取舍
+
+> 本节补充：既然 `tool_call` 已经能做很多事，为什么 agent 还要有 `spawn_subagent`？两者区别是什么？subagent 的设计取舍在哪？标注约定同前：**【事实】**＝官方文档可验证；**【推断】**＝我的推理。
+
+### 7.1 一句话：叶子 vs 子树
+
+| | tool_call | subagent |
+|---|---|---|
+| 本质 | 一个原子动作，输入→输出明确 | 一个会**自己决策、自己循环**的独立 agent |
+| 谁在推理 | 父模型自己推理后决定下一步 | subagent 有**自己的推理链**，父模型只看结果 |
+| 上下文 | 由调用方完全指定 | 有**自己的**上下文（自己的历史、自己的文档） |
+| 模型/工具 | 绑定父模型的 toolset | 可用**不同**模型、不同工具、不同 system prompt |
+| 结构 | 扁平 | 可**递归嵌套**（子 agent 能再 spawn 子子 agent） |
+| 执行 | 同步阻塞，等结果 | 可**异步/后台**跑，父模型不必等 |
+| 并行 | N 个调用＝N 个操作，但**一个大脑**串行等 | N 个＝N 个**独立推理进程**，真并发 |
+
+**【事实】** 但有个诚实的边界：**subagent 在协议层常常"就是"一个 tool_call**。OpenAI Agents SDK 原话：
+
+> *"Handoffs are represented as tools to the LLM. So if there's a handoff to an agent named `Refund Agent`, the tool would be named `transfer_to_refund_agent`."*
+
+即 handoff 对 LLM 暴露成 `transfer_to_<agent>` 这个 tool。**所以区别在抽象层，不在 wire level**——能不能 spawn subagent 取决于框架有没有这个抽象；但"subagent 内部是一次独立前向、维护自己的上下文"是它和 tool_call 的能力边界。
+
+### 7.2 官方给的两条正交路：agents-as-tools vs handoffs
+
+**【事实】** OpenAI Agents SDK 把"subagent"拆成两种模式（`Agent orchestration` 文档）：
+
+| 模式 | 机制 | 何时用（官方原文意译） |
+|---|---|---|
+| **Agents as tools** | manager 保留对话控制权，用 `Agent.as_tool()` 调 specialist | 要一个 agent 拥有最终答案、汇总多个 specialist、集中执行 guardrails |
+| **Handoffs** | triage 路由到 specialist，specialist 成为**本 turn 的 active agent** | 要 specialist 直接应答、prompt 聚焦、或切换 active instructions |
+
+> *"Use agents as tools when a specialist should help with a bounded subtask but should not take over the user-facing conversation. Use handoffs when routing itself is part of the workflow..."*
+
+```mermaid
+flowchart LR
+    U[User] --> M[Manager / Triage Agent]
+    M -->|"Agent.as_tool()<br/>不转移对话"| S1[Specialist A]
+    M -->|"handoff: transfer_to_X<br/>转移对话控制权"| S2[Specialist B]
+    S1 -->|"结果回到 manager"| M
+    S2 -->|"B 成为本 turn active agent"| U
+```
+
+**【事实】** SDK 还区分**编排层**：*orchestrating via LLM*（模型自己 plan/handoff）vs *orchestrating via code*（`asyncio.gather` 并行、chaining、evaluator loop）。后者更确定、更快更省。
+
+#### 7.2.1 跨厂商术语对照：没有统一标准
+
+"handoff" 是 OpenAI 的命名选择，不是通用词。各家说法【事实·2026-09 核对】：
+
+| 厂商 | 术语 | 备注 |
+|---|---|---|
+| OpenAI | handoff / agents-as-tools | 两条正交路，两个开关都给 |
+| Anthropic | subagent / delegate | managed-agents 文档**不用 "handoff"**；coordinator 始终保留控制权、委派后回报——更像 agents-as-tools，无独立 handoff 概念 |
+| LangGraph / LangChain | subgraph / tool node / agent node | 【印象·未逐页核】 |
+| MCP | 纯 tool_call 范式 | 【印象·未逐页核】 |
+
+【推断】正在形成的概念轴（软共识，非标准）：
+
+- **根本轴：tool_call（叶子动作）vs subagent（子树/委派 agent，有自己的上下文）**。
+- **wire level 上 subagent 常被实现为 tool_call**——区别在抽象层，不在协议层（呼应 §1 结论）。
+- **handoff = 用 tool_call 暴露的 subagent 路由变体**（转移对话控制权）。
+
+所以准确说法：**"要不要转移控制权"这个旋钮，OpenAI 给了两个开关（handoff 转移 / agents-as-tools 保留），Anthropic 偏固定（保留 + 委派回报）。跨厂商读文档时，先映射到"叶子 vs 子树 + 控制权是否转移"这两个维度，再对号入座，别被各家命名带偏。**
+
+### 7.3 上下文继承：默认继承，但可裁剪
+
+**【事实】** 这直接回答"subagent 生成时是否集成 parent 上下文"：
+
+- **handoff 默认继承**：*"When a handoff occurs, it's as though the new agent takes over the conversation, and gets to see the entire previous conversation history."*
+- **可裁剪**：`input_filter`（过滤传给下一个 agent 的输入）、`RunConfig.nest_handoff_history`（把可摘要的历史压成 ordered summary segments）、`RunConfig.handoff_history_mapper`。
+- **agents-as-tools 默认不转移对话**：`Agent.as_tool()` 用于 *"structured input for a nested specialist without transferring the conversation"*。
+
+所以准确说法不是"subagent 一定不继承 parent 上下文"，而是：
+
+> **handoff 默认给全档案，可用 `input_filter`/`nest_handoff_history` 裁成简报；agents-as-tools 默认只给简报。继承与否是设计旋钮，OpenAI 两头都给了。**
+
+### 7.4 缓存账：继承 vs 不继承
+
+**【事实】** OpenAI prompt caching 文档说清三件事：
+
+1. 缓存的是 *"unchanged tokens at the beginning of a prompt"*（即稳定前缀），含 instructions、developer messages、**tool definitions**、conversation history。
+2. *"Cache reuse requires the entire rendered prefix to match."*
+3. 关于 agent 的关键一句：*"Agents API model calls use the same prompt-caching behavior... Reusing context within a session can preserve a shared prompt prefix, but maintaining a session doesn't guarantee a cache hit. See ... **subagent accounting**."*
+
+由此【推断】：
+
+- **继承 parent 上下文**（handoff 默认）→ 复用 parent 的 stable prefix → **有机会**命中共享缓存前缀（但官方明说"不保证"）。
+- **不继承**（agents-as-tools / `input_filter`）→ subagent 用自己的小 stable prefix → 输入小、聚焦、prefill 便宜，但拿不到 parent 的前缀复用。
+- **省钱主体在 parent 的推理循环**（大前缀 × 多次复用），subagent 是小计算。所以"隔离"通常更优，而不是"违反稳定前缀哲学"——**每个 agent 有自己的 stablePrefix + appendOnly log，哲学各自满足**。
+
+### 7.5 subagent 设计取舍总表
+
+| 维度 | 隔离（不继承 parent） | 共享（继承 parent） |
+|---|---|---|
+| 上下文大小 | 小 | 大 |
+| prefill 成本 | 低 | 高 |
+| 前缀缓存 | 各用各的小前缀 | 有机会复用 parent 大前缀（不保证） |
+| 聚焦度 | 高（无噪声） | 低（可能被无关历史稀释） |
+| 协作 | 需共享 workspace/memory 间接同步 | 直接可见 |
+| 失败隔离 | 好 | 差 |
+| 典型实现 | `Agent.as_tool()` / `input_filter` | handoff 默认 |
+
+### 7.6 怎么选
+
+- **tool_call**：动作单一、边界清晰、要父模型全程可控 → 取数、跑命令、查库。
+- **agents-as-tools**：specialist 处理 bounded subtask、不要它接管用户对话、要 manager 汇总。
+- **handoffs**：路由本身就是 workflow、要 specialist 接管本 turn。
+- **编排层**：要确定/快/省 → 用 code 编排（`asyncio.gather`、chaining、evaluator loop）；要开放任务自主规划 → 交给 LLM 编排。
+
+### 7.7 一页速记
+
+- **tool_call 是叶子，subagent 是子树**；但 subagent 在 wire level 常就是 `transfer_to_X` 这类 tool_call。
+- **两条正交路**：agents-as-tools（不转移对话）vs handoffs（转移对话）。
+- **上下文**：handoff 默认继承全档案，可 `input_filter`/`nest_handoff_history` 裁成简报；agents-as-tools 默认只给简报。
+- **缓存**：继承有机会复用 parent 稳定前缀（不保证），不继承各用各的小前缀；省钱主体在 parent 循环。
+- **选型**：单动作→tool_call；bounded subtask→agents-as-tools；路由接管→handoffs。
+
 ## 参考官方文档
 
 - OpenAI — Migrate to the Responses API（含 GPT-5.4 工具调用限制、字段映射、store 默认值）: https://developers.openai.com/api/docs/guides/migrate-to-responses
@@ -636,6 +1374,11 @@ flowchart TD
 - Microsoft Learn — 从 Azure OpenAI Chat Completions 迁移到 Responses API: https://learn.microsoft.com/en-us/azure/developer/ai/how-to/azure-openai-to-responses
 - vLLM — OpenAI-Compatible Server（Supported APIs 列表，含 /v1/responses 端点）: https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server
 - MDN — Server-sent events（SSE 协议语义）: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
+- OpenAI Agents SDK — Agent orchestration（agents-as-tools vs handoffs、LLM/code 编排）: https://openai.github.io/openai-agents-python/multi_agent
+- OpenAI Agents SDK — Handoffs（transfer_to_X、input_filter、nest_handoff_history）: https://openai.github.io/openai-agents-python/handoffs/
+- OpenAI Agents SDK — Tools（Agents as tools / Agent.as_tool）: https://openai.github.io/openai-agents-python/tools/
+- OpenAI — Prompt caching（前缀缓存、subagent accounting）: https://developers.openai.com/api/docs/guides/prompt-caching
+- vLLM — Tool Calling（caller 责任：定义 tools / 带上下文 / 应用侧处理）: https://docs.vllm.ai/en/latest/features/tool_calling
 ---
 
 > © Ivar.Chen · https://iintothewind.github.io

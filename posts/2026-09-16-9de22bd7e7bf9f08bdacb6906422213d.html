@@ -112,6 +112,8 @@
 <li>5.2 决策框架与一页速查</li>
 </ul>
 </li>
+<li><strong>六、一次完整 turn 的时序</strong>：user / agent / llm 三视图</li>
+<li><strong>七、tool_call vs subagent</strong>：区别与设计取舍</li>
 <li><strong>参考官方文档</strong></li>
 </ul>
 <hr>
@@ -158,7 +160,7 @@
 <tr>
 <td>已移除参数</td>
 <td>—</td>
-<td><code>n</code>（多候选）、<code>seed</code></td>
+<td><code>n</code>（多候选，迁移映射表明确）；<code>seed</code>（【推断】：Responses 只有单生成，种子无复用意义；三篇官方页未逐字标注&quot;移除&quot;）</td>
 </tr>
 <tr>
 <td>流式事件</td>
@@ -305,6 +307,7 @@ for tool_call in response.output:
 <li><strong>结构化流事件</strong>：item 级语义事件替代裸 delta</li>
 </ul>
 <p>【事实】接口确实影响能力释放，官方原文：<em>&quot;Reasoning models have a richer experience in the Responses API with improved tool usage. <strong>Starting with GPT-5.4, Chat Completions does not support tool calling with <code>reasoning_effort</code> values other than <code>none</code>.</strong>&quot;</em> ——推理模型的工具调用能力，在 CC 接口上被硬性砍掉了。</p>
+<p>【版本漂移·2026-09 官方文档】OpenAI 官方文档现已把最新推理模型更新为 <strong>GPT-6 Astra</strong>（示例与选型都以 <code>gpt-6-astra</code> 为准），上段 GPT-5.4 的限制仍是历史事实且仍在生效。做选型或自测时以 <code>gpt-6-astra</code> 实测为准，别把 5.4 当最新模型。</p>
 <p>【厂商宣称，未验证】OpenAI 称推理模型在 Responses 上 SWE-bench +3%，前缀缓存利用使成本降 40–80%。这是 OpenAI 内部数字，无第三方复现，我持保留态度。</p>
 <p>【事实】Chat Completions <strong>仍在支持中</strong>，官方只说&quot;新项目推荐 Responses&quot;，<strong>没有公布任何弃用时间表</strong>。</p>
 <h3>2.3 response id 细节：作用域、保留期、链式引用</h3>
@@ -312,6 +315,13 @@ for tool_call in response.output:
 <p><strong>谁来生成？</strong>【事实】response id（<code>resp_</code> 前缀）由服务端创建 Response 时生成并随响应返回，客户端从不生成。id 的生成与去重机制文档没有描述，属服务端实现细节——但客户端无需也无从关心。</p>
 <p><strong>作用域是什么？</strong>【事实】一个 Response 对象 = <strong>一次 API 调用的完整产物</strong>：<code>output[]</code> 里聚合了这一轮产出的全部 item（message、reasoning、function_call…）加上 usage 等元数据。&quot;一个 turn 产生一个 response id&quot;成立。流式场景要分两层：SSE 传输时收到的是 delta/语义事件，客户端把它们归并成 item；最终落账的仍是 response 对象及其 output items——事件是传输形态，item 是语义单位，response id 指向的是后者所在的整体。</p>
 <p><strong>服务端存什么？</strong>【事实】<code>store: true</code>（默认）时，Response 对象在服务端保存 <strong>30 天</strong>：dashboard 可查，<code>GET /v1/responses/{id}</code> 可取回。下一轮请求带 <code>previous_response_id: &lt;上一轮 id&gt;</code>，服务端自动把这条链上的历史拼进上下文，客户端只发增量输入。另有第三条路 <strong>Conversations API</strong>：把 messages、tool calls、tool outputs 存成一个跨会话的持久对象，有自己的 durable id，适合多设备/多任务共享同一份对话。</p>
+<blockquote>
+<p>【事实·补充，2026-09 官方文档】两条常被忽略的细节：</p>
+<ol>
+<li><strong>Conversations API 的 item 不受 30 天 TTL 约束</strong>——挂在 Conversation 对象上的 item 会永久保存，而 <code>previous_response_id</code> 链上的 Response 仍是 30 天。要长期共享对话，选 Conversations。</li>
+<li><strong><code>previous_response_id</code> 不带顶层 <code>instructions</code></strong>——用链式引用时，稳定的 <code>instructions</code> 仍需在每轮重发，否则系统提示会丢失。</li>
+</ol>
+</blockquote>
 <p><strong>省不省 token？</strong>【事实】不省。官方明说：即使走 <code>previous_response_id</code> 链，链上之前所有轮次的 input token 照常计入 input 计费。服务端记历史省的是客户端代码，不是上下文。</p>
 <h3>2.4 有状态 vs 无状态：两种都支持</h3>
 <p>【事实】无状态是一等公民：设 <code>store: false</code>，响应不落库，多轮上下文由客户端手动放进 <code>input</code>——和 CC 同一玩法。官方无状态示例就是&quot;把上一轮 <code>response.output</code>（含加密 reasoning item）整体追加回 <code>input</code>，再发下一轮&quot;。</p>
@@ -509,6 +519,411 @@ for tool_call in response.output:
 <li><strong>无论选哪个</strong>：含 tool_call 的复杂历史都能一次传全量；流式按 SSE 语义理解；并发治理靠超时/上限/快速失败；异步框架解决的是并发密度而非连接释放</li>
 </ul>
 <hr>
+<h2>六、一次完整 turn 的时序：user / agent / llm 三视图</h2>
+<blockquote>
+<p>本节补充：把&quot;一个 user turn&quot;从开启到收尾的完整时序拆开，明确 <strong>user / agent（客户端·执行侧）/ llm（服务端·推理侧）</strong> 三个角色在每个节点做什么。标注约定同前：<strong>【事实】</strong>＝官方文档可验证；<strong>【推断】</strong>＝我的推理。</p>
+</blockquote>
+<h3>6.1 先定义两个粒度：turn 与 request</h3>
+<p><strong>【事实】</strong> 这是最易混淆、也最关键的一刀：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>粒度</th>
+<th>定义</th>
+<th>边界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>user turn（对话轮）</strong></td>
+<td>用户发一条消息 → agent 最终回一条答案</td>
+<td>由 <strong>多次</strong> LLM 调用组成</td>
+</tr>
+<tr>
+<td><strong>request（请求）</strong></td>
+<td>一次 <code>POST /v1/chat/completions</code> 或 <code>/v1/responses</code></td>
+<td>＝ <strong>一个</strong> assistant turn</td>
+</tr>
+</tbody>
+</table></div>
+<p>一句话：<strong>user turn ⊃ request</strong>。所谓&quot;一个完整 turn 里 LLM 的 response 包含 reasoning / message / tool_calls / final_answer&quot;，是<strong>逻辑上的合并视图</strong>；落到 API 上，它们是<strong>多个</strong> response 拼出来的：</p>
+<ul>
+<li><strong>一个 request 的响应 ＝ 一个 assistant turn</strong>：要么 <code>content</code>（message），要么 <code>tool_calls</code>，<strong>不会同时</strong>给出最终答案和&quot;还要继续调用&quot;的意图。</li>
+<li><strong>final_answer 是最后一个 request 的响应</strong>，不在产生 <code>tool_calls</code> 的那一次里。</li>
+<li><strong>reasoning</strong> 是单次响应的内部产出：Responses 里作为独立的 <code>reasoning</code> item 出现在 <code>output[]</code>（可选 <code>summary</code>，无状态模式带 <code>encrypted_content</code>）；CC 里 OpenAI <strong>不返回</strong>推理 token（隐藏）。</li>
+</ul>
+<h3>6.2 三个角色</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>角色</th>
+<th>位置</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>User（用户）</strong></td>
+<td>人</td>
+<td>发消息开启 turn；消费最终答案</td>
+</tr>
+<tr>
+<td><strong>Agent（客户端·执行侧）</strong></td>
+<td>应用代码</td>
+<td><strong>跑循环</strong>：拼请求 → 发请求 → 执行工具 → 把结果塞回下一次请求 → 判断何时结束</td>
+</tr>
+<tr>
+<td><strong>LLM（服务端·推理侧）</strong></td>
+<td>OpenAI / vLLM 等</td>
+<td><strong>只做一次前向</strong>：吃当前 context，产出一个 assistant turn（<code>content</code> 或 <code>tool_calls</code>）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>【事实】</strong> &quot;谁跑循环&quot;是核心分野：OpenAI 五步工具流明确 <em>execute code on the application side</em>；vLLM 文档也把 <em>handle the tool calls in your application logic</em> 列为 caller 责任。<strong>LLM 从不执行工具，也不拼下一次请求。</strong></p>
+<h3>6.3 完整时序（含并行工具调用）</h3>
+<div class="mermaid">sequenceDiagram
+    autonumber
+    actor U as User（人）
+    participant A as Agent（客户端·执行侧）
+    participant L as LLM（服务端·推理侧）
+
+    Note over U,L: ── 一个 user turn 开始 ──
+    U-&gt;&gt;A: user message（开启 turn）
+
+    A-&gt;&gt;L: request #1：messages/input + tools
+    Note over L: 前向推理（reasoning tokens）
+    L--&gt;&gt;A: response #1 ＝ assistant turn：tool_calls × N（可并行）
+    Note over A: 无最终答案；此刻 LLM 还没看到任何工具结果
+
+    par 客户端墙钟并发执行（非协议并发）
+        A-&gt;&gt;A: 执行 tool A（call_id_1）
+    and
+        A-&gt;&gt;A: 执行 tool B（call_id_2）
+    end
+
+    A-&gt;&gt;L: request #2：历史 + N 条 tool 结果（按 call_id 绑定）
+    Note over L: 现在才&quot;看到&quot;上一轮的工具结果
+    L--&gt;&gt;A: response #2 ＝ assistant turn：content（final_answer）
+
+    A--&gt;&gt;U: final_answer ── 一个 user turn 结束 ──
+</div><p><strong>【事实】</strong> 图里三条要点都有官方依据：</p>
+<ol>
+<li><strong>并行＝&quot;单轮多个 tool_call&quot;</strong>：官方原话 <em>&quot;The model may choose to call multiple functions in a single turn&quot;</em>；<code>parallel_tool_calls:false</code> 可强制零或一个。</li>
+<li><strong>工具结果在&quot;下一次请求&quot;才进模型</strong>：官方五步流的第 3、4 步——应用侧执行 → <em>第二次请求</em>带上 tool output。模型永远滞后一轮才看到结果。</li>
+<li><strong>绑定靠 <code>call_id</code></strong>：Responses 把 <code>function_call_output{call_id, output}</code> 追加进 <code>input</code>；CC 用 <code>role:&quot;tool&quot;</code> + <code>tool_call_id</code>。顺序/并行由执行侧决定，<strong>协议层是串行的</strong>。</li>
+</ol>
+<h3>6.4 每个节点，三个角色分别做什么</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>节点</th>
+<th>User</th>
+<th>Agent（客户端）</th>
+<th>LLM（服务端）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 开启</td>
+<td>发 user message</td>
+<td>组装 request #1（历史 + tools 全量打包）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>② 推理</td>
+<td>—</td>
+<td>等待</td>
+<td>前向推理，产出 reasoning（内部/可选摘要）</td>
+</tr>
+<tr>
+<td>③ 出调用</td>
+<td>—</td>
+<td>收到 <code>tool_calls × N</code></td>
+<td>输出 N 个调用意图（可并行），<strong>不含最终答案</strong></td>
+</tr>
+<tr>
+<td>④ 执行</td>
+<td>—</td>
+<td><strong>并行执行</strong> N 个工具，收集输出</td>
+<td>—（此刻无感知）</td>
+</tr>
+<tr>
+<td>⑤ 回填</td>
+<td>—</td>
+<td>拼 request #2：历史 + 按 <code>call_id</code> 绑定的工具结果</td>
+<td>—</td>
+</tr>
+<tr>
+<td>⑥ 出答案</td>
+<td>—</td>
+<td>收到 <code>content</code></td>
+<td>看到上一轮工具结果，产出 final_answer</td>
+</tr>
+<tr>
+<td>⑦ 收尾</td>
+<td>消费答案</td>
+<td>结束循环（或继续下一轮工具）</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>【推断】</strong> ③–⑥ 会按需重复：只要 response 里还有 <code>tool_calls</code>，agent 就回到 ④。<strong>终止条件</strong>＝&quot;某次 response 只有 <code>content</code>、没有 <code>tool_calls</code>&quot;。</p>
+<h3>6.5 CC vs Responses：时序一样，循环归属不同</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>CC（<code>/v1/chat/completions</code>）</th>
+<th>Responses（<code>/v1/responses</code>）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>循环归属</td>
+<td><strong>客户端</strong>（agent 自己写）</td>
+<td>可<strong>服务端托管</strong>（内置工具 / agent loop）</td>
+</tr>
+<tr>
+<td>历史维护</td>
+<td>客户端攒 <code>messages[]</code>，每轮全量重发</td>
+<td><code>store:true</code> + <code>previous_response_id</code>，或手动回传 <code>output[]</code></td>
+</tr>
+<tr>
+<td>工具结果形态</td>
+<td><code>role:&quot;tool&quot;</code> + <code>tool_call_id</code></td>
+<td><code>function_call_output{call_id, output}</code></td>
+</tr>
+<tr>
+<td>reasoning 回传</td>
+<td>OpenAI 不返回推理 token</td>
+<td><strong>官方建议</strong>把 reasoning item 一起回传（可用 <code>previous_response_id</code>）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>【事实】</strong> &quot;谁跑循环&quot;变了，&quot;对模型逐轮调用&quot;没变。即便 Responses 服务端托管，模型侧仍是&quot;一次一个 assistant turn、工具结果下一轮才进&quot;。</p>
+<h3>6.6 一页速记</h3>
+<ul>
+<li><strong>user turn</strong> 由 <strong>多个 request</strong> 组成；<strong>request ＝ 一个 assistant turn</strong>。</li>
+<li><strong>LLM 只产一个 turn</strong>：<code>content</code> 或 <code>tool_calls</code>，二者不同时给出最终答案。</li>
+<li><strong>工具执行 100% 在 agent 侧</strong>；结果<strong>滞后一轮请求</strong>才进模型。</li>
+<li><strong>并行＝单轮内多个 <code>tool_call</code> + 客户端并发执行</strong>，协议层始终串行。</li>
+<li><strong>终止</strong>＝某次 response 只有 <code>content</code>。</li>
+</ul>
+<h2>七、tool_call vs subagent：区别与设计取舍</h2>
+<blockquote>
+<p>本节补充：既然 <code>tool_call</code> 已经能做很多事，为什么 agent 还要有 <code>spawn_subagent</code>？两者区别是什么？subagent 的设计取舍在哪？标注约定同前：<strong>【事实】</strong>＝官方文档可验证；<strong>【推断】</strong>＝我的推理。</p>
+</blockquote>
+<h3>7.1 一句话：叶子 vs 子树</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th></th>
+<th>tool_call</th>
+<th>subagent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本质</td>
+<td>一个原子动作，输入→输出明确</td>
+<td>一个会<strong>自己决策、自己循环</strong>的独立 agent</td>
+</tr>
+<tr>
+<td>谁在推理</td>
+<td>父模型自己推理后决定下一步</td>
+<td>subagent 有<strong>自己的推理链</strong>，父模型只看结果</td>
+</tr>
+<tr>
+<td>上下文</td>
+<td>由调用方完全指定</td>
+<td>有<strong>自己的</strong>上下文（自己的历史、自己的文档）</td>
+</tr>
+<tr>
+<td>模型/工具</td>
+<td>绑定父模型的 toolset</td>
+<td>可用<strong>不同</strong>模型、不同工具、不同 system prompt</td>
+</tr>
+<tr>
+<td>结构</td>
+<td>扁平</td>
+<td>可<strong>递归嵌套</strong>（子 agent 能再 spawn 子子 agent）</td>
+</tr>
+<tr>
+<td>执行</td>
+<td>同步阻塞，等结果</td>
+<td>可<strong>异步/后台</strong>跑，父模型不必等</td>
+</tr>
+<tr>
+<td>并行</td>
+<td>N 个调用＝N 个操作，但<strong>一个大脑</strong>串行等</td>
+<td>N 个＝N 个<strong>独立推理进程</strong>，真并发</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>【事实】</strong> 但有个诚实的边界：<strong>subagent 在协议层常常&quot;就是&quot;一个 tool_call</strong>。OpenAI Agents SDK 原话：</p>
+<blockquote>
+<p><em>&quot;Handoffs are represented as tools to the LLM. So if there's a handoff to an agent named <code>Refund Agent</code>, the tool would be named <code>transfer_to_refund_agent</code>.&quot;</em></p>
+</blockquote>
+<p>即 handoff 对 LLM 暴露成 <code>transfer_to_&lt;agent&gt;</code> 这个 tool。<strong>所以区别在抽象层，不在 wire level</strong>——能不能 spawn subagent 取决于框架有没有这个抽象；但&quot;subagent 内部是一次独立前向、维护自己的上下文&quot;是它和 tool_call 的能力边界。</p>
+<h3>7.2 官方给的两条正交路：agents-as-tools vs handoffs</h3>
+<p><strong>【事实】</strong> OpenAI Agents SDK 把&quot;subagent&quot;拆成两种模式（<code>Agent orchestration</code> 文档）：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>机制</th>
+<th>何时用（官方原文意译）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Agents as tools</strong></td>
+<td>manager 保留对话控制权，用 <code>Agent.as_tool()</code> 调 specialist</td>
+<td>要一个 agent 拥有最终答案、汇总多个 specialist、集中执行 guardrails</td>
+</tr>
+<tr>
+<td><strong>Handoffs</strong></td>
+<td>triage 路由到 specialist，specialist 成为<strong>本 turn 的 active agent</strong></td>
+<td>要 specialist 直接应答、prompt 聚焦、或切换 active instructions</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><em>&quot;Use agents as tools when a specialist should help with a bounded subtask but should not take over the user-facing conversation. Use handoffs when routing itself is part of the workflow...&quot;</em></p>
+</blockquote>
+<div class="mermaid">flowchart LR
+    U[User] --&gt; M[Manager / Triage Agent]
+    M --&gt;|&quot;Agent.as_tool()&lt;br/&gt;不转移对话&quot;| S1[Specialist A]
+    M --&gt;|&quot;handoff: transfer_to_X&lt;br/&gt;转移对话控制权&quot;| S2[Specialist B]
+    S1 --&gt;|&quot;结果回到 manager&quot;| M
+    S2 --&gt;|&quot;B 成为本 turn active agent&quot;| U
+</div><p><strong>【事实】</strong> SDK 还区分<strong>编排层</strong>：<em>orchestrating via LLM</em>（模型自己 plan/handoff）vs <em>orchestrating via code</em>（<code>asyncio.gather</code> 并行、chaining、evaluator loop）。后者更确定、更快更省。</p>
+<h4>7.2.1 跨厂商术语对照：没有统一标准</h4>
+<p>&quot;handoff&quot; 是 OpenAI 的命名选择，不是通用词。各家说法【事实·2026-09 核对】：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>厂商</th>
+<th>术语</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenAI</td>
+<td>handoff / agents-as-tools</td>
+<td>两条正交路，两个开关都给</td>
+</tr>
+<tr>
+<td>Anthropic</td>
+<td>subagent / delegate</td>
+<td>managed-agents 文档<strong>不用 &quot;handoff&quot;</strong>；coordinator 始终保留控制权、委派后回报——更像 agents-as-tools，无独立 handoff 概念</td>
+</tr>
+<tr>
+<td>LangGraph / LangChain</td>
+<td>subgraph / tool node / agent node</td>
+<td>【印象·未逐页核】</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>纯 tool_call 范式</td>
+<td>【印象·未逐页核】</td>
+</tr>
+</tbody>
+</table></div>
+<p>【推断】正在形成的概念轴（软共识，非标准）：</p>
+<ul>
+<li><strong>根本轴：tool_call（叶子动作）vs subagent（子树/委派 agent，有自己的上下文）</strong>。</li>
+<li><strong>wire level 上 subagent 常被实现为 tool_call</strong>——区别在抽象层，不在协议层（呼应 §1 结论）。</li>
+<li><strong>handoff = 用 tool_call 暴露的 subagent 路由变体</strong>（转移对话控制权）。</li>
+</ul>
+<p>所以准确说法：<strong>&quot;要不要转移控制权&quot;这个旋钮，OpenAI 给了两个开关（handoff 转移 / agents-as-tools 保留），Anthropic 偏固定（保留 + 委派回报）。跨厂商读文档时，先映射到&quot;叶子 vs 子树 + 控制权是否转移&quot;这两个维度，再对号入座，别被各家命名带偏。</strong></p>
+<h3>7.3 上下文继承：默认继承，但可裁剪</h3>
+<p><strong>【事实】</strong> 这直接回答&quot;subagent 生成时是否集成 parent 上下文&quot;：</p>
+<ul>
+<li><strong>handoff 默认继承</strong>：<em>&quot;When a handoff occurs, it's as though the new agent takes over the conversation, and gets to see the entire previous conversation history.&quot;</em></li>
+<li><strong>可裁剪</strong>：<code>input_filter</code>（过滤传给下一个 agent 的输入）、<code>RunConfig.nest_handoff_history</code>（把可摘要的历史压成 ordered summary segments）、<code>RunConfig.handoff_history_mapper</code>。</li>
+<li><strong>agents-as-tools 默认不转移对话</strong>：<code>Agent.as_tool()</code> 用于 <em>&quot;structured input for a nested specialist without transferring the conversation&quot;</em>。</li>
+</ul>
+<p>所以准确说法不是&quot;subagent 一定不继承 parent 上下文&quot;，而是：</p>
+<blockquote>
+<p><strong>handoff 默认给全档案，可用 <code>input_filter</code>/<code>nest_handoff_history</code> 裁成简报；agents-as-tools 默认只给简报。继承与否是设计旋钮，OpenAI 两头都给了。</strong></p>
+</blockquote>
+<h3>7.4 缓存账：继承 vs 不继承</h3>
+<p><strong>【事实】</strong> OpenAI prompt caching 文档说清三件事：</p>
+<ol>
+<li>缓存的是 <em>&quot;unchanged tokens at the beginning of a prompt&quot;</em>（即稳定前缀），含 instructions、developer messages、<strong>tool definitions</strong>、conversation history。</li>
+<li><em>&quot;Cache reuse requires the entire rendered prefix to match.&quot;</em></li>
+<li>关于 agent 的关键一句：<em>&quot;Agents API model calls use the same prompt-caching behavior... Reusing context within a session can preserve a shared prompt prefix, but maintaining a session doesn't guarantee a cache hit. See ... <strong>subagent accounting</strong>.&quot;</em></li>
+</ol>
+<p>由此【推断】：</p>
+<ul>
+<li><strong>继承 parent 上下文</strong>（handoff 默认）→ 复用 parent 的 stable prefix → <strong>有机会</strong>命中共享缓存前缀（但官方明说&quot;不保证&quot;）。</li>
+<li><strong>不继承</strong>（agents-as-tools / <code>input_filter</code>）→ subagent 用自己的小 stable prefix → 输入小、聚焦、prefill 便宜，但拿不到 parent 的前缀复用。</li>
+<li><strong>省钱主体在 parent 的推理循环</strong>（大前缀 × 多次复用），subagent 是小计算。所以&quot;隔离&quot;通常更优，而不是&quot;违反稳定前缀哲学&quot;——<strong>每个 agent 有自己的 stablePrefix + appendOnly log，哲学各自满足</strong>。</li>
+</ul>
+<h3>7.5 subagent 设计取舍总表</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>隔离（不继承 parent）</th>
+<th>共享（继承 parent）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上下文大小</td>
+<td>小</td>
+<td>大</td>
+</tr>
+<tr>
+<td>prefill 成本</td>
+<td>低</td>
+<td>高</td>
+</tr>
+<tr>
+<td>前缀缓存</td>
+<td>各用各的小前缀</td>
+<td>有机会复用 parent 大前缀（不保证）</td>
+</tr>
+<tr>
+<td>聚焦度</td>
+<td>高（无噪声）</td>
+<td>低（可能被无关历史稀释）</td>
+</tr>
+<tr>
+<td>协作</td>
+<td>需共享 workspace/memory 间接同步</td>
+<td>直接可见</td>
+</tr>
+<tr>
+<td>失败隔离</td>
+<td>好</td>
+<td>差</td>
+</tr>
+<tr>
+<td>典型实现</td>
+<td><code>Agent.as_tool()</code> / <code>input_filter</code></td>
+<td>handoff 默认</td>
+</tr>
+</tbody>
+</table></div>
+<h3>7.6 怎么选</h3>
+<ul>
+<li><strong>tool_call</strong>：动作单一、边界清晰、要父模型全程可控 → 取数、跑命令、查库。</li>
+<li><strong>agents-as-tools</strong>：specialist 处理 bounded subtask、不要它接管用户对话、要 manager 汇总。</li>
+<li><strong>handoffs</strong>：路由本身就是 workflow、要 specialist 接管本 turn。</li>
+<li><strong>编排层</strong>：要确定/快/省 → 用 code 编排（<code>asyncio.gather</code>、chaining、evaluator loop）；要开放任务自主规划 → 交给 LLM 编排。</li>
+</ul>
+<h3>7.7 一页速记</h3>
+<ul>
+<li><strong>tool_call 是叶子，subagent 是子树</strong>；但 subagent 在 wire level 常就是 <code>transfer_to_X</code> 这类 tool_call。</li>
+<li><strong>两条正交路</strong>：agents-as-tools（不转移对话）vs handoffs（转移对话）。</li>
+<li><strong>上下文</strong>：handoff 默认继承全档案，可 <code>input_filter</code>/<code>nest_handoff_history</code> 裁成简报；agents-as-tools 默认只给简报。</li>
+<li><strong>缓存</strong>：继承有机会复用 parent 稳定前缀（不保证），不继承各用各的小前缀；省钱主体在 parent 循环。</li>
+<li><strong>选型</strong>：单动作→tool_call；bounded subtask→agents-as-tools；路由接管→handoffs。</li>
+</ul>
 <h2>参考官方文档</h2>
 <ul>
 <li>OpenAI — Migrate to the Responses API（含 GPT-5.4 工具调用限制、字段映射、store 默认值）: <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses">https://developers.openai.com/api/docs/guides/migrate-to-responses</a></li>
@@ -518,6 +933,11 @@ for tool_call in response.output:
 <li>Microsoft Learn — 从 Azure OpenAI Chat Completions 迁移到 Responses API: <a href="https://learn.microsoft.com/en-us/azure/developer/ai/how-to/azure-openai-to-responses">https://learn.microsoft.com/en-us/azure/developer/ai/how-to/azure-openai-to-responses</a></li>
 <li>vLLM — OpenAI-Compatible Server（Supported APIs 列表，含 /v1/responses 端点）: <a href="https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server">https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server</a></li>
 <li>MDN — Server-sent events（SSE 协议语义）: <a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events">https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events</a></li>
+<li>OpenAI Agents SDK — Agent orchestration（agents-as-tools vs handoffs、LLM/code 编排）: <a href="https://openai.github.io/openai-agents-python/multi_agent">https://openai.github.io/openai-agents-python/multi_agent</a></li>
+<li>OpenAI Agents SDK — Handoffs（transfer_to_X、input_filter、nest_handoff_history）: <a href="https://openai.github.io/openai-agents-python/handoffs/">https://openai.github.io/openai-agents-python/handoffs/</a></li>
+<li>OpenAI Agents SDK — Tools（Agents as tools / Agent.as_tool）: <a href="https://openai.github.io/openai-agents-python/tools/">https://openai.github.io/openai-agents-python/tools/</a></li>
+<li>OpenAI — Prompt caching（前缀缓存、subagent accounting）: <a href="https://developers.openai.com/api/docs/guides/prompt-caching">https://developers.openai.com/api/docs/guides/prompt-caching</a></li>
+<li>vLLM — Tool Calling（caller 责任：定义 tools / 带上下文 / 应用侧处理）: <a href="https://docs.vllm.ai/en/latest/features/tool_calling">https://docs.vllm.ai/en/latest/features/tool_calling</a></li>
 </ul>
 
 <!--

@@ -6,6 +6,30 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-18-fec9ae92c7bc121f0aec69e709a8ab23.html</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-18-ecf12face2154f17ed6d4a051c1fe18f.html</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://iintothewind.github.io/posts/2026-09-16-8c7c0f76bec5a47e0fe44d3a6295fe9c.html</loc>
     <lastmod>2026-09-16</lastmod>
     <changefreq>monthly</changefreq>
@@ -339,6 +363,30 @@
     <loc>https://iintothewind.github.io/llms.txt</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-18-fec9ae92c7bc121f0aec69e709a8ab23.md</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.md</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-18-ecf12face2154f17ed6d4a051c1fe18f.md</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.md</loc>
+    <lastmod>2026-09-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://iintothewind.github.io/posts/2026-09-16-8c7c0f76bec5a47e0fe44d3a6295fe9c.md</loc>

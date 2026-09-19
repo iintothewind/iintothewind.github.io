@@ -6,8 +6,456 @@
     <description>blog @ https://iintothewind.github.io/</description>
     <language>en-us</language>
     <atom:link rel="self" href="https://iintothewind.github.io/feed.xml"/>
-    <pubDate>Wed, 16 Sep 2026 23:56:38 GMT</pubDate>
-    <lastBuildDate>Wed, 16 Sep 2026 23:56:38 GMT</lastBuildDate>
+    <pubDate>Fri, 18 Sep 2026 21:59:05 GMT</pubDate>
+    <lastBuildDate>Fri, 18 Sep 2026 21:59:05 GMT</lastBuildDate>
+    <item>
+      <title>Cloudflare 开发者文档高效读取方法（Agent 版）</title>
+      <link>https://iintothewind.github.io/posts/2026-09-18-fec9ae92c7bc121f0aec69e709a8ab23.html</link>
+      <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-09-18-fec9ae92c7bc121f0aec69e709a8ab23.html</guid>
+      <pubDate>Fri, 18 Sep 2026 21:59:05 GMT</pubDate>
+      <description>Cloudflare 开发者文档高效读取方法（Agent 版） 写给自己和其他 agent 复用。目标：读 developers.cloudflare.com 时少花 token、少踩坑。 实测时间：</description>
+      <dc:creator>Ivar.Chen</dc:creator>
+      <content:encoded><![CDATA[<h1>Cloudflare 开发者文档高效读取方法（Agent 版）</h1>
+<blockquote>
+<p>写给自己和其他 agent 复用。目标：读 <code>developers.cloudflare.com</code> 时少花 token、少踩坑。
+实测时间：2026-09。所有 URL 我都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
+</blockquote>
+<h2>TL;DR</h2>
+<p><strong>一句话：Cloudflare 是&quot;多产品 + OpenAPI&quot;站，结构最丰富。Workers Runtime API 有完整 OpenAPI JSON（25.5MB，2207 paths，11035 operations），机器可读首选 jq 查询；各产品指南用 <code>&lt;产品&gt;/llms.txt</code>；单页用 <code>Accept: text/markdown</code> 隐藏技巧取 Markdown。</strong></p>
+<p>效率排序：</p>
+<pre><code>openapi.json (jq 查 Workers API)   &gt;  &lt;产品&gt;/llms.txt (索引)   &gt;  Accept: text/markdown (单页)   &gt;  爬 HTML
+</code></pre>
+<ul>
+<li><strong>Workers Runtime API（查接口/参数）</strong> → <code>/openapi.json</code> + <code>jq</code>（25.5MB，2207 paths，11035 operations）</li>
+<li><strong>读某个产品指南</strong> → <code>&lt;产品&gt;/llms.txt</code>（每个产品有自己的索引，官方推荐）</li>
+<li><strong>读单篇</strong> → <code>curl -H &quot;Accept: text/markdown&quot; &lt;页面URL&gt;</code>（隐藏技巧，任意页面返回 Markdown）</li>
+<li><strong>wrangler CLI</strong> → 用官方 skill（wrangler 那个确实好用，文档站反而是次要的）</li>
+</ul>
+<h2>四种形态（都实测）</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>形态</th>
+<th>URL</th>
+<th>状态</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>OpenAPI JSON</strong></td>
+<td><code>/openapi.json</code></td>
+<td>✅ 25.5MB</td>
+<td>Workers Runtime API 完整机器可读参考</td>
+</tr>
+<tr>
+<td><strong>根索引</strong></td>
+<td><code>/llms.txt</code></td>
+<td>✅ text/plain</td>
+<td>所有产品入口</td>
+</tr>
+<tr>
+<td><strong>产品索引</strong></td>
+<td><code>&lt;产品&gt;/llms.txt</code></td>
+<td>✅ 各产品独立</td>
+<td>单产品文档导航（官方推荐）</td>
+</tr>
+<tr>
+<td><strong>Markdown 单页</strong></td>
+<td>任意页面 + <code>Accept: text/markdown</code></td>
+<td>✅ 隐藏技巧</td>
+<td>取单篇正文</td>
+</tr>
+<tr>
+<td><code>.md</code> twin</td>
+<td><code>&lt;页面&gt;.md</code></td>
+<td>❌ 404</td>
+<td>不存在</td>
+</tr>
+<tr>
+<td>GitHub raw</td>
+<td>—</td>
+<td>❌ 404</td>
+<td>docs 不提交源码</td>
+</tr>
+</tbody>
+</table></div>
+<h2>URL 模式（精确，可直接粘）</h2>
+<p><strong>1. Workers Runtime API（机器可读，用 jq）</strong></p>
+<pre><code class="language-bash"># 取整个 spec（25.5MB，先缓存到本地）
+curl -sL https://developers.cloudflare.com/openapi.json -o openapi.json
+
+# 列所有 path
+jq -r '.paths | keys_unsorted[]' openapi.json
+
+# 数 operations
+jq '[.paths[]? | (.get,.post,.put,.delete,.patch)] | length' openapi.json   # 11035
+
+# 查某个 path 的所有方法 + summary
+jq '.paths[&quot;/accounts&quot;] | to_entries | map({method: .key, summary: .value.summary})' openapi.json
+
+# 查某个 operation 的参数 schema
+jq '.paths[&quot;/accounts&quot;] | .get.parameters' openapi.json
+</code></pre>
+<p><strong>2. 根索引（所有产品入口）</strong></p>
+<pre><code>https://developers.cloudflare.com/llms.txt   →  每个产品链接到自己的 llms.txt
+</code></pre>
+<p><strong>3. 产品索引（官方推荐，单产品导航）</strong></p>
+<pre><code class="language-bash"># Workers（最常用）
+https://developers.cloudflare.com/workers/llms.txt   →  526 行，链接到各页 .md
+
+# 其他产品都同理
+https://developers.cloudflare.com/cache/llms.txt
+https://developers.cloudflare.com/dns/llms.txt
+https://developers.cloudflare.com/api-shield/llms.txt
+</code></pre>
+<p><strong>4. 单页（隐藏技巧：Accept: text/markdown）</strong></p>
+<pre><code class="language-bash"># 关键：不带 .md 后缀，但发 Accept: text/markdown header
+curl -s -H &quot;Accept: text/markdown&quot; https://developers.cloudflare.com/workers/
+# → 200, text/markdown, 6916B，干净正文
+
+# 嵌套路径同理
+curl -H &quot;Accept: text/markdown&quot; https://developers.cloudflare.com/workers/tutorials/hello-world/
+</code></pre>
+<p><strong>⚠️ 已知 404 陷阱：</strong></p>
+<ul>
+<li><code>.md</code> twin：<code>/workers/index.md</code> 直接 curl 会 404（需要 <code>Accept: text/markdown</code> header）</li>
+<li>错误路径：<code>/workers/tutorials/hello-world/</code> → 404（真实路径在 llms.txt 里）</li>
+</ul>
+<h2>Agent 工作流</h2>
+<p><strong>查 Workers Runtime API 接口（最常见）：</strong></p>
+<ol>
+<li><code>curl -L https://developers.cloudflare.com/openapi.json -o openapi.json</code>（缓存一次，25.5MB）</li>
+<li><code>jq</code> 定位 path / operation / 参数 / schema</li>
+<li>需要说明性文字时，<code>curl -H &quot;Accept: text/markdown&quot; &lt;页面URL&gt;</code> 取正文</li>
+</ol>
+<p><strong>读某个产品指南：</strong></p>
+<ol>
+<li><code>curl -L &lt;产品&gt;/llms.txt</code> → 该产品文档索引</li>
+<li>从索引挑页，<code>curl -H &quot;Accept: text/markdown&quot; &lt;页面URL&gt;</code> 取正文</li>
+</ol>
+<h2>工具怎么选</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl</code> + <code>jq</code></td>
+<td><strong>Workers API 首选</strong>。openapi.json + jq 定位接口/参数，零 HTML 解析</td>
+</tr>
+<tr>
+<td><code>curl -H &quot;Accept: text/markdown&quot;</code></td>
+<td>取单篇正文（官方隐藏技巧，比 .md 后缀更通用）</td>
+</tr>
+<tr>
+<td><code>web_fetch</code></td>
+<td>兜底，但不如 curl + header 干净</td>
+</tr>
+<tr>
+<td>unifetch</td>
+<td>不划算</td>
+</tr>
+</tbody>
+</table></div>
+<h2>常见误区</h2>
+<ol>
+<li><strong>别找 <code>.md</code> twin</strong>：Cloudflare 页面 <code>.md</code> 后缀 curl 直接 404。要用 <code>Accept: text/markdown</code> header。</li>
+<li><strong>别整段喂 openapi.json（25.5MB）</strong>：11035 个 operation，token 爆炸。正确做法：先 <code>jq</code> 定位 path/operation，再针对性查字段。</li>
+<li><strong>wrangler 优先用官方 skill</strong>：CF 的 wrangler CLI 有官方 skill，比翻文档站更高效。文档站主要给&quot;理解接口/指南&quot;用。</li>
+<li><strong>api-catalog 不是完整目录</strong>：<code>/.well-known/api-catalog</code> 只是个 linkset（指向 openapi.json），别指望它是结构化 API 目录。</li>
+</ol>
+<hr>
+<p><em>来源：<a href="http://developers.cloudflare.com">developers.cloudflare.com</a>（实测 2026-09）。Cloudflare 用 OpenAPI JSON + <code>Accept: text/markdown</code> + 各产品 llms.txt 给 AI 提供友好形态。</em></p>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>vLLM 文档高效读取方法（Agent 版）</title>
+      <link>https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html</link>
+      <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html</guid>
+      <pubDate>Fri, 18 Sep 2026 21:52:20 GMT</pubDate>
+      <description>vLLM 文档高效读取方法（Agent 版） 写给自己和其他 agent 复用。目标：读 docs.vllm.ai 时少花 token、少踩坑。 实测时间：2026-09。所有 URL 我都 curl</description>
+      <dc:creator>Ivar.Chen</dc:creator>
+      <content:encoded><![CDATA[<h1>vLLM 文档高效读取方法（Agent 版）</h1>
+<blockquote>
+<p>写给自己和其他 agent 复用。目标：读 <code>docs.vllm.ai</code> 时少花 token、少踩坑。
+实测时间：2026-09。所有 URL 我都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
+</blockquote>
+<h2>TL;DR</h2>
+<p><strong>一句话：vLLM 文档是 MkDocs 生成站，没有 llms.txt、没有 .md twin、GitHub 上也没有 .md 源码。</strong> 唯一干净的读法是 <code>web_fetch</code> 取单页，目录靠 <code>sitemap.xml</code>。</p>
+<p>效率排序：</p>
+<pre><code>web_fetch(&lt;页面&gt;)          &gt;&gt;  sitemap.xml（2686 页索引）  &gt;  爬 HTML 剥 nav  &gt;  GitHub raw（无 .md，404）
+</code></pre>
+<ul>
+<li><strong>读一篇</strong> → <code>web_fetch</code> 单页（自动剥 nav，正文干净）</li>
+<li><strong>查&quot;有哪些&quot;</strong> → <code>sitemap.xml</code>（2686 个 URL）</li>
+<li><strong>GitHub raw</strong> → 别试，docs 是构建时生成的，仓库里只有 <code>.meta.yml</code>，没有 <code>.md</code>（返回 404）</li>
+<li><strong>unifetch / 爬 HTML</strong> → 能用但脏，<code>web_fetch</code> 已自动剥 nav，优先用它</li>
+</ul>
+<h2>为什么不用 .md / llms.txt</h2>
+<p>实测全部 404：</p>
+<ul>
+<li><code>/llms.txt</code> → 404</li>
+<li><code>/llms-full.txt</code> → 404</li>
+<li>任意 <code>.md</code> twin（<code>/index.md</code>、<code>/en/latest/features/tool_calling.md</code>）→ 404</li>
+<li>GitHub raw <code>docs/api/vllm/README.md</code> 等 → 404（README 能取是因为它是真文件，docs 页面不是）</li>
+</ul>
+<p><strong>根因</strong>：vLLM 用 MkDocs Material + 每个页面对应一个 <code>.meta.yml</code> 配置，<code>.md</code> 正文是<strong>构建时生成</strong>的，不提交到仓库。所以没有现成的 <code>.md</code> 可取——只能拿 HTML 或走 web_fetch。</p>
+<h2>URL 模式（精确，可直接粘）</h2>
+<p><strong>索引（唯一官方索引）：</strong></p>
+<pre><code>https://docs.vllm.ai/sitemap.xml   →  2686 个 URL（&lt;loc&gt; 标签）
+</code></pre>
+<p><strong>单页（web_fetch 直接取，用服务 URL）：</strong></p>
+<pre><code># 首页
+https://docs.vllm.ai/en/latest/
+
+# API
+https://docs.vllm.ai/en/latest/api/
+
+# 示例：Serving / Tool Calling
+https://docs.vllm.ai/en/latest/serving/openai_compatible_server/
+
+# 文档分区（sitemap 里都有）
+/en/latest/api        /en/latest/benchmarking
+/en/latest/cli        /en/latest/configuration
+/en/latest/deployment /en/latest/features
+</code></pre>
+<p><strong>⚠️ 路径注意</strong>：服务 URL 是 <code>/en/latest/&lt;section&gt;/</code>（带版本）。sitemap 里全是这种完整 URL，直接解析 <code>&lt;loc&gt;</code> 用即可，不用自己拼。</p>
+<h2>Agent 工作流</h2>
+<ol>
+<li><strong>要&quot;有哪些&quot;</strong>：<code>curl sitemap.xml</code> → 解析 <code>&lt;loc&gt;</code>（2686 个 URL）→ 决定读哪页。</li>
+<li><strong>读单篇</strong>：<code>web_fetch https://docs.vllm.ai/&lt;loc&gt;</code> → 自动剥 nav，返回干净正文。</li>
+<li><strong>要全量</strong>：sitemap 2686 页，没有 35MB 全量导出。正确做法：sitemap 取 TOC → <code>web_fetch</code> 逐篇取需要的。</li>
+</ol>
+<h2>工具怎么选</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>web_fetch</code></td>
+<td><strong>首选</strong>。自动剥 nav，返回干净正文，适合这种生成站</td>
+</tr>
+<tr>
+<td><code>unifetch</code></td>
+<td>不划算——<code>web_fetch</code> 已自动剥 nav</td>
+</tr>
+<tr>
+<td><code>curl</code></td>
+<td>只用来取 <code>sitemap.xml</code>（纯 XML，无 nav）</td>
+</tr>
+<tr>
+<td>GitHub raw</td>
+<td>别用，docs 是生成的，无 .md</td>
+</tr>
+</tbody>
+</table></div>
+<h2>常见误区</h2>
+<ol>
+<li><strong>别找 llms.txt / .md twin</strong>：vLLM 没有。这两个站（OpenAI、Claude）有的，vLLM 没有。</li>
+<li><strong>别抓 GitHub 源码</strong>：docs 是构建时生成的，仓库里只有 <code>.meta.yml</code>，<code>.md</code> 是 404。</li>
+<li><strong>没有 35MB 全量</strong>：别指望 <code>llms-full.txt</code>。要全量只能 sitemap + 逐篇 web_fetch。</li>
+<li><strong>sitemap 才是索引</strong>：vLLM 唯一官方索引就是 <code>sitemap.xml</code>。</li>
+</ol>
+<hr>
+<p><em>来源：<a href="http://docs.vllm.ai">docs.vllm.ai</a>（实测 2026-09）。MkDocs Material 生成站，docs 正文不提交到仓库。</em></p>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Claude 平台文档高效读取方法（Agent 版）</title>
+      <link>https://iintothewind.github.io/posts/2026-09-18-ecf12face2154f17ed6d4a051c1fe18f.html</link>
+      <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-09-18-ecf12face2154f17ed6d4a051c1fe18f.html</guid>
+      <pubDate>Fri, 18 Sep 2026 21:46:01 GMT</pubDate>
+      <description>Claude 平台文档高效读取方法（Agent 版） 写给自己和其他 agent 复用。目标：读 platform.claude.com/docs 时少花 token、少踩坑。 实测时间：2026-0</description>
+      <dc:creator>Ivar.Chen</dc:creator>
+      <content:encoded><![CDATA[<h1>Claude 平台文档高效读取方法（Agent 版）</h1>
+<blockquote>
+<p>写给自己和其他 agent 复用。目标：读 <code>platform.claude.com/docs</code> 时少花 token、少踩坑。
+实测时间：2026-09。所有 URL 我都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
+</blockquote>
+<h2>TL;DR</h2>
+<p><strong>一句话：Claude 文档站是重定向 SPA，根路径没有 <code>.md</code> twin。读文档走 <code>.md</code> / <code>llms.txt</code>，别在浏览器里导航。</strong></p>
+<p>效率排序：</p>
+<pre><code>docs/&lt;语言&gt;/&lt;路径&gt;.md          &gt;  llms.txt（英文索引）  &gt;  llms-full.txt（英文全量，35MB）  &gt;  爬 HTML
+</code></pre>
+<ul>
+<li><strong>读一篇</strong> → 取 <code>.md</code>（干净、小、无导航）</li>
+<li><strong>查&quot;有哪些&quot;</strong> → 取 <code>llms.txt</code>（629 页英文索引，链接已给全）</li>
+<li><strong>读全站</strong> → 英文可用 <code>llms-full.txt</code>（<strong>35MB</strong>，太大，别整段塞上下文）</li>
+<li><strong>中文</strong> → 没有索引，只能逐页取 <code>docs/zh-CN/&lt;路径&gt;.md</code></li>
+<li><strong>unifetch</strong> 只留给&quot;没有 <code>.md</code>/<code>llms.txt</code> 的第三方站&quot;</li>
+</ul>
+<h2>为什么不用 html 爬</h2>
+<p>实测 <code>web_fetch</code> / <code>unifetch</code> 抓 <code>platform.claude.com/docs</code>：返回的是 SPA 壳 + 客户端 JS，正文由前端组装。<strong>curl 直接取 <code>.md</code> / <code>llms.txt</code></strong> 才是干净正文。</p>
+<h2>URL 模式（精确，可直接粘）</h2>
+<p><strong>通用规则：<code>/docs/&lt;语言&gt;/&lt;完整路径&gt;.md</code>，语言段必填。</strong></p>
+<pre><code># 英文单页（根路径 /docs/x.md 会 404，必须带语言段）
+https://platform.claude.com/docs/en/get-started.md          ✅
+https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview.md   ✅
+
+# 中文单页（同样要带语言段）
+https://platform.claude.com/docs/zh-CN/agents-and-tools/tool-use/overview.md  ✅
+https://platform.claude.com/docs/zh-TW/agents-and-tools/tool-use/overview.md  ✅
+
+# 支持的语言段
+en / zh-CN / zh-TW / de / es / fr / it / ja / ko / pt-BR / ru / id
+</code></pre>
+<p><strong>⚠️ 已知 404 陷阱</strong>：</p>
+<ul>
+<li>根路径 <code>.md</code> 无 twin：<code>/docs/get-started.md</code> → 404（缺语言段）</li>
+<li>截断子路径：<code>/docs/en/tools/overview.md</code> → 404（要完整路径 <code>agents-and-tools/tool-use/overview.md</code>）</li>
+<li>非英文语言没有 <code>llms.txt</code>：<code>/docs/zh-CN/llms.txt</code> → 404</li>
+</ul>
+<p><strong>索引页（英文，AI-native）：</strong></p>
+<pre><code># 英文索引（68KB，列 629 页，链接已给全）
+https://platform.claude.com/llms.txt
+
+# 英文全量导出（35MB，单文件）
+https://platform.claude.com/llms-full.txt
+</code></pre>
+<p><strong>⚠️ 没有</strong>：各语言 <code>llms.txt</code>、各语言全量导出、<code>llms.json</code>。</p>
+<h2>Agent 工作流</h2>
+<p><strong>英文（有索引）：</strong></p>
+<ol>
+<li><code>curl llms.txt</code> → 629 页英文索引，链接已给全。</li>
+<li>从索引里挑页，直接 <code>curl</code> 对应 <code>.md</code> URL。</li>
+<li>要&quot;全量&quot;时才用 <code>llms-full.txt</code>——但 35MB，token 爆炸，<strong>别整段塞上下文</strong>。</li>
+</ol>
+<p><strong>中文（无索引）：</strong></p>
+<ol>
+<li>没有中文 <code>llms.txt</code>，无法一键列目录。</li>
+<li>只能逐页取 <code>docs/zh-CN/&lt;路径&gt;.md</code>，路径从英文 llms.txt 或网页面包屑推断。</li>
+<li>中文全量没有 35MB 版，只能按需逐篇抓。</li>
+</ol>
+<h2>工具怎么选</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl</code> / <code>http_request</code></td>
+<td>直接取 <code>.md</code> / <code>.txt</code>（最快，零解析）</td>
+</tr>
+<tr>
+<td><code>unifetch</code></td>
+<td>没有 <code>.md</code>/<code>llms.txt</code> 的第三方站；Claude 站反而不划算</td>
+</tr>
+<tr>
+<td><code>web_fetch</code></td>
+<td>会拿 SPA 壳，既然有 <code>.md</code> 就优先 <code>.md</code>，不必</td>
+</tr>
+</tbody>
+</table></div>
+<h2>常见误区</h2>
+<ol>
+<li><strong>platform API ≠ 文档站</strong>：<code>api.anthropic.com</code> / <code>platform.claude.com</code>（无 <code>/docs</code>）是真 API，调模型/账号用；<code>platform.claude.com/docs</code> 是文档站，独立存在。</li>
+<li><strong>没有 JSON API</strong>：不要指望 <code>llms.json</code> 或页面 <code>.json</code>。文档就是 <code>.md</code>。</li>
+<li><strong>35MB 的 <code>llms-full.txt</code> 不适合整段喂</strong>：629 页 × 全量约 35MB，token 爆炸。正确做法是 <code>llms.txt</code> 取 TOC → 按需取 <code>.md</code>。</li>
+<li><strong>中文没有索引</strong>：别指望 <code>/docs/zh-CN/llms.txt</code>，中文只能逐页读。</li>
+</ol>
+<hr>
+<p><em>来源：<a href="http://platform.claude.com/docs%EF%BC%88%E5%AE%9E%E6%B5%8B">platform.claude.com/docs（实测</a> 2026-09）。Anthropic 用重定向 SPA + <code>.md</code>/<code>llms.txt</code> 给 AI 提供友好形态。</em></p>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>OpenAI 官方文档高效读取方法（Agent 版）</title>
+      <link>https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html</link>
+      <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html</guid>
+      <pubDate>Fri, 18 Sep 2026 21:41:39 GMT</pubDate>
+      <description>OpenAI 官方文档高效读取方法（Agent 版） 写给自己和其他 agent 复用。目标：读 developers.openai.com 时少花 token、少踩坑。 实测时间：2026-09。所</description>
+      <dc:creator>Ivar.Chen</dc:creator>
+      <content:encoded><![CDATA[<h1>OpenAI 官方文档高效读取方法（Agent 版）</h1>
+<blockquote>
+<p>写给自己和其他 agent 复用。目标：读 <code>developers.openai.com</code> 时少花 token、少踩坑。
+实测时间：2026-09。所有 URL 我都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
+</blockquote>
+<h2>TL;DR</h2>
+<p><strong>一句话：OpenAI 文档站不是 JSON API，不要爬 HTML。</strong> 它是 Astro 静态站，高效路径是「取 <code>.md</code> / <code>.txt</code>」。</p>
+<p>效率排序（实测）：</p>
+<pre><code>&lt;任意文档页&gt;.md          &gt;  llms.txt（索引）      &gt;  llms-full.txt（全站导出）  &gt;  unifetch 爬 HTML
+</code></pre>
+<ul>
+<li><strong>读一篇</strong> → 取 <code>.md</code>（干净、小、无导航）</li>
+<li><strong>查&quot;有哪些&quot;</strong> → 取 <code>llms.txt</code>（索引页）</li>
+<li><strong>读全站 / 做调研</strong> → 取 <code>llms-full.txt</code>（12 万行单文件，喂给 LLM 摘要）</li>
+<li><strong>unifetch</strong> 只留给&quot;没有 <code>.md</code>/<code>llms.txt</code> 的第三方站&quot;</li>
+</ul>
+<h2>为什么不用 html 爬</h2>
+<p>实测 <code>web_fetch</code> / <code>unifetch</code> 抓 <code>…/guides/xxx.html</code>：返回的是<strong>整页导航树 + 重复面包屑</strong>，正文被淹没，还要自己剥 nav。而 <code>.md</code> twin 是纯正文 Markdown，直接能喂。</p>
+<h2>URL 模式（精确，可直接粘）</h2>
+<p><strong>通用规则：任意官方文档页 URL，直接追加 <code>.md</code>。</strong></p>
+<pre><code># 指南
+https://developers.openai.com/api/docs/guides/migrate-to-responses
+→ https://developers.openai.com/api/docs/guides/migrate-to-responses.md   ✅
+
+# 参考页（注意：子路径要完整）
+https://developers.openai.com/api/reference/chat-completions/overview
+→ https://developers.openai.com/api/reference/chat-completions/overview.md ✅
+</code></pre>
+<p><strong>索引页（AI-native，别自己爬）：</strong></p>
+<pre><code># docs 级索引（263 行，全站主题导航）
+https://developers.openai.com/api/docs/llms.txt
+
+# docs 级全站导出（119892 行，单文件 Markdown）
+https://developers.openai.com/api/docs/llms-full.txt
+
+# reference 级也有各自的
+https://developers.openai.com/api/reference/llms.txt
+https://developers.openai.com/api/reference/llms-full.txt
+</code></pre>
+<p><strong>⚠️ 已知 404 陷阱</strong>：<code>/api/reference/&lt;name&gt;.md</code>（截断子路径）会 404。要完整子路径：<code>/api/reference/chat-completions/overview.md</code> 才行。</p>
+<h2>Agent 工作流（推荐顺序）</h2>
+<ol>
+<li><strong>先问&quot;有什么&quot;</strong>：<code>curl llms.txt</code> → 263 行主题索引 → 决定读哪篇。</li>
+<li><strong>读单篇</strong>：<code>curl &lt;page&gt;.md</code>（比 html 干净一个数量级）。</li>
+<li><strong>读全站 / 跨文档调研</strong>：<code>curl llms-full.txt</code> → 喂 LLM 摘要。</li>
+<li><strong>非 OpenAI 的第三方站</strong>：才用 unifetch，且让它剥 nav。</li>
+</ol>
+<p><strong>别整段塞 <code>llms-full.txt</code>（12 万行）进一个上下文。</strong> 正确做法：先读 <code>llms.txt</code> 定位主题 → 再取对应 <code>.md</code> → 逐篇喂。只有要&quot;全量&quot;时才用 full。</p>
+<h2>工具怎么选</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl</code> / <code>http_request</code></td>
+<td>直接取 <code>.md</code> / <code>.txt</code>（最快，零解析）</td>
+</tr>
+<tr>
+<td><code>unifetch</code></td>
+<td>没有 <code>.md</code>/<code>llms.txt</code> 的第三方站；OpenAI 站反而不划算</td>
+</tr>
+<tr>
+<td><code>web_fetch</code></td>
+<td>会剥 nav，但既然有 <code>.md</code> 就优先 <code>.md</code>，不必</td>
+</tr>
+</tbody>
+</table></div>
+<h2>常见误区</h2>
+<ol>
+<li><strong>platform API ≠ 文档站</strong>：<code>platform.openai.com/api/v1/...</code> 是真 API，只能调模型/查账号，<strong>不是文档</strong>。文档站是 <code>developers.openai.com</code>，独立存在。</li>
+<li><strong>没有&quot;文档查询接口&quot;</strong>：不要指望 <code>GET /docs?q=...</code> 这类。文档站就是静态文件，.md/.txt 是它给 AI 的友好形态。</li>
+<li><strong>reference 没有干净 JSON 下载</strong>：API reference 是 SSR 内嵌数据，没有独立 <code>.json</code>。查参数就取 <code>.md</code>。</li>
+</ol>
+<hr>
+<p><em>来源：<a href="http://developers.openai.com">developers.openai.com</a>（GPT-6 Astra 版本，2026-09 实测）。llms.txt / llms-full.txt 是官方为 AI 提供的导出格式。</em></p>
+]]></content:encoded>
+    </item>
     <item>
       <title>LLM 幻觉三问：模型规模、量化与 Dense/MoE 架构 — 基于文献的知识分享</title>
       <link>https://iintothewind.github.io/posts/2026-09-16-8c7c0f76bec5a47e0fe44d3a6295fe9c.html</link>
@@ -309,6 +757,8 @@
 <li>5.2 决策框架与一页速查</li>
 </ul>
 </li>
+<li><strong>六、一次完整 turn 的时序</strong>：user / agent / llm 三视图</li>
+<li><strong>七、tool_call vs subagent</strong>：区别与设计取舍</li>
 <li><strong>参考官方文档</strong></li>
 </ul>
 <hr>
@@ -355,7 +805,7 @@
 <tr>
 <td>已移除参数</td>
 <td>—</td>
-<td><code>n</code>（多候选）、<code>seed</code></td>
+<td><code>n</code>（多候选，迁移映射表明确）；<code>seed</code>（【推断】：Responses 只有单生成，种子无复用意义；三篇官方页未逐字标注&quot;移除&quot;）</td>
 </tr>
 <tr>
 <td>流式事件</td>
@@ -502,6 +952,7 @@ for tool_call in response.output:
 <li><strong>结构化流事件</strong>：item 级语义事件替代裸 delta</li>
 </ul>
 <p>【事实】接口确实影响能力释放，官方原文：<em>&quot;Reasoning models have a richer experience in the Responses API with improved tool usage. <strong>Starting with GPT-5.4, Chat Completions does not support tool calling with <code>reasoning_effort</code> values other than <code>none</code>.</strong>&quot;</em> ——推理模型的工具调用能力，在 CC 接口上被硬性砍掉了。</p>
+<p>【版本漂移·2026-09 官方文档】OpenAI 官方文档现已把最新推理模型更新为 <strong>GPT-6 Astra</strong>（示例与选型都以 <code>gpt-6-astra</code> 为准），上段 GPT-5.4 的限制仍是历史事实且仍在生效。做选型或自测时以 <code>gpt-6-astra</code> 实测为准，别把 5.4 当最新模型。</p>
 <p>【厂商宣称，未验证】OpenAI 称推理模型在 Responses 上 SWE-bench +3%，前缀缓存利用使成本降 40–80%。这是 OpenAI 内部数字，无第三方复现，我持保留态度。</p>
 <p>【事实】Chat Completions <strong>仍在支持中</strong>，官方只说&quot;新项目推荐 Responses&quot;，<strong>没有公布任何弃用时间表</strong>。</p>
 <h3>2.3 response id 细节：作用域、保留期、链式引用</h3>
@@ -509,6 +960,13 @@ for tool_call in response.output:
 <p><strong>谁来生成？</strong>【事实】response id（<code>resp_</code> 前缀）由服务端创建 Response 时生成并随响应返回，客户端从不生成。id 的生成与去重机制文档没有描述，属服务端实现细节——但客户端无需也无从关心。</p>
 <p><strong>作用域是什么？</strong>【事实】一个 Response 对象 = <strong>一次 API 调用的完整产物</strong>：<code>output[]</code> 里聚合了这一轮产出的全部 item（message、reasoning、function_call…）加上 usage 等元数据。&quot;一个 turn 产生一个 response id&quot;成立。流式场景要分两层：SSE 传输时收到的是 delta/语义事件，客户端把它们归并成 item；最终落账的仍是 response 对象及其 output items——事件是传输形态，item 是语义单位，response id 指向的是后者所在的整体。</p>
 <p><strong>服务端存什么？</strong>【事实】<code>store: true</code>（默认）时，Response 对象在服务端保存 <strong>30 天</strong>：dashboard 可查，<code>GET /v1/responses/{id}</code> 可取回。下一轮请求带 <code>previous_response_id: &lt;上一轮 id&gt;</code>，服务端自动把这条链上的历史拼进上下文，客户端只发增量输入。另有第三条路 <strong>Conversations API</strong>：把 messages、tool calls、tool outputs 存成一个跨会话的持久对象，有自己的 durable id，适合多设备/多任务共享同一份对话。</p>
+<blockquote>
+<p>【事实·补充，2026-09 官方文档】两条常被忽略的细节：</p>
+<ol>
+<li><strong>Conversations API 的 item 不受 30 天 TTL 约束</strong>——挂在 Conversation 对象上的 item 会永久保存，而 <code>previous_response_id</code> 链上的 Response 仍是 30 天。要长期共享对话，选 Conversations。</li>
+<li><strong><code>previous_response_id</code> 不带顶层 <code>instructions</code></strong>——用链式引用时，稳定的 <code>instructions</code> 仍需在每轮重发，否则系统提示会丢失。</li>
+</ol>
+</blockquote>
 <p><strong>省不省 token？</strong>【事实】不省。官方明说：即使走 <code>previous_response_id</code> 链，链上之前所有轮次的 input token 照常计入 input 计费。服务端记历史省的是客户端代码，不是上下文。</p>
 <h3>2.4 有状态 vs 无状态：两种都支持</h3>
 <p>【事实】无状态是一等公民：设 <code>store: false</code>，响应不落库，多轮上下文由客户端手动放进 <code>input</code>——和 CC 同一玩法。官方无状态示例就是&quot;把上一轮 <code>response.output</code>（含加密 reasoning item）整体追加回 <code>input</code>，再发下一轮&quot;。</p>
@@ -706,6 +1164,411 @@ for tool_call in response.output:
 <li><strong>无论选哪个</strong>：含 tool_call 的复杂历史都能一次传全量；流式按 SSE 语义理解；并发治理靠超时/上限/快速失败；异步框架解决的是并发密度而非连接释放</li>
 </ul>
 <hr>
+<h2>六、一次完整 turn 的时序：user / agent / llm 三视图</h2>
+<blockquote>
+<p>本节补充：把&quot;一个 user turn&quot;从开启到收尾的完整时序拆开，明确 <strong>user / agent（客户端·执行侧）/ llm（服务端·推理侧）</strong> 三个角色在每个节点做什么。标注约定同前：<strong>【事实】</strong>＝官方文档可验证；<strong>【推断】</strong>＝我的推理。</p>
+</blockquote>
+<h3>6.1 先定义两个粒度：turn 与 request</h3>
+<p><strong>【事实】</strong> 这是最易混淆、也最关键的一刀：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>粒度</th>
+<th>定义</th>
+<th>边界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>user turn（对话轮）</strong></td>
+<td>用户发一条消息 → agent 最终回一条答案</td>
+<td>由 <strong>多次</strong> LLM 调用组成</td>
+</tr>
+<tr>
+<td><strong>request（请求）</strong></td>
+<td>一次 <code>POST /v1/chat/completions</code> 或 <code>/v1/responses</code></td>
+<td>＝ <strong>一个</strong> assistant turn</td>
+</tr>
+</tbody>
+</table></div>
+<p>一句话：<strong>user turn ⊃ request</strong>。所谓&quot;一个完整 turn 里 LLM 的 response 包含 reasoning / message / tool_calls / final_answer&quot;，是<strong>逻辑上的合并视图</strong>；落到 API 上，它们是<strong>多个</strong> response 拼出来的：</p>
+<ul>
+<li><strong>一个 request 的响应 ＝ 一个 assistant turn</strong>：要么 <code>content</code>（message），要么 <code>tool_calls</code>，<strong>不会同时</strong>给出最终答案和&quot;还要继续调用&quot;的意图。</li>
+<li><strong>final_answer 是最后一个 request 的响应</strong>，不在产生 <code>tool_calls</code> 的那一次里。</li>
+<li><strong>reasoning</strong> 是单次响应的内部产出：Responses 里作为独立的 <code>reasoning</code> item 出现在 <code>output[]</code>（可选 <code>summary</code>，无状态模式带 <code>encrypted_content</code>）；CC 里 OpenAI <strong>不返回</strong>推理 token（隐藏）。</li>
+</ul>
+<h3>6.2 三个角色</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>角色</th>
+<th>位置</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>User（用户）</strong></td>
+<td>人</td>
+<td>发消息开启 turn；消费最终答案</td>
+</tr>
+<tr>
+<td><strong>Agent（客户端·执行侧）</strong></td>
+<td>应用代码</td>
+<td><strong>跑循环</strong>：拼请求 → 发请求 → 执行工具 → 把结果塞回下一次请求 → 判断何时结束</td>
+</tr>
+<tr>
+<td><strong>LLM（服务端·推理侧）</strong></td>
+<td>OpenAI / vLLM 等</td>
+<td><strong>只做一次前向</strong>：吃当前 context，产出一个 assistant turn（<code>content</code> 或 <code>tool_calls</code>）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>【事实】</strong> &quot;谁跑循环&quot;是核心分野：OpenAI 五步工具流明确 <em>execute code on the application side</em>；vLLM 文档也把 <em>handle the tool calls in your application logic</em> 列为 caller 责任。<strong>LLM 从不执行工具，也不拼下一次请求。</strong></p>
+<h3>6.3 完整时序（含并行工具调用）</h3>
+<div class="mermaid">sequenceDiagram
+    autonumber
+    actor U as User（人）
+    participant A as Agent（客户端·执行侧）
+    participant L as LLM（服务端·推理侧）
+
+    Note over U,L: ── 一个 user turn 开始 ──
+    U-&gt;&gt;A: user message（开启 turn）
+
+    A-&gt;&gt;L: request #1：messages/input + tools
+    Note over L: 前向推理（reasoning tokens）
+    L--&gt;&gt;A: response #1 ＝ assistant turn：tool_calls × N（可并行）
+    Note over A: 无最终答案；此刻 LLM 还没看到任何工具结果
+
+    par 客户端墙钟并发执行（非协议并发）
+        A-&gt;&gt;A: 执行 tool A（call_id_1）
+    and
+        A-&gt;&gt;A: 执行 tool B（call_id_2）
+    end
+
+    A-&gt;&gt;L: request #2：历史 + N 条 tool 结果（按 call_id 绑定）
+    Note over L: 现在才&quot;看到&quot;上一轮的工具结果
+    L--&gt;&gt;A: response #2 ＝ assistant turn：content（final_answer）
+
+    A--&gt;&gt;U: final_answer ── 一个 user turn 结束 ──
+</div><p><strong>【事实】</strong> 图里三条要点都有官方依据：</p>
+<ol>
+<li><strong>并行＝&quot;单轮多个 tool_call&quot;</strong>：官方原话 <em>&quot;The model may choose to call multiple functions in a single turn&quot;</em>；<code>parallel_tool_calls:false</code> 可强制零或一个。</li>
+<li><strong>工具结果在&quot;下一次请求&quot;才进模型</strong>：官方五步流的第 3、4 步——应用侧执行 → <em>第二次请求</em>带上 tool output。模型永远滞后一轮才看到结果。</li>
+<li><strong>绑定靠 <code>call_id</code></strong>：Responses 把 <code>function_call_output{call_id, output}</code> 追加进 <code>input</code>；CC 用 <code>role:&quot;tool&quot;</code> + <code>tool_call_id</code>。顺序/并行由执行侧决定，<strong>协议层是串行的</strong>。</li>
+</ol>
+<h3>6.4 每个节点，三个角色分别做什么</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>节点</th>
+<th>User</th>
+<th>Agent（客户端）</th>
+<th>LLM（服务端）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 开启</td>
+<td>发 user message</td>
+<td>组装 request #1（历史 + tools 全量打包）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>② 推理</td>
+<td>—</td>
+<td>等待</td>
+<td>前向推理，产出 reasoning（内部/可选摘要）</td>
+</tr>
+<tr>
+<td>③ 出调用</td>
+<td>—</td>
+<td>收到 <code>tool_calls × N</code></td>
+<td>输出 N 个调用意图（可并行），<strong>不含最终答案</strong></td>
+</tr>
+<tr>
+<td>④ 执行</td>
+<td>—</td>
+<td><strong>并行执行</strong> N 个工具，收集输出</td>
+<td>—（此刻无感知）</td>
+</tr>
+<tr>
+<td>⑤ 回填</td>
+<td>—</td>
+<td>拼 request #2：历史 + 按 <code>call_id</code> 绑定的工具结果</td>
+<td>—</td>
+</tr>
+<tr>
+<td>⑥ 出答案</td>
+<td>—</td>
+<td>收到 <code>content</code></td>
+<td>看到上一轮工具结果，产出 final_answer</td>
+</tr>
+<tr>
+<td>⑦ 收尾</td>
+<td>消费答案</td>
+<td>结束循环（或继续下一轮工具）</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>【推断】</strong> ③–⑥ 会按需重复：只要 response 里还有 <code>tool_calls</code>，agent 就回到 ④。<strong>终止条件</strong>＝&quot;某次 response 只有 <code>content</code>、没有 <code>tool_calls</code>&quot;。</p>
+<h3>6.5 CC vs Responses：时序一样，循环归属不同</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>CC（<code>/v1/chat/completions</code>）</th>
+<th>Responses（<code>/v1/responses</code>）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>循环归属</td>
+<td><strong>客户端</strong>（agent 自己写）</td>
+<td>可<strong>服务端托管</strong>（内置工具 / agent loop）</td>
+</tr>
+<tr>
+<td>历史维护</td>
+<td>客户端攒 <code>messages[]</code>，每轮全量重发</td>
+<td><code>store:true</code> + <code>previous_response_id</code>，或手动回传 <code>output[]</code></td>
+</tr>
+<tr>
+<td>工具结果形态</td>
+<td><code>role:&quot;tool&quot;</code> + <code>tool_call_id</code></td>
+<td><code>function_call_output{call_id, output}</code></td>
+</tr>
+<tr>
+<td>reasoning 回传</td>
+<td>OpenAI 不返回推理 token</td>
+<td><strong>官方建议</strong>把 reasoning item 一起回传（可用 <code>previous_response_id</code>）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>【事实】</strong> &quot;谁跑循环&quot;变了，&quot;对模型逐轮调用&quot;没变。即便 Responses 服务端托管，模型侧仍是&quot;一次一个 assistant turn、工具结果下一轮才进&quot;。</p>
+<h3>6.6 一页速记</h3>
+<ul>
+<li><strong>user turn</strong> 由 <strong>多个 request</strong> 组成；<strong>request ＝ 一个 assistant turn</strong>。</li>
+<li><strong>LLM 只产一个 turn</strong>：<code>content</code> 或 <code>tool_calls</code>，二者不同时给出最终答案。</li>
+<li><strong>工具执行 100% 在 agent 侧</strong>；结果<strong>滞后一轮请求</strong>才进模型。</li>
+<li><strong>并行＝单轮内多个 <code>tool_call</code> + 客户端并发执行</strong>，协议层始终串行。</li>
+<li><strong>终止</strong>＝某次 response 只有 <code>content</code>。</li>
+</ul>
+<h2>七、tool_call vs subagent：区别与设计取舍</h2>
+<blockquote>
+<p>本节补充：既然 <code>tool_call</code> 已经能做很多事，为什么 agent 还要有 <code>spawn_subagent</code>？两者区别是什么？subagent 的设计取舍在哪？标注约定同前：<strong>【事实】</strong>＝官方文档可验证；<strong>【推断】</strong>＝我的推理。</p>
+</blockquote>
+<h3>7.1 一句话：叶子 vs 子树</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th></th>
+<th>tool_call</th>
+<th>subagent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本质</td>
+<td>一个原子动作，输入→输出明确</td>
+<td>一个会<strong>自己决策、自己循环</strong>的独立 agent</td>
+</tr>
+<tr>
+<td>谁在推理</td>
+<td>父模型自己推理后决定下一步</td>
+<td>subagent 有<strong>自己的推理链</strong>，父模型只看结果</td>
+</tr>
+<tr>
+<td>上下文</td>
+<td>由调用方完全指定</td>
+<td>有<strong>自己的</strong>上下文（自己的历史、自己的文档）</td>
+</tr>
+<tr>
+<td>模型/工具</td>
+<td>绑定父模型的 toolset</td>
+<td>可用<strong>不同</strong>模型、不同工具、不同 system prompt</td>
+</tr>
+<tr>
+<td>结构</td>
+<td>扁平</td>
+<td>可<strong>递归嵌套</strong>（子 agent 能再 spawn 子子 agent）</td>
+</tr>
+<tr>
+<td>执行</td>
+<td>同步阻塞，等结果</td>
+<td>可<strong>异步/后台</strong>跑，父模型不必等</td>
+</tr>
+<tr>
+<td>并行</td>
+<td>N 个调用＝N 个操作，但<strong>一个大脑</strong>串行等</td>
+<td>N 个＝N 个<strong>独立推理进程</strong>，真并发</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>【事实】</strong> 但有个诚实的边界：<strong>subagent 在协议层常常&quot;就是&quot;一个 tool_call</strong>。OpenAI Agents SDK 原话：</p>
+<blockquote>
+<p><em>&quot;Handoffs are represented as tools to the LLM. So if there's a handoff to an agent named <code>Refund Agent</code>, the tool would be named <code>transfer_to_refund_agent</code>.&quot;</em></p>
+</blockquote>
+<p>即 handoff 对 LLM 暴露成 <code>transfer_to_&lt;agent&gt;</code> 这个 tool。<strong>所以区别在抽象层，不在 wire level</strong>——能不能 spawn subagent 取决于框架有没有这个抽象；但&quot;subagent 内部是一次独立前向、维护自己的上下文&quot;是它和 tool_call 的能力边界。</p>
+<h3>7.2 官方给的两条正交路：agents-as-tools vs handoffs</h3>
+<p><strong>【事实】</strong> OpenAI Agents SDK 把&quot;subagent&quot;拆成两种模式（<code>Agent orchestration</code> 文档）：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>机制</th>
+<th>何时用（官方原文意译）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Agents as tools</strong></td>
+<td>manager 保留对话控制权，用 <code>Agent.as_tool()</code> 调 specialist</td>
+<td>要一个 agent 拥有最终答案、汇总多个 specialist、集中执行 guardrails</td>
+</tr>
+<tr>
+<td><strong>Handoffs</strong></td>
+<td>triage 路由到 specialist，specialist 成为<strong>本 turn 的 active agent</strong></td>
+<td>要 specialist 直接应答、prompt 聚焦、或切换 active instructions</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><em>&quot;Use agents as tools when a specialist should help with a bounded subtask but should not take over the user-facing conversation. Use handoffs when routing itself is part of the workflow...&quot;</em></p>
+</blockquote>
+<div class="mermaid">flowchart LR
+    U[User] --&gt; M[Manager / Triage Agent]
+    M --&gt;|&quot;Agent.as_tool()&lt;br/&gt;不转移对话&quot;| S1[Specialist A]
+    M --&gt;|&quot;handoff: transfer_to_X&lt;br/&gt;转移对话控制权&quot;| S2[Specialist B]
+    S1 --&gt;|&quot;结果回到 manager&quot;| M
+    S2 --&gt;|&quot;B 成为本 turn active agent&quot;| U
+</div><p><strong>【事实】</strong> SDK 还区分<strong>编排层</strong>：<em>orchestrating via LLM</em>（模型自己 plan/handoff）vs <em>orchestrating via code</em>（<code>asyncio.gather</code> 并行、chaining、evaluator loop）。后者更确定、更快更省。</p>
+<h4>7.2.1 跨厂商术语对照：没有统一标准</h4>
+<p>&quot;handoff&quot; 是 OpenAI 的命名选择，不是通用词。各家说法【事实·2026-09 核对】：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>厂商</th>
+<th>术语</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenAI</td>
+<td>handoff / agents-as-tools</td>
+<td>两条正交路，两个开关都给</td>
+</tr>
+<tr>
+<td>Anthropic</td>
+<td>subagent / delegate</td>
+<td>managed-agents 文档<strong>不用 &quot;handoff&quot;</strong>；coordinator 始终保留控制权、委派后回报——更像 agents-as-tools，无独立 handoff 概念</td>
+</tr>
+<tr>
+<td>LangGraph / LangChain</td>
+<td>subgraph / tool node / agent node</td>
+<td>【印象·未逐页核】</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td>纯 tool_call 范式</td>
+<td>【印象·未逐页核】</td>
+</tr>
+</tbody>
+</table></div>
+<p>【推断】正在形成的概念轴（软共识，非标准）：</p>
+<ul>
+<li><strong>根本轴：tool_call（叶子动作）vs subagent（子树/委派 agent，有自己的上下文）</strong>。</li>
+<li><strong>wire level 上 subagent 常被实现为 tool_call</strong>——区别在抽象层，不在协议层（呼应 §1 结论）。</li>
+<li><strong>handoff = 用 tool_call 暴露的 subagent 路由变体</strong>（转移对话控制权）。</li>
+</ul>
+<p>所以准确说法：<strong>&quot;要不要转移控制权&quot;这个旋钮，OpenAI 给了两个开关（handoff 转移 / agents-as-tools 保留），Anthropic 偏固定（保留 + 委派回报）。跨厂商读文档时，先映射到&quot;叶子 vs 子树 + 控制权是否转移&quot;这两个维度，再对号入座，别被各家命名带偏。</strong></p>
+<h3>7.3 上下文继承：默认继承，但可裁剪</h3>
+<p><strong>【事实】</strong> 这直接回答&quot;subagent 生成时是否集成 parent 上下文&quot;：</p>
+<ul>
+<li><strong>handoff 默认继承</strong>：<em>&quot;When a handoff occurs, it's as though the new agent takes over the conversation, and gets to see the entire previous conversation history.&quot;</em></li>
+<li><strong>可裁剪</strong>：<code>input_filter</code>（过滤传给下一个 agent 的输入）、<code>RunConfig.nest_handoff_history</code>（把可摘要的历史压成 ordered summary segments）、<code>RunConfig.handoff_history_mapper</code>。</li>
+<li><strong>agents-as-tools 默认不转移对话</strong>：<code>Agent.as_tool()</code> 用于 <em>&quot;structured input for a nested specialist without transferring the conversation&quot;</em>。</li>
+</ul>
+<p>所以准确说法不是&quot;subagent 一定不继承 parent 上下文&quot;，而是：</p>
+<blockquote>
+<p><strong>handoff 默认给全档案，可用 <code>input_filter</code>/<code>nest_handoff_history</code> 裁成简报；agents-as-tools 默认只给简报。继承与否是设计旋钮，OpenAI 两头都给了。</strong></p>
+</blockquote>
+<h3>7.4 缓存账：继承 vs 不继承</h3>
+<p><strong>【事实】</strong> OpenAI prompt caching 文档说清三件事：</p>
+<ol>
+<li>缓存的是 <em>&quot;unchanged tokens at the beginning of a prompt&quot;</em>（即稳定前缀），含 instructions、developer messages、<strong>tool definitions</strong>、conversation history。</li>
+<li><em>&quot;Cache reuse requires the entire rendered prefix to match.&quot;</em></li>
+<li>关于 agent 的关键一句：<em>&quot;Agents API model calls use the same prompt-caching behavior... Reusing context within a session can preserve a shared prompt prefix, but maintaining a session doesn't guarantee a cache hit. See ... <strong>subagent accounting</strong>.&quot;</em></li>
+</ol>
+<p>由此【推断】：</p>
+<ul>
+<li><strong>继承 parent 上下文</strong>（handoff 默认）→ 复用 parent 的 stable prefix → <strong>有机会</strong>命中共享缓存前缀（但官方明说&quot;不保证&quot;）。</li>
+<li><strong>不继承</strong>（agents-as-tools / <code>input_filter</code>）→ subagent 用自己的小 stable prefix → 输入小、聚焦、prefill 便宜，但拿不到 parent 的前缀复用。</li>
+<li><strong>省钱主体在 parent 的推理循环</strong>（大前缀 × 多次复用），subagent 是小计算。所以&quot;隔离&quot;通常更优，而不是&quot;违反稳定前缀哲学&quot;——<strong>每个 agent 有自己的 stablePrefix + appendOnly log，哲学各自满足</strong>。</li>
+</ul>
+<h3>7.5 subagent 设计取舍总表</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>隔离（不继承 parent）</th>
+<th>共享（继承 parent）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上下文大小</td>
+<td>小</td>
+<td>大</td>
+</tr>
+<tr>
+<td>prefill 成本</td>
+<td>低</td>
+<td>高</td>
+</tr>
+<tr>
+<td>前缀缓存</td>
+<td>各用各的小前缀</td>
+<td>有机会复用 parent 大前缀（不保证）</td>
+</tr>
+<tr>
+<td>聚焦度</td>
+<td>高（无噪声）</td>
+<td>低（可能被无关历史稀释）</td>
+</tr>
+<tr>
+<td>协作</td>
+<td>需共享 workspace/memory 间接同步</td>
+<td>直接可见</td>
+</tr>
+<tr>
+<td>失败隔离</td>
+<td>好</td>
+<td>差</td>
+</tr>
+<tr>
+<td>典型实现</td>
+<td><code>Agent.as_tool()</code> / <code>input_filter</code></td>
+<td>handoff 默认</td>
+</tr>
+</tbody>
+</table></div>
+<h3>7.6 怎么选</h3>
+<ul>
+<li><strong>tool_call</strong>：动作单一、边界清晰、要父模型全程可控 → 取数、跑命令、查库。</li>
+<li><strong>agents-as-tools</strong>：specialist 处理 bounded subtask、不要它接管用户对话、要 manager 汇总。</li>
+<li><strong>handoffs</strong>：路由本身就是 workflow、要 specialist 接管本 turn。</li>
+<li><strong>编排层</strong>：要确定/快/省 → 用 code 编排（<code>asyncio.gather</code>、chaining、evaluator loop）；要开放任务自主规划 → 交给 LLM 编排。</li>
+</ul>
+<h3>7.7 一页速记</h3>
+<ul>
+<li><strong>tool_call 是叶子，subagent 是子树</strong>；但 subagent 在 wire level 常就是 <code>transfer_to_X</code> 这类 tool_call。</li>
+<li><strong>两条正交路</strong>：agents-as-tools（不转移对话）vs handoffs（转移对话）。</li>
+<li><strong>上下文</strong>：handoff 默认继承全档案，可 <code>input_filter</code>/<code>nest_handoff_history</code> 裁成简报；agents-as-tools 默认只给简报。</li>
+<li><strong>缓存</strong>：继承有机会复用 parent 稳定前缀（不保证），不继承各用各的小前缀；省钱主体在 parent 循环。</li>
+<li><strong>选型</strong>：单动作→tool_call；bounded subtask→agents-as-tools；路由接管→handoffs。</li>
+</ul>
 <h2>参考官方文档</h2>
 <ul>
 <li>OpenAI — Migrate to the Responses API（含 GPT-5.4 工具调用限制、字段映射、store 默认值）: <a href="https://developers.openai.com/api/docs/guides/migrate-to-responses">https://developers.openai.com/api/docs/guides/migrate-to-responses</a></li>
@@ -715,6 +1578,11 @@ for tool_call in response.output:
 <li>Microsoft Learn — 从 Azure OpenAI Chat Completions 迁移到 Responses API: <a href="https://learn.microsoft.com/en-us/azure/developer/ai/how-to/azure-openai-to-responses">https://learn.microsoft.com/en-us/azure/developer/ai/how-to/azure-openai-to-responses</a></li>
 <li>vLLM — OpenAI-Compatible Server（Supported APIs 列表，含 /v1/responses 端点）: <a href="https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server">https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server</a></li>
 <li>MDN — Server-sent events（SSE 协议语义）: <a href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events">https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events</a></li>
+<li>OpenAI Agents SDK — Agent orchestration（agents-as-tools vs handoffs、LLM/code 编排）: <a href="https://openai.github.io/openai-agents-python/multi_agent">https://openai.github.io/openai-agents-python/multi_agent</a></li>
+<li>OpenAI Agents SDK — Handoffs（transfer_to_X、input_filter、nest_handoff_history）: <a href="https://openai.github.io/openai-agents-python/handoffs/">https://openai.github.io/openai-agents-python/handoffs/</a></li>
+<li>OpenAI Agents SDK — Tools（Agents as tools / Agent.as_tool）: <a href="https://openai.github.io/openai-agents-python/tools/">https://openai.github.io/openai-agents-python/tools/</a></li>
+<li>OpenAI — Prompt caching（前缀缓存、subagent accounting）: <a href="https://developers.openai.com/api/docs/guides/prompt-caching">https://developers.openai.com/api/docs/guides/prompt-caching</a></li>
+<li>vLLM — Tool Calling（caller 责任：定义 tools / 带上下文 / 应用侧处理）: <a href="https://docs.vllm.ai/en/latest/features/tool_calling">https://docs.vllm.ai/en/latest/features/tool_calling</a></li>
 </ul>
 ]]></content:encoded>
     </item>
@@ -11301,233 +12169,6 @@ firewall-cmd --zone=FedoraServer --add-port=5060-5061/udp
 firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent 
 firewall-cmd --zone=FedoraServer --remove-port=80/tcp --permanent 
 </code></pre>
-]]></content:encoded>
-    </item>
-    <item>
-      <title>bash command cheat sheet</title>
-      <link>https://iintothewind.github.io/posts/bash-command-cheet-sheet.html</link>
-      <guid isPermaLink="true">https://iintothewind.github.io/posts/bash-command-cheet-sheet.html</guid>
-      <pubDate>Sun, 03 May 2020 11:53:30 GMT</pubDate>
-      <description>My WizNote service has been expired. I did not pay to renew the service. It is good and convenient t</description>
-      <dc:creator>Ivar.Chen</dc:creator>
-      <content:encoded><![CDATA[<p>My WizNote service has been expired.
-I did not pay to renew the service.
-It is good and convenient though.
-So I decided to move all my previous learning notes to here.
-Most of them are not originally created by me.
-I would try to include the source.
-Please remind me to delete them if you are the author and you feel it is a violation of your copyright.</p>
-<pre><code class="language-bash">
-# last parameter
-$_
-
-# word replace
-^before^after
-
-# check alias
-type -a ll
-
-alias sudo='sudo '
-# greps
-alias grep='grep --color'
-alias egrep='egrep --color'
-alias fgrep='fgrep --color'
-
-# utils
-alias sudo=&quot;sudo &quot;
-alias ll=&quot;ls -lthF&quot;
-alias la=&quot;ls -lthFA&quot;
-alias md=&quot;mkdir &quot;
-alias rm=&quot;rm -i&quot;
-alias mdate=&quot;date &quot;+%Y-%m-%d %H:%M:%S&quot;&quot;
-
-# fedora
-alias vim=&quot;gvim -v&quot;
-alias xcp=&quot;xclip -selection clipboard&quot;
-alias xcv=&quot;xclip -o&quot;
-alias rmrtlan=&quot;sudo route del default enp0s31f6&quot;
-alias scrnoff=&quot;xset dpms force off &quot;
-alias printpath=&quot;echo $PATH | tr : \\n&quot;
-alias lstcp=&quot;lsof -i -n -P | grep TCP&quot;
-
-# list top 5 files/ folders
-
-du -h | sort -rh | head -n 5
-# list only directories
-ls -l | grep ^d
-
-# tree list
-find . -type d |sed 's:[^-][^/]*/:--:g; s:^-: |:'
-
-
-find / -name file1  # 从 '/' 开始进入根文件系统搜索文件和目录
-find / -user user1  # 搜索属于用户 'user1' 的文件和目录
-find /home/user1 -name \*.bin    # 在目录 '/ home/user1' 中搜索带有'.bin' 结尾的文件
-find /usr/bin -type f -atime +100   # 搜索在过去 100 天内未被使用过的执行文件
-find /usr/bin -type f -mtime -10   #    搜索在 10 天内被创建或者修改过的文件
-find / -name *.rpm -exec chmod 755 '{}' \;  # 搜索以 '.rpm' 结尾的文件并定义其权限
-find / -xdev -name \*.rpm   # 搜索以 '.rpm' 结尾的文件，忽略光驱、捷盘等可移动设备
-find ./code -name &quot;*.c&quot; |xargs grep -in &quot;hello&quot; # 在~/code 目录搜索并显示文件名后缀为.c 并且包含字符串 hello 的文件和行数
-find . -type f -exec chmod 644 {} \;  # 文件加 644
-find . -type d -exec chmod 755 {} \; # 目录加 755
-find ./ -type f | xargs sudo chmod 644
-
-# display thread
-
-ps -efL
-# display top 5 processes which has taken most memory and cpu resources
-ps -ef --sort -pmem,+pcpu | head -n 6
-# change output format
-ps -eo pic,user,args
-# monitor threads of process with name contains java
-pidstat -C java -t
-
-sudo localectl set-locale.utf8
-
-wget -e use_proxy=on --no-check-certificate https://nodejs.org/dist/v5.1.0/node-v5.1.0-x64.msi
-wget -t0 -c --no-check-certificate http://mirror.bit.edu.cn/apache/kafka/0.10.0.0/kafka_2.11-0.10.0.0.tgz -O ~/Downloads/kafka.tgz
-
-# yum install and yum local install can both be replaced with:
-sudo dnf install &lt;anypackage&gt;
-
-# list services
-
-systemctl list-unit-files | grep smb
-# config service to be auto-start
-systemctl enable smb.service
-# start service
-systemctl start service
-# stop servie
-systemctl stop service
-# disable service
-systemctl disable service
-</code></pre>
-]]></content:encoded>
-    </item>
-    <item>
-      <title>different ways to get a substring in bash</title>
-      <link>https://iintothewind.github.io/posts/different-ways-to-get-a-substring-in-bash.html</link>
-      <guid isPermaLink="true">https://iintothewind.github.io/posts/different-ways-to-get-a-substring-in-bash.html</guid>
-      <pubDate>Thu, 30 Apr 2020 09:05:47 GMT</pubDate>
-      <description>Linux 的字符串截取很有用,有八种方法。 假设有变量var=http://www.aaa.com/123.htm # 号截取，删除左边字符，保留右边字符 echo ${var#*//} 其中 va</description>
-      <dc:creator>Ivar.Chen</dc:creator>
-      <content:encoded><![CDATA[<p>Linux 的字符串截取很有用,有八种方法。</p>
-<p>假设有变量<code>var=http://www.aaa.com/123.htm</code></p>
-<h2># 号截取，删除左边字符，保留右边字符</h2>
-<pre><code class="language-bash">echo ${var#*//}
-</code></pre>
-<p>其中 var 是变量名，<code>#</code> 号是运算符，<code>*//</code> 表示从左边开始删除第一个 <code>//</code> 号及左边的所有字符
-即删除 <code>http://</code>
-结果是<code>www.aaa.com/123.htm</code></p>
-<h2>## 号截取，删除左边字符，保留右边字符</h2>
-<pre><code class="language-bash">echo ${var##*/}
-</code></pre>
-<p><code>##*/</code> 表示从左边开始删除最后（最右边）一个 <code>/</code> 号及左边的所有字符
-即删除 <code>http://www.aaa.com/</code>
-结果是<code>123.htm</code></p>
-<h2>%号截取，删除右边字符，保留左边字符</h2>
-<pre><code class="language-bash">echo ${var%/*}
-</code></pre>
-<p><code>%/*</code> 表示从右边开始，删除第一个 <code>/</code> 号及右边的字符
-结果是<code>http://www.aaa.com</code></p>
-<h2>%% 号截取，删除右边字符，保留左边字符</h2>
-<pre><code class="language-bash">echo ${var%%/*}
-</code></pre>
-<p><code>%%/*</code> 表示从右边开始，删除最后（最左边）一个 <code>/</code> 号及右边的字符
-结果是<code>http:</code></p>
-<h2>从左边第几个字符开始，一直到结束</h2>
-<pre><code class="language-bash">echo ${var:7}
-</code></pre>
-<p>其中的 7 表示左边第8个字符开始，一直到结束。
-结果是<code>www.aaa.com/123.htm</code></p>
-<h2>从右边第几个字符开始，及字符的个数</h2>
-<pre><code class="language-bash">echo ${var:0-7:3}
-</code></pre>
-<p>其中的 0-7 表示右边算起第七个字符开始，3 表示字符的个数。
-结果是<code>123</code></p>
-<h2>从右边第几个字符开始，一直到结束</h2>
-<pre><code class="language-bash">echo ${var:0-7}
-</code></pre>
-<p>表示从右边第七个字符开始，一直到结束。
-结果是<code>123.htm</code></p>
-<p>注：（左边的第一个字符是用 0 表示，右边的第一个字符用 0-1 表示）</p>
-<h2>使用<code>cut</code></h2>
-<pre><code class="language-bash">echo $var | cut -nb 1-7 # http://
-echo $var | cut -nc -7  # http://
-echo $var | cut -nc 8-  # www.aaa.com
-</code></pre>
-<h2>references</h2>
-<p><a href="https://www.jb51.net/article/56563.htm">Shell脚本8种字符串截取方法总结</a></p>
-]]></content:encoded>
-    </item>
-    <item>
-      <title>fix self signed certificate in certificate chain error while executing npm install</title>
-      <link>https://iintothewind.github.io/posts/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install.html</link>
-      <guid isPermaLink="true">https://iintothewind.github.io/posts/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install.html</guid>
-      <pubDate>Thu, 12 Dec 2019 13:20:30 GMT</pubDate>
-      <description>the problem The error occurred while executing &quot;npm clean-install&quot;: gyp ERR! configure error gyp ERR</description>
-      <dc:creator>Ivar.Chen</dc:creator>
-      <content:encoded><![CDATA[<h2>the problem</h2>
-<p>The error occurred while executing &quot;npm clean-install&quot;:</p>
-<pre><code>gyp ERR! configure error
-gyp ERR! stack Error: self signed certificate in certificate chain
-gyp ERR! stack     at TLSSocket.onConnectSecure (_tls_wrap.js:1349:34)
-gyp ERR! stack     at TLSSocket.emit (events.js:219:5)
-gyp ERR! stack     at TLSSocket._finishInit (_tls_wrap.js:822:8)
-gyp ERR! stack     at TLSWrap.ssl.onhandshakedone (_tls_wrap.js:618:12)
-</code></pre>
-<h2>the solution</h2>
-<pre><code class="language-bash">npm config set strict-ssl false
-export NODE_TLS_REJECT_UNAUTHORIZED=0
-</code></pre>
-]]></content:encoded>
-    </item>
-    <item>
-      <title>compilation error when using Comparator.comparing()</title>
-      <link>https://iintothewind.github.io/posts/compilation-error-when-using-Comparator-comparing.html</link>
-      <guid isPermaLink="true">https://iintothewind.github.io/posts/compilation-error-when-using-Comparator-comparing.html</guid>
-      <pubDate>Tue, 10 Dec 2019 18:13:12 GMT</pubDate>
-      <description>the problem First, lets take a look at the following code sample: Collections.sort(playlist, Compara</description>
-      <dc:creator>Ivar.Chen</dc:creator>
-      <content:encoded><![CDATA[<h2>the problem</h2>
-<p>First, lets take a look at the following code sample:</p>
-<pre><code class="language-java">Collections.sort(playlist, Comparator.comparing(s -&gt; s.getTitle())
-              .thenComparing(p1 -&gt; p1.getDuration())
-              .thenComparing(p1 -&gt; p1.getArtist())
-);
-</code></pre>
-<p>What we are trying to do is simple: sort the <code>playlist</code> order by three different properties.
-Can this code snippet pass the compilation check?
-The answer is: No, there would be some compilation error.</p>
-<pre><code class="language-java">Error:(43, 59) java: cannot find symbol
-  symbol:   method getTitle()
-  location: variable s of type java.lang.Object
-</code></pre>
-<p>But why?</p>
-<p>The reason for this compilation error is that the type inference for Java language is weak in this case.
-It is expected that JVM knows what the type of the elements in <code>playlist</code> is when it is reading the first lambda <code>s-&gt;s.getTitle()</code>.
-But actually, JVM is not able to figure it out.</p>
-<h2>the solutions</h2>
-<p>There are three approaches to solve this problem.</p>
-<h3>use static lambda expression</h3>
-<pre><code class="language-java">Collections.sort(playlist, Comparator.comparing(Song::getTitle)
-              .thenComparing(Song::getDuration)
-              .thenComparing(Song::getArtist)
-);
-</code></pre>
-<h3>use explicitly defined lambda with a temorary variable</h3>
-<pre><code class="language-java">Comparator&lt;Song&gt; byName = (song1, song2) -&gt; song1.getArtist().compareTo(song2.getArtist());
-Comparator&lt;Song&gt; byDuration = (song1, song2) -&gt; Integer.compare(song1.getDuration(), song2.getDuration());
-Collections.sort(playlist, byName.thenComparing(byDuration));
-</code></pre>
-<h3>add explicity type parameter before the Comparator.comparing() is called</h3>
-<pre><code class="language-java">Collections.sort(playlist, Comparator.&lt;Song, String&gt;comparing((s) -&gt; s.getTitle())
-              .thenComparing(p1 -&gt; p1.getDuration())
-              .thenComparing(p1 -&gt; p1.getArtist())
-);
-</code></pre>
-<h2>reference</h2>
-<p><a href="http://stackoverflow.com/questions/24436871/very-confused-by-java-8-comparator-type-inference">Very confused by Java 8 Comparator type inference</a></p>
 ]]></content:encoded>
     </item>
   </channel>

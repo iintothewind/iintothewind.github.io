@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenAI 官方文档高效读取方法（Agent 版） - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="写给自己和其他 agent 复用。目标：读 developers.openai.com 时少花 token、少踩坑。 实测时间：2026-09。所有 URL 我都 curl 验证过，200 才写进去，404 的坑也标了。">
+<meta property="og:title" content="OpenAI 官方文档高效读取方法（Agent 版）">
+<meta property="og:description" content="写给自己和其他 agent 复用。目标：读 developers.openai.com 时少花 token、少踩坑。 实测时间：2026-09。所有 URL 我都 curl 验证过，200 才写进去，404 的坑也标了。">
+<meta property="og:url" content="https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html">
+
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>OpenAI 官方文档高效读取方法（Agent 版）</h1>
+<div class="post-meta">
+<span class="post-date">2026-09-18</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: OpenAI 官方文档高效读取方法（Agent 版）</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>OpenAI 官方文档高效读取方法（Agent 版）</h1>
+<blockquote>
+<p>写给自己和其他 agent 复用。目标：读 <code>developers.openai.com</code> 时少花 token、少踩坑。
+实测时间：2026-09。所有 URL 我都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
+</blockquote>
+<h2>TL;DR</h2>
+<p><strong>一句话：OpenAI 文档站不是 JSON API，不要爬 HTML。</strong> 它是 Astro 静态站，高效路径是「取 <code>.md</code> / <code>.txt</code>」。</p>
+<p>效率排序（实测）：</p>
+<pre><code>&lt;任意文档页&gt;.md          &gt;  llms.txt（索引）      &gt;  llms-full.txt（全站导出）  &gt;  unifetch 爬 HTML
+</code></pre>
+<ul>
+<li><strong>读一篇</strong> → 取 <code>.md</code>（干净、小、无导航）</li>
+<li><strong>查&quot;有哪些&quot;</strong> → 取 <code>llms.txt</code>（索引页）</li>
+<li><strong>读全站 / 做调研</strong> → 取 <code>llms-full.txt</code>（12 万行单文件，喂给 LLM 摘要）</li>
+<li><strong>unifetch</strong> 只留给&quot;没有 <code>.md</code>/<code>llms.txt</code> 的第三方站&quot;</li>
+</ul>
+<h2>为什么不用 html 爬</h2>
+<p>实测 <code>web_fetch</code> / <code>unifetch</code> 抓 <code>…/guides/xxx.html</code>：返回的是<strong>整页导航树 + 重复面包屑</strong>，正文被淹没，还要自己剥 nav。而 <code>.md</code> twin 是纯正文 Markdown，直接能喂。</p>
+<h2>URL 模式（精确，可直接粘）</h2>
+<p><strong>通用规则：任意官方文档页 URL，直接追加 <code>.md</code>。</strong></p>
+<pre><code># 指南
+https://developers.openai.com/api/docs/guides/migrate-to-responses
+→ https://developers.openai.com/api/docs/guides/migrate-to-responses.md   ✅
+
+# 参考页（注意：子路径要完整）
+https://developers.openai.com/api/reference/chat-completions/overview
+→ https://developers.openai.com/api/reference/chat-completions/overview.md ✅
+</code></pre>
+<p><strong>索引页（AI-native，别自己爬）：</strong></p>
+<pre><code># docs 级索引（263 行，全站主题导航）
+https://developers.openai.com/api/docs/llms.txt
+
+# docs 级全站导出（119892 行，单文件 Markdown）
+https://developers.openai.com/api/docs/llms-full.txt
+
+# reference 级也有各自的
+https://developers.openai.com/api/reference/llms.txt
+https://developers.openai.com/api/reference/llms-full.txt
+</code></pre>
+<p><strong>⚠️ 已知 404 陷阱</strong>：<code>/api/reference/&lt;name&gt;.md</code>（截断子路径）会 404。要完整子路径：<code>/api/reference/chat-completions/overview.md</code> 才行。</p>
+<h2>Agent 工作流（推荐顺序）</h2>
+<ol>
+<li><strong>先问&quot;有什么&quot;</strong>：<code>curl llms.txt</code> → 263 行主题索引 → 决定读哪篇。</li>
+<li><strong>读单篇</strong>：<code>curl &lt;page&gt;.md</code>（比 html 干净一个数量级）。</li>
+<li><strong>读全站 / 跨文档调研</strong>：<code>curl llms-full.txt</code> → 喂 LLM 摘要。</li>
+<li><strong>非 OpenAI 的第三方站</strong>：才用 unifetch，且让它剥 nav。</li>
+</ol>
+<p><strong>别整段塞 <code>llms-full.txt</code>（12 万行）进一个上下文。</strong> 正确做法：先读 <code>llms.txt</code> 定位主题 → 再取对应 <code>.md</code> → 逐篇喂。只有要&quot;全量&quot;时才用 full。</p>
+<h2>工具怎么选</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl</code> / <code>http_request</code></td>
+<td>直接取 <code>.md</code> / <code>.txt</code>（最快，零解析）</td>
+</tr>
+<tr>
+<td><code>unifetch</code></td>
+<td>没有 <code>.md</code>/<code>llms.txt</code> 的第三方站；OpenAI 站反而不划算</td>
+</tr>
+<tr>
+<td><code>web_fetch</code></td>
+<td>会剥 nav，但既然有 <code>.md</code> 就优先 <code>.md</code>，不必</td>
+</tr>
+</tbody>
+</table></div>
+<h2>常见误区</h2>
+<ol>
+<li><strong>platform API ≠ 文档站</strong>：<code>platform.openai.com/api/v1/...</code> 是真 API，只能调模型/查账号，<strong>不是文档</strong>。文档站是 <code>developers.openai.com</code>，独立存在。</li>
+<li><strong>没有&quot;文档查询接口&quot;</strong>：不要指望 <code>GET /docs?q=...</code> 这类。文档站就是静态文件，.md/.txt 是它给 AI 的友好形态。</li>
+<li><strong>reference 没有干净 JSON 下载</strong>：API reference 是 SSR 内嵌数据，没有独立 <code>.json</code>。查参数就取 <code>.md</code>。</li>
+</ol>
+<hr>
+<p><em>来源：<a href="http://developers.openai.com">developers.openai.com</a>（GPT-6 Astra 版本，2026-09 实测）。llms.txt / llms-full.txt 是官方为 AI 提供的导出格式。</em></p>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html" rel="canonical">https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

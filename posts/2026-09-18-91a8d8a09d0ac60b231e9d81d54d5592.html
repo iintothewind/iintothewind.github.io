@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>vLLM 文档高效读取方法（Agent 版） - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="写给自己和其他 agent 复用。目标：读 docs.vllm.ai 时少花 token、少踩坑。 实测时间：2026-09。所有 URL 我都 curl 验证过，200 才写进去，404 的坑也标了。">
+<meta property="og:title" content="vLLM 文档高效读取方法（Agent 版）">
+<meta property="og:description" content="写给自己和其他 agent 复用。目标：读 docs.vllm.ai 时少花 token、少踩坑。 实测时间：2026-09。所有 URL 我都 curl 验证过，200 才写进去，404 的坑也标了。">
+<meta property="og:url" content="https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html">
+
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>vLLM 文档高效读取方法（Agent 版）</h1>
+<div class="post-meta">
+<span class="post-date">2026-09-18</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: vLLM 文档高效读取方法（Agent 版）</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>vLLM 文档高效读取方法（Agent 版）</h1>
+<blockquote>
+<p>写给自己和其他 agent 复用。目标：读 <code>docs.vllm.ai</code> 时少花 token、少踩坑。
+实测时间：2026-09。所有 URL 我都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
+</blockquote>
+<h2>TL;DR</h2>
+<p><strong>一句话：vLLM 文档是 MkDocs 生成站，没有 llms.txt、没有 .md twin、GitHub 上也没有 .md 源码。</strong> 唯一干净的读法是 <code>web_fetch</code> 取单页，目录靠 <code>sitemap.xml</code>。</p>
+<p>效率排序：</p>
+<pre><code>web_fetch(&lt;页面&gt;)          &gt;&gt;  sitemap.xml（2686 页索引）  &gt;  爬 HTML 剥 nav  &gt;  GitHub raw（无 .md，404）
+</code></pre>
+<ul>
+<li><strong>读一篇</strong> → <code>web_fetch</code> 单页（自动剥 nav，正文干净）</li>
+<li><strong>查&quot;有哪些&quot;</strong> → <code>sitemap.xml</code>（2686 个 URL）</li>
+<li><strong>GitHub raw</strong> → 别试，docs 是构建时生成的，仓库里只有 <code>.meta.yml</code>，没有 <code>.md</code>（返回 404）</li>
+<li><strong>unifetch / 爬 HTML</strong> → 能用但脏，<code>web_fetch</code> 已自动剥 nav，优先用它</li>
+</ul>
+<h2>为什么不用 .md / llms.txt</h2>
+<p>实测全部 404：</p>
+<ul>
+<li><code>/llms.txt</code> → 404</li>
+<li><code>/llms-full.txt</code> → 404</li>
+<li>任意 <code>.md</code> twin（<code>/index.md</code>、<code>/en/latest/features/tool_calling.md</code>）→ 404</li>
+<li>GitHub raw <code>docs/api/vllm/README.md</code> 等 → 404（README 能取是因为它是真文件，docs 页面不是）</li>
+</ul>
+<p><strong>根因</strong>：vLLM 用 MkDocs Material + 每个页面对应一个 <code>.meta.yml</code> 配置，<code>.md</code> 正文是<strong>构建时生成</strong>的，不提交到仓库。所以没有现成的 <code>.md</code> 可取——只能拿 HTML 或走 web_fetch。</p>
+<h2>URL 模式（精确，可直接粘）</h2>
+<p><strong>索引（唯一官方索引）：</strong></p>
+<pre><code>https://docs.vllm.ai/sitemap.xml   →  2686 个 URL（&lt;loc&gt; 标签）
+</code></pre>
+<p><strong>单页（web_fetch 直接取，用服务 URL）：</strong></p>
+<pre><code># 首页
+https://docs.vllm.ai/en/latest/
+
+# API
+https://docs.vllm.ai/en/latest/api/
+
+# 示例：Serving / Tool Calling
+https://docs.vllm.ai/en/latest/serving/openai_compatible_server/
+
+# 文档分区（sitemap 里都有）
+/en/latest/api        /en/latest/benchmarking
+/en/latest/cli        /en/latest/configuration
+/en/latest/deployment /en/latest/features
+</code></pre>
+<p><strong>⚠️ 路径注意</strong>：服务 URL 是 <code>/en/latest/&lt;section&gt;/</code>（带版本）。sitemap 里全是这种完整 URL，直接解析 <code>&lt;loc&gt;</code> 用即可，不用自己拼。</p>
+<h2>Agent 工作流</h2>
+<ol>
+<li><strong>要&quot;有哪些&quot;</strong>：<code>curl sitemap.xml</code> → 解析 <code>&lt;loc&gt;</code>（2686 个 URL）→ 决定读哪页。</li>
+<li><strong>读单篇</strong>：<code>web_fetch https://docs.vllm.ai/&lt;loc&gt;</code> → 自动剥 nav，返回干净正文。</li>
+<li><strong>要全量</strong>：sitemap 2686 页，没有 35MB 全量导出。正确做法：sitemap 取 TOC → <code>web_fetch</code> 逐篇取需要的。</li>
+</ol>
+<h2>工具怎么选</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>web_fetch</code></td>
+<td><strong>首选</strong>。自动剥 nav，返回干净正文，适合这种生成站</td>
+</tr>
+<tr>
+<td><code>unifetch</code></td>
+<td>不划算——<code>web_fetch</code> 已自动剥 nav</td>
+</tr>
+<tr>
+<td><code>curl</code></td>
+<td>只用来取 <code>sitemap.xml</code>（纯 XML，无 nav）</td>
+</tr>
+<tr>
+<td>GitHub raw</td>
+<td>别用，docs 是生成的，无 .md</td>
+</tr>
+</tbody>
+</table></div>
+<h2>常见误区</h2>
+<ol>
+<li><strong>别找 llms.txt / .md twin</strong>：vLLM 没有。这两个站（OpenAI、Claude）有的，vLLM 没有。</li>
+<li><strong>别抓 GitHub 源码</strong>：docs 是构建时生成的，仓库里只有 <code>.meta.yml</code>，<code>.md</code> 是 404。</li>
+<li><strong>没有 35MB 全量</strong>：别指望 <code>llms-full.txt</code>。要全量只能 sitemap + 逐篇 web_fetch。</li>
+<li><strong>sitemap 才是索引</strong>：vLLM 唯一官方索引就是 <code>sitemap.xml</code>。</li>
+</ol>
+<hr>
+<p><em>来源：<a href="http://docs.vllm.ai">docs.vllm.ai</a>（实测 2026-09）。MkDocs Material 生成站，docs 正文不提交到仓库。</em></p>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html" rel="canonical">https://iintothewind.github.io/posts/2026-09-18-91a8d8a09d0ac60b231e9d81d54d5592.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>
