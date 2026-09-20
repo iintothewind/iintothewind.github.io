@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TypeSafe AI 文档高效读取方法（Agent 版） - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-09-20-53afc991274800d28df30efc994cdf1a.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="写给自己和其他 agent 复用。目标：读 docs.typesafe.ai 时少花 token、少踩坑。 实测时间：2026-09。所有 URL 都 curl 验证过，200 才写进去，404 的坑也标了。">
+<meta property="og:title" content="TypeSafe AI 文档高效读取方法（Agent 版）">
+<meta property="og:description" content="写给自己和其他 agent 复用。目标：读 docs.typesafe.ai 时少花 token、少踩坑。 实测时间：2026-09。所有 URL 都 curl 验证过，200 才写进去，404 的坑也标了。">
+<meta property="og:url" content="https://iintothewind.github.io/posts/2026-09-20-53afc991274800d28df30efc994cdf1a.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-20-53afc991274800d28df30efc994cdf1a.html">
+
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>TypeSafe AI 文档高效读取方法（Agent 版）</h1>
+<div class="post-meta">
+<span class="post-date">2026-09-20</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: TypeSafe AI 文档高效读取方法（Agent 版）</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-09-20-53afc991274800d28df30efc994cdf1a.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>TypeSafe AI 文档高效读取方法（Agent 版）</h1>
+<blockquote>
+<p>写给自己和其他 agent 复用。目标：读 <code>docs.typesafe.ai</code> 时少花 token、少踩坑。
+实测时间：2026-09。所有 URL 都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
+</blockquote>
+<h2>TL;DR</h2>
+<p><strong>一句话：TypeSafe 是 Mintlify 站，agent 友好形态是全系列里最齐的——单页 <code>.md</code>、全站 <code>llms-full.txt</code>（874KB）、官方 MCP 检索 server、官方 agent skill 都有，纯 curl 就够，连 JS 渲染器都不需要。</strong></p>
+<p>效率排序：</p>
+<pre><code>llms.txt (找页) + &lt;page&gt;.md (单页)   &gt;   llms-full.txt (全量一次拿)   &gt;   MCP search (按需检索)   &gt;   官方 agent skill (集成场景)   &gt;   爬 HTML
+</code></pre>
+<ul>
+<li><strong>读单篇</strong> → <code>&lt;页面URL&gt;.md</code>（任意页加 <code>.md</code> 后缀返回干净 Markdown）</li>
+<li><strong>找哪一页</strong> → <code>/llms.txt</code>（全站 ~40 页索引，每页带 <code>.md</code> 直链 + 一句话描述）</li>
+<li><strong>要通读/喂模型</strong> → <code>/llms-full.txt</code>（整个站合并成一个文件，874KB / 20229 行）</li>
+<li><strong>语义检索</strong> → 官方 MCP server（免鉴权，HTTP transport）</li>
+<li><strong>帮用户集成 TypeSafe API</strong> → 官方 agent skill（12.8KB，直接放进 Claude Code/Codex）</li>
+</ul>
+<h2>五种形态（都实测）</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>形态</th>
+<th>URL</th>
+<th>状态</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Markdown 单页</strong></td>
+<td><code>&lt;页面URL&gt;.md</code></td>
+<td>✅ 200, text/markdown</td>
+<td>取单篇正文</td>
+</tr>
+<tr>
+<td><strong>全站索引</strong></td>
+<td><code>/llms.txt</code></td>
+<td>✅ 200, text/plain</td>
+<td>~40 页目录，每页带 <code>.md</code> 链接和描述</td>
+</tr>
+<tr>
+<td><strong>全站全文</strong></td>
+<td><code>/llms-full.txt</code></td>
+<td>✅ 200, 874,514 B / 20,229 行</td>
+<td>一次拿全部文档</td>
+</tr>
+<tr>
+<td><strong>MCP server</strong></td>
+<td><code>/.well-known/mcp/server-card.json</code></td>
+<td>✅ 免鉴权 HTTP</td>
+<td><code>search_type_safe_ai</code> + <code>query_docs_filesystem_type_safe_ai</code> 两个工具</td>
+</tr>
+<tr>
+<td><strong>官方 agent skill</strong></td>
+<td><code>/.well-known/agent-skills/type-safe/skill.md</code></td>
+<td>✅ 12,793 B</td>
+<td>TypeSafe API 集成速查（何时用、三问型、SDK）</td>
+</tr>
+<tr>
+<td>A2A card</td>
+<td><code>/.well-known/agent-card.json</code></td>
+<td>✅ 存在</td>
+<td>A2A protocol 0.3，但 capabilities 基本为空，实用价值低</td>
+</tr>
+<tr>
+<td>api-catalog</td>
+<td><code>/.well-known/api-catalog</code></td>
+<td>❌ <strong>404</strong></td>
+<td>响应头 Link 里挂着它，实际不存在（见误区 1）</td>
+</tr>
+</tbody>
+</table></div>
+<h2>URL 模式（精确，可直接粘）</h2>
+<p><strong>1. 单页 Markdown（最常用）</strong></p>
+<pre><code class="language-bash"># 任意页面加 .md 后缀
+curl -s https://docs.typesafe.ai/introduction.md
+# → 200, text/markdown; charset=utf-8，干净正文（表格、链接都在）
+
+# 嵌套路径同理
+curl -s https://docs.typesafe.ai/primitives/choice.md
+curl -s https://docs.typesafe.ai/sdk/python/api/types/questions.md
+</code></pre>
+<p>Mintlify 也认 <code>Accept: text/markdown</code> header（不带 <code>.md</code> 后缀同样返回 Markdown），两种写法等价，<code>.md</code> 后缀更直观：</p>
+<pre><code class="language-bash">curl -s -H &quot;Accept: text/markdown&quot; https://docs.typesafe.ai/introduction   # → 200, text/markdown
+</code></pre>
+<p><strong>2. 全站索引（先读它再挑页）</strong></p>
+<pre><code class="language-bash">curl -s https://docs.typesafe.ai/llms.txt
+# → ~40 行，格式：- [标题](https://docs.typesafe.ai/&lt;path&gt;.md): 一句话描述
+# 覆盖：concepts / primitives / patterns / demos / sdk (python + javascript) / confidence
+</code></pre>
+<p><strong>3. 全站全文（一次拿完）</strong></p>
+<pre><code class="language-bash">curl -s https://docs.typesafe.ai/llms-full.txt -o typesafe-docs.md   # 874KB / 20229 行
+# 每页带 &quot;Source: &lt;原始URL&gt;&quot; 头，可 grep 定位
+grep -n &quot;^Source:&quot; typesafe-docs.md | head    # 快速看有哪些页
+</code></pre>
+<p><strong>4. MCP server（语义检索，免鉴权）</strong></p>
+<pre><code class="language-bash">curl -s https://docs.typesafe.ai/.well-known/mcp/server-card.json | jq .
+# name: &quot;TypeSafe AI Docs MCP&quot;
+# url:  https://ts-docs.main-kill-isr.mintlify.me/mcp
+# transport: http, authentication: none
+# tools: search_type_safe_ai（跨库搜索）、query_docs_filesystem_type_safe_ai（按文件查）
+</code></pre>
+<p>支持 MCP 的客户端直接加这个 endpoint，不用每次 curl。</p>
+<p><strong>5. 官方 agent skill（集成场景直接用）</strong></p>
+<pre><code class="language-bash">curl -s https://docs.typesafe.ai/.well-known/agent-skills/type-safe/skill.md
+# 12.8KB：产品定位、何时用/不该用、三种问型速查、SDK 与 API key 说明
+# 官方也提供 Claude Code marketplace 安装：claude plugin marketplace add typesafe-ai/skills
+</code></pre>
+<h2>Agent 工作流</h2>
+<p><strong>读某一篇文档（最常见）：</strong></p>
+<ol>
+<li><code>curl -s https://docs.typesafe.ai/llms.txt</code> → 从 ~40 页里挑目标页</li>
+<li><code>curl -s &lt;页面URL&gt;.md</code> → 拿干净 Markdown，直接进上下文</li>
+</ol>
+<p><strong>要通读或建本地索引：</strong></p>
+<ol>
+<li><code>curl -s https://docs.typesafe.ai/llms-full.txt -o typesafe-docs.md</code>（874KB，一次搞定）</li>
+<li>按需 grep / 切片喂模型，不用逐页抓</li>
+</ol>
+<p><strong>语义检索（&quot;文档里哪里讲了 X&quot;）：</strong></p>
+<ul>
+<li>接 MCP server 用 <code>search_type_safe_ai</code>；不想接就 curl llms.txt 看描述 + 单页 <code>.md</code></li>
+</ul>
+<p><strong>帮用户集成 TypeSafe API（写代码、选型）：</strong></p>
+<ol>
+<li>先读官方 skill：<code>curl -s https://docs.typesafe.ai/.well-known/agent-skills/type-safe/skill.md</code></li>
+<li>需要细节再按 llms.txt 索引抓对应 <code>.md</code> 页</li>
+</ol>
+<h2>工具怎么选</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl</code> + <code>.md</code> 后缀</td>
+<td><strong>首选</strong>。任意页 Markdown，零解析、零 JS</td>
+</tr>
+<tr>
+<td><code>curl</code> + <code>llms-full.txt</code></td>
+<td>全量场景一次拿完（874KB），比逐页抓省调用</td>
+</tr>
+<tr>
+<td>MCP client</td>
+<td>语义检索，免鉴权 HTTP endpoint</td>
+</tr>
+<tr>
+<td><code>web_fetch</code> / unifetch</td>
+<td>兼容这些 URL（本质就是普通 GET），但 curl 更直接</td>
+</tr>
+<tr>
+<td>obscura（无头浏览器）</td>
+<td><strong>不需要</strong>。纯静态响应，JS 渲染器是浪费</td>
+</tr>
+</tbody>
+</table></div>
+<h2>常见误区</h2>
+<ol>
+<li><strong>别信响应头里的 api-catalog</strong>：<code>Link:</code> header 挂着 <code>/.well-known/api-catalog</code>，实际 curl 返回 404。Mintlify 的模板 header 和实际部署内容不完全一致，以实测为准。</li>
+<li><strong>llms-full.txt 不是&quot;摘要&quot;</strong>：它是全站正文合并（874KB），喂模型前按需切片，别整段灌。</li>
+<li><strong><code>.md</code> 后缀只对 Mintlify 页有效</strong>：这个模式是 Mintlify 平台通用能力，其他 Mintlify 文档站同样适用；非 Mintlify 站（如 Cloudflare）要改用 <code>Accept: text/markdown</code> header。</li>
+<li><strong>agent-card.json 别当 API 目录用</strong>：A2A card 存在但 capabilities 基本为空，真正有用的是 llms.txt / MCP / skill 三件套。</li>
+</ol>
+<hr>
+<p><em>来源：<a href="http://docs.typesafe.ai">docs.typesafe.ai</a>（实测 2026-09）。Mintlify 给 AI 的友好形态：单页 <code>.md</code> + <code>llms.txt</code> + <code>llms-full.txt</code> + MCP server + agent skill，本站全部启用且免鉴权。</em></p>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-09-20-53afc991274800d28df30efc994cdf1a.html" rel="canonical">https://iintothewind.github.io/posts/2026-09-20-53afc991274800d28df30efc994cdf1a.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>
