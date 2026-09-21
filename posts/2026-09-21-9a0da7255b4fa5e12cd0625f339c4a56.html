@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程师视角解读 Qwen Next 架构：Engram + MTP 如何让本地模型提速 + 省显存 - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="从 DeepSeek Engram 论文到 Qwen3.8-Flash-Next 的落地，讲清楚 Engram 查表到底解决了什么、怎么算、怎么 offload。 本文为技术解读，标注了「事实」与「推断」，方便你核对原始来源。">
+<meta property="og:title" content="工程师视角解读 Qwen Next 架构：Engram + MTP 如何让本地模型提速 + 省显存">
+<meta property="og:description" content="从 DeepSeek Engram 论文到 Qwen3.8-Flash-Next 的落地，讲清楚 Engram 查表到底解决了什么、怎么算、怎么 offload。 本文为技术解读，标注了「事实」与「推断」，方便你核对原始来源。">
+<meta property="og:url" content="https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.html">
+
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>工程师视角解读 Qwen Next 架构：Engram + MTP 如何让本地模型提速 + 省显存</h1>
+<div class="post-meta">
+<span class="post-date">2026-09-21</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: 工程师视角解读 Qwen Next 架构：Engram + MTP 如何让本地模型提速 + 省显存</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>工程师视角解读: Engram + MTP (Qwen Next架构) 如何让本地模型提速 + 省显存</h1>
+<blockquote>
+<p>从 DeepSeek Engram 论文到 Qwen3.8-Flash-Next 的落地，讲清楚 Engram 查表到底解决了什么、怎么算、怎么 offload。
+本文为技术解读，<strong>标注了「事实」与「推断」</strong>，方便你核对原始来源。</p>
+</blockquote>
+<hr>
+<h2>TL;DR</h2>
+<ul>
+<li>Transformer 没有&quot;原生知识查找&quot;，静态知识全靠注意力 + 前馈网络用<strong>计算</strong>慢慢拼出来。</li>
+<li><strong>Engram 查表</strong>是稀疏性的<strong>第二条轴</strong>：套路化、静态的局部模式（命名实体、固定短语）O(1) 查表，把算力留给真正的推理。</li>
+<li>它和 MoE 的<strong>条件计算</strong>互补：MoE 负责&quot;条件推理&quot;，Engram 负责&quot;条件记忆&quot;。</li>
+<li>工程落地：Engram 表是<strong>独立权重</strong>，可 offload 到 NVMe——让<strong>小显存也能跑大模型</strong>。</li>
+</ul>
+<hr>
+<h2>1. Engram 是什么？</h2>
+<p>经典 n-gram 嵌入（如 ELMo）是把 n 个连续词映射成一个向量，喂给模型。Engram 把它现代化成<strong>条件记忆模块</strong>，干四件事：</p>
+<div class="mermaid">flowchart TD
+accTitle: Engram 模块结构
+accDescr: 展示 Engram 查表作为第二条稀疏轴，如何通过词表压缩、多头哈希、上下文门控、卷积融合四步，把静态条件记忆注入 Transformer 主干。
+    subgraph 输入
+      T[输入 token]
+    end
+    subgraph Engram 模块
+      H[T 的后缀 Engram&lt;br/&gt;2/3 阶]
+      HASH[H XOR 哈希&lt;br/&gt;K 个头 → 素数槽]
+      TAB[(Engram 嵌入表&lt;br/&gt;每个槽一个可学习向量)]
+      GATE[上下文门控&lt;br/&gt;Query·静态KV → α_t]
+      CONV[轻量 depthwise conv&lt;br/&gt;融合]
+    end
+    subgraph 主干
+      TRANS[Transformer&lt;br/&gt;MoE + 注意力]
+    end
+    T --&gt; H --&gt; HASH --&gt; TAB --&gt; GATE --&gt; CONV --&gt; TRANS
+    T -.-&gt;|同时进入| TRANS
+
+    style TAB fill:#f9f,stroke:#333
+    style GATE fill:#bbf,stroke:#333
+</div><ol>
+<li><strong>词表压缩</strong>：NFKC 归一化 + 小写等，把语义等价的 token 合并成规范 ID（DeepSeek 压掉 23%）。</li>
+<li><strong>多头哈希</strong>：每个 Engram 阶数用 K 个头映射到素数大小的表，用 multiplicative-XOR hash。</li>
+<li><strong>上下文门控</strong>：检索出的静态 embedding 当 Key/Value，当前 hidden state 当 Query 做注意力式门控——静态记忆是&quot;无上下文先验&quot;，这一步给它加上下文。</li>
+<li><strong>多分支 + 卷积融合</strong>：插进主干的不同分支里。</li>
+</ol>
+<p><strong>关键事实</strong>：Engram 查表在推理时<strong>几乎不增加 FLOPs</strong>（每 token 只花 O(d)），但<strong>访存有开销</strong>。</p>
+<hr>
+<h2>2. 为什么要用它？——U 形分配律（Sparsity Allocation Law）</h2>
+<h3>2.1 核心直觉</h3>
+<p>MoE 的&quot;空闲参数&quot;（没被选中的 expert）是<strong>不花钱</strong>的。问题是：这笔免费预算该分给 MoE 还是给 Engram？</p>
+<h3>2.2 U 形曲线</h3>
+<p>定义分配比：</p>
+<pre><code>ρ = 分给 MoE 的空闲参数 / 总空闲参数 Psparse   ∈ [0, 1]
+</code></pre>
+<ul>
+<li>ρ = 1 → 全是 MoE（纯计算）</li>
+<li>ρ = 0 → 全是 Engram（纯查表）</li>
+<li>中间 → 混合</li>
+</ul>
+<p>在<strong>严格等参数量、等 FLOPs</strong> 下，把 Psparse 在这两者间滑动，画验证集 loss——是一条 <strong>U 形曲线</strong>：两头都更差，中间混合点最好。</p>
+<div class="mermaid">xychart-beta
+accTitle: U 形分配律
+accDescr: 展示在等参等算力下，空闲参数在 MoE（纯计算）与 Engram（纯查表）之间分配的验证集 Loss 曲线。ρ≈74% 混合点最优，两端纯 MoE / 纯 Engram 都更差。
+    title &quot;U 形分配律：MoE 与 Engram 的空闲参数分配（验证集 Loss）&quot;
+    x-axis [&quot;0%&quot;, &quot;26%&quot;, &quot;50%&quot;, &quot;74%&quot;, &quot;100%&quot;]
+    y-axis 3.0 --&gt; 5.0
+    line [5.0, 3.6, 3.4, 3.35, 4.8]
+</div><blockquote>
+<p>x 轴刻度：纯 Engram (ρ=0) → 混合低 → 混合中 → Engram-27B (ρ≈74%) → 纯 MoE (ρ=100%)。</p>
+</blockquote>
+<p><strong>含义</strong>：同样的参数和算力预算下，&quot;计算 + 查表&quot;混合结构严格胜过把预算全押在 MoE 上。</p>
+<h3>2.3 怎么算出 Engram 槽位数？</h3>
+<p><code>Psparse</code> = MoE 里没被选中的 expert 参数。Engram 表容量 = <code>(1 − ρ) × Psparse</code>，<strong>每个槽一个可学习向量 = 参数</strong>。</p>
+<p>以 <strong>Engram-27B</strong> 为例：</p>
+<ul>
+<li>从 72 个 routed expert 减到 55 个，省下的参数 → <strong>5.7B 的 Engram 模块</strong>。</li>
+<li>5.7B = <code>(1 − ρ) × Psparse</code>，ρ = 74.3% → 反推 Psparse ≈ 22B，MoE 部分 ≈ 16.5B。</li>
+</ul>
+<p><strong>要点</strong>：不是&quot;挑哪 26% 做表&quot;，而是&quot;表开多大&quot;。表是规则哈希结构，覆盖整个 Engram 空间，内容在预训练里学出来——<strong>热点由 Zipf 分布自然沉淀</strong>，不需要人工选。</p>
+<hr>
+<h2>3. DeepSeek Engram vs Qwen3.8-Flash-Next</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>DeepSeek Engram</th>
+<th>Qwen3.8-Flash-Next</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>角色</td>
+<td><strong>预训练模块</strong>（省算力）</td>
+<td><strong>推理时</strong>实时查的&quot;长期记忆&quot;</td>
+</tr>
+<tr>
+<td>是否影响生成</td>
+<td>否</td>
+<td>是，注入到 hidden state</td>
+</tr>
+<tr>
+<td>表大小</td>
+<td>5.7B</td>
+<td><strong>51B</strong></td>
+</tr>
+<tr>
+<td>插入层</td>
+<td>Layer 2 和 6/15 两段</td>
+<td><strong>Layer 2 单独</strong>（<code>layers.1.ple.ngram_embedding</code>）</td>
+</tr>
+<tr>
+<td>阶数</td>
+<td>2/3-gram</td>
+<td>bigrams/trigrams（2/3）✓</td>
+</tr>
+<tr>
+<td>门控</td>
+<td>上下文门控 α_t + depthwise conv</td>
+<td>未见（名为 <strong>PLE</strong>）</td>
+</tr>
+<tr>
+<td>词表压缩</td>
+<td>NFKC 归一化</td>
+<td>未提及</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>结论</strong>：<strong>概念同源，实现不同。</strong> Qwen 官方 model card 基本在致敬 Engram：</p>
+<blockquote>
+<p>&quot;N-gram Embedding... requires less computation and is more amenable to offloading than MoE. By indexing with short n-grams, this approach makes parameter scaling highly efficient for memory-constrained accelerators.&quot;</p>
+</blockquote>
+<p>但 Qwen 是<strong>独立设计</strong>：只插一层、表大 9 倍、叫 PLE（Prompt-Learned Embedding，<strong>推断</strong>）。它更像是&quot;学 Engram 思路，自己再造一个更轻/更大的版本&quot;，而非直接搬实现。</p>
+<blockquote>
+<p>⚠️ 关于 Qwen Engram 的门控/哈希/PLE 机制，来自 model card 和 tensor 路径名，<strong>不是 Qwen 技术报告确认的</strong>，标注为推断。</p>
+</blockquote>
+<hr>
+<h2>4. Qwen3.8-Flash-Next：Engram + MTP 做提速 + 省显存</h2>
+<h3>4.1 两个机制，各管一摊</h3>
+<div class="mermaid">flowchart LR
+accTitle: Engram + MTP 双机制分工
+accDescr: 展示 Qwen3.8-Flash-Next 两条腿：MTP+token skipping 负责提速（省 decode FLOPs），Engram 表 offload 到 NVMe 负责省显存。
+    subgraph 提速腿
+      MTP[MTP 多步预测&lt;br/&gt;猜对就跳过 decode]
+      skip[省掉已预测 token&lt;br/&gt;的自回归 FLOPs]
+    end
+    subgraph 省显存腿
+      NG[Engram 表 51B&lt;br/&gt;独立权重]
+      off[offload 到 NVMe&lt;br/&gt;不占统一内存]
+    end
+    MTP --&gt; skip
+    NG --&gt; off
+</div><div class="table-scroll"><table>
+<thead>
+<tr>
+<th>机制</th>
+<th>主要贡献</th>
+<th>次要贡献</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Engram (PLE)</strong></td>
+<td><strong>省显存</strong>——102GB 表 offload 到 NVMe</td>
+<td>注入知识、让模型&quot;知道&quot;</td>
+</tr>
+<tr>
+<td><strong>MTP + token skipping</strong></td>
+<td><strong>提速</strong>——猜对就跳过 decode</td>
+<td>省算力</td>
+</tr>
+<tr>
+<td><strong>Ultra-Sparse MoE</strong></td>
+<td>两者都不是</td>
+<td>3.7% 激活率，底子省</td>
+</tr>
+</tbody>
+</table></div>
+<h3>4.2 常见误解澄清</h3>
+<p><strong>误解 1</strong>：&quot;Engram 加快返回速度&quot;</p>
+<ul>
+<li><strong>错</strong>。Engram 省的是<strong>预训练算力</strong>（Multi-Query NIAH 只用了基线 82% 的预训练 FLOPs），不是 token/sec。自回归生成的串行瓶颈查表救不了。</li>
+</ul>
+<p><strong>误解 2</strong>：&quot;第一个 token 匹配到整词，省了好几次自回归&quot;</p>
+<ul>
+<li><strong>错</strong>。生成时 Engram 只能看到已生成的后缀，&quot;Alexander the Great&quot; 的 3-gram 要到第 3 个 token 才凑齐。查表<strong>不产出 token</strong>，&quot;Great&quot; 仍在位置 i+1 正常 decode。</li>
+</ul>
+<p><strong>误解 3</strong>：&quot;Engram 比 MoE 省算力 = 省掉 decode 算力&quot;</p>
+<ul>
+<li><strong>错</strong>。Engram 每 token 只花 O(d)，MoE 是 O(k×F×seq)。用 Qwen 数字算（seq_len=256）：</li>
+</ul>
+<pre><code>MoE（11 激活 expert × 48 层）≈ 1.7 亿 FLOPs/token
+Engram 门控（layer 2，O(d)）≈ 5120 FLOPs/token
+差距 ≈ 3.3 万倍
+</code></pre>
+<p>&quot;less computation&quot; 是<strong>替换成本</strong>的对比——用 Engram 扛静态知识比开 MoE 便宜 3 万倍，<strong>不是省 base compute</strong>。真正省 decode 的是 <strong>MTP</strong>。</p>
+<h3>4.3 为什么 Engram 不&quot;跳过&quot;生成？</h3>
+<p>Engram 是<strong>注入器</strong>，不是 token 生成器。它让模型&quot;知道该来 Great&quot;，但模型还得自己吐出 &quot;Great&quot;，并继续写&quot;Great 之后&quot;（开口部分）。MTP 才负责&quot;跳过已确定 token&quot;。</p>
+<hr>
+<h2>5. 社区案例：NVMe offload，DGX Spark 单机跑</h2>
+<h3>5.1 真实部署</h3>
+<p>Qwen3.8-Flash-Next 的 Engram 表：</p>
+<ul>
+<li><strong>原始 BF16</strong>：128 shards × 2,500,012 行 × 160 列 = <strong>102.4 GB</strong></li>
+<li><strong>NVFP4 量化</strong>：~51 GB</li>
+</ul>
+<p>社区仓库 <strong><code>dolf3131/qwen3.8-flash-next-dgx-spark</code></strong>：在单台 <strong>DGX Spark（121 GiB 统一内存）</strong> 上，用 <strong>NVFP4</strong> 量化主权重，把 <strong>51B 的 Engram 表页到 SSD swap</strong>——装不进内存的表，靠 NVMe 跑起来。</p>
+<p>仓库 <strong><code>Felliks/qwen38-flash-next-one-dgx-spark</code></strong>：SGLang + MTP + 原生 262K context + <strong>NVMe-backed PLE cache</strong>，可复现部署。</p>
+<p><strong>推荐（需要 prefix caching 的多轮 / agent 场景）：<code>blazux/qwen3.8-Flash-DGX</code>（PLE mmap）</strong>。它 patch 官方 vLLM 镜像，把 51B PLE 表用 <strong>mmap 从 NVMe 直接 serve</strong>——权重降到 ~75 GiB，KV pool 到 ~680k tokens，500k context，确定性 greedy，已被独立复现（其 <a href="https://github.com/blazux/qwen3.8-Flash-DGX/issues/1">issue #1</a>）。</p>
+<p>推荐理由是<strong>其它 vLLM 路线的 prefix caching 是坏的</strong>：</p>
+<ul>
+<li><strong>官方 recipe 镜像直接崩</strong>：<code>--enable-prefix-caching</code> + 多轮对话（不同长度共享前缀）→ GDN 路径 <code>CUBLAS_STATUS_INTERNAL_ERROR</code> / illegal memory access，可复现（<a href="https://github.com/vllm-project/vllm/issues/54173">vllm#54173</a>，open）。</li>
+<li><strong>不崩也可能白开</strong>：这个模型上单开 <code>--enable-prefix-caching</code> 默认 <code>mamba_cache_mode=none</code>，GDN state 不可缓存，实测 0 hits / 813 queries；需再加 <code>--mamba-cache-mode align</code>，且 &lt;1600 token 的 prompt 仍命中不了（dolf3131 仓库实测）。</li>
+<li>blazux 修了这条链上的 block-size bug（每次 cache hit 会静默恢复<strong>全零 Mamba state</strong>），prefix caching 真正可用。</li>
+</ul>
+<blockquote>
+<p>⚠️ vllm#54173 针对官方 recipe 镜像；其它 vLLM-based 仓库是否各自 patch 过此 bug，未逐一验证（推断：README 没提的默认中招）。SGLang 路线不走这条 GDN 路径，不受该 crash 影响。</p>
+</blockquote>
+<h3>5.2 为什么能 work</h3>
+<p>Engram 访问是 <strong>Zipf 分布</strong>，热点条目被 OS <strong>页缓存</strong>吸回 DRAM（~100ns），冷条目才回 NVMe（~微秒）。所以命中路径是：</p>
+<div class="mermaid">flowchart TD
+accTitle: Engram 访问命中路径
+accDescr: 展示 Engram 查询因 Zipf 分布，热点条目经 OS 页缓存命中 DRAM（~100ns），冷条目才打到 NVMe（~微秒）的访问路径。
+    Q[查询 Engram] --&gt; HOT{{是热点?}}
+    HOT --&gt;|是| DRAM[DRAM page cache&lt;br/&gt;~100ns]
+    HOT --&gt;|否| NVME[NVMe 随机读&lt;br/&gt;~微秒]
+    DRAM --&gt; OUT[注入 hidden state]
+    NVME --&gt; DRAM
+</div><blockquote>
+<p>注意：DGX Spark 入门版（Jetson Orin）只有 32GB，装不下这张表。能跑的是 <strong>DGX Spark Pro</strong>（128GB 级统一内存）。</p>
+</blockquote>
+<hr>
+<h2>6. 工程要点与注意事项</h2>
+<ol>
+<li><strong>Engram 是独立权重，天生可 offload</strong>——这是它能省显存的前提。</li>
+<li><strong>offload 到 DRAM 是甜点</strong>（论文实测 2.8% 吞吐损失）；但&quot;再往磁盘推&quot;只对&quot;表比内存还大&quot;才有意义——DGX Spark 就是这种情况。</li>
+<li><strong>量化是硬门槛</strong>：NVFP4 把 102GB → 51GB，否则根本装不进小显存。</li>
+<li><strong>提速靠 MTP，省显存靠 Engram offload</strong>——两条腿，别混。</li>
+<li><strong>事实 vs 推断</strong>：Engram 的插入层、表大小、offload 方案来自 model card / 社区仓库（事实）；PLE 机制、门控、哈希细节来自 tensor 路径名（推断），需核对 Qwen 技术报告。</li>
+</ol>
+<hr>
+<h2>参考文献</h2>
+<ul>
+<li>DeepSeek Engram 论文：<a href="https://github.com/deepseek-ai/Engram/blob/main/Engram_paper.pdf">https://github.com/deepseek-ai/Engram/blob/main/Engram_paper.pdf</a></li>
+<li>Qwen3.8-Flash-Next model card：<a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next">https://huggingface.co/Qwen/Qwen3.8-Flash-Next</a></li>
+<li>Qwen 技术报告：<a href="https://github.com/QwenLM/Qwen3.8-Flash-Next/blob/main/tech_report.pdf">https://github.com/QwenLM/Qwen3.8-Flash-Next/blob/main/tech_report.pdf</a></li>
+<li>Engram knowledge injector：<a href="https://github.com/ortegaalfredo/ngram-knowledge-injector">https://github.com/ortegaalfredo/ngram-knowledge-injector</a></li>
+<li>DGX Spark 部署：<a href="https://github.com/dolf3131/qwen3.8-flash-next-dgx-spark">https://github.com/dolf3131/qwen3.8-flash-next-dgx-spark</a></li>
+<li>NVMe PLE cache：<a href="https://github.com/Felliks/qwen38-flash-next-one-dgx-spark">https://github.com/Felliks/qwen38-flash-next-one-dgx-spark</a></li>
+</ul>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.html" rel="canonical">https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>
