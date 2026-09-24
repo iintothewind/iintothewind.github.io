@@ -1,5 +1,18 @@
 [
   {
+    "title": "DGX Spark 静默死机：长 Prefill 与 nvidia-580-open",
+    "date": "2026-09-24T04:43:54.000Z",
+    "formattedDate": "2026-09-24",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-09-24-d1b592067fd3a51b9df485f1165b3085",
+    "url": "posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html",
+    "excerpt": "DGX Spark 静默死机：长 Prefill 与 nvidia-580-open DGX Spark（GB10，128GB 统一内存）跑大模型长上下文 prefill（社区复现约 69K+ tok"
+  },
+  {
     "title": "工程师视角解读 Qwen Next 架构：Engram + MTP 如何让本地模型提速 + 省显存",
     "date": "2026-09-21T06:28:26.000Z",
     "formattedDate": "2026-09-21",

@@ -275,8 +275,6 @@ Engram 门控（layer 2，O(d)）≈ 5120 FLOPs/token
 <li><strong>原始 BF16</strong>：128 shards × 2,500,012 行 × 160 列 = <strong>102.4 GB</strong></li>
 <li><strong>NVFP4 量化</strong>：~51 GB</li>
 </ul>
-<p>社区仓库 <strong><code>dolf3131/qwen3.8-flash-next-dgx-spark</code></strong>：在单台 <strong>DGX Spark（121 GiB 统一内存）</strong> 上，用 <strong>NVFP4</strong> 量化主权重，把 <strong>51B 的 Engram 表页到 SSD swap</strong>——装不进内存的表，靠 NVMe 跑起来。</p>
-<p>仓库 <strong><code>Felliks/qwen38-flash-next-one-dgx-spark</code></strong>：SGLang + MTP + 原生 262K context + <strong>NVMe-backed PLE cache</strong>，可复现部署。</p>
 <p><strong>推荐（需要 prefix caching 的多轮 / agent 场景）：<code>blazux/qwen3.8-Flash-DGX</code>（PLE mmap）</strong>。它 patch 官方 vLLM 镜像，把 51B PLE 表用 <strong>mmap 从 NVMe 直接 serve</strong>——权重降到 ~75 GiB，KV pool 到 ~680k tokens，500k context，确定性 greedy，已被独立复现（其 <a href="https://github.com/blazux/qwen3.8-Flash-DGX/issues/1">issue #1</a>）。</p>
 <p>推荐理由是<strong>其它 vLLM 路线的 prefix caching 是坏的</strong>：</p>
 <ul>

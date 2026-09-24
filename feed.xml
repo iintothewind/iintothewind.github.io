@@ -6,8 +6,85 @@
     <description>blog @ https://iintothewind.github.io/</description>
     <language>en-us</language>
     <atom:link rel="self" href="https://iintothewind.github.io/feed.xml"/>
-    <pubDate>Mon, 21 Sep 2026 06:28:26 GMT</pubDate>
-    <lastBuildDate>Mon, 21 Sep 2026 06:28:26 GMT</lastBuildDate>
+    <pubDate>Thu, 24 Sep 2026 04:43:54 GMT</pubDate>
+    <lastBuildDate>Thu, 24 Sep 2026 04:43:54 GMT</lastBuildDate>
+    <item>
+      <title>DGX Spark 静默死机：长 Prefill 与 nvidia-580-open</title>
+      <link>https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html</link>
+      <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html</guid>
+      <pubDate>Thu, 24 Sep 2026 04:43:54 GMT</pubDate>
+      <description>DGX Spark 静默死机：长 Prefill 与 nvidia-580-open DGX Spark（GB10，128GB 统一内存）跑大模型长上下文 prefill（社区复现约 69K+ tok</description>
+      <dc:creator>Ivar.Chen</dc:creator>
+      <content:encoded><![CDATA[<h1>DGX Spark 静默死机：长 Prefill 与 nvidia-580-open</h1>
+<p>DGX Spark（GB10，128GB 统一内存）跑大模型<strong>长上下文 prefill</strong>（社区复现约 69K+ token）时，可能整机瞬间卡死：无 panic、无清晰 OOM、看门狗不触发，往往只能拔电。这和「推理进程挂了但还能 SSH」不是一类问题。</p>
+<h2>原因</h2>
+<p>部分出厂镜像默认是开源 GPU 内核模块：</p>
+<pre><code class="language-bash">modinfo nvidia | grep filename
+cat /proc/driver/nvidia/version
+</code></pre>
+<p>若路径含 <code>nvidia-580-open</code>，或 NVRM 写着 <code>Open Kernel Module</code>，即属易感配置。社区多台对比结论：该模块在统一内存高压下的分配失败路径可能触发<strong>内核活锁</strong>；换成同版本<strong>专有模块</strong>后现象明显缓解，性能通常无明显回退。</p>
+<p>短请求不易触发；偶发超长 prefill 更容易踩中。拉长框架超时、降并发只能减少频率，<strong>不能代替换驱动</strong>。</p>
+<h2>补丁</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>从</th>
+<th>到</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nvidia-driver-580-open</code></td>
+<td><code>nvidia-driver-580</code></td>
+</tr>
+<tr>
+<td><code>linux-modules-nvidia-580-open-nvidia-hwe-24.04</code></td>
+<td><code>linux-modules-nvidia-580-nvidia-hwe-24.04</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>保持同一 580 系列，勿顺便跨大版本升级（驱动需与 OTA 固件配对）。先确认源里有包：</p>
+<pre><code class="language-bash">apt-cache policy nvidia-driver-580 nvidia-driver-580-open
+apt-cache policy linux-modules-nvidia-580-nvidia-hwe-24.04
+</code></pre>
+<h2>操作</h2>
+<pre><code class="language-bash"># 1. 留档并停掉所有大模型负载
+modinfo nvidia | grep -E '^(filename|version|license):'
+cat /proc/driver/nvidia/version
+docker stop &lt;your-llm-containers...&gt;
+
+# 2. 换同版本专有模块
+sudo apt update
+sudo apt install -y nvidia-driver-580 linux-modules-nvidia-580-nvidia-hwe-24.04
+# 如有残留：sudo apt purge -y nvidia-driver-580-open linux-modules-nvidia-580-open-nvidia-hwe-24.04
+
+# 3. 重启
+sudo reboot
+</code></pre>
+<h2>确认</h2>
+<pre><code class="language-bash">modinfo nvidia | grep filename
+cat /proc/driver/nvidia/version
+nvidia-smi
+</code></pre>
+<p>通过：<code>filename</code> 为 <code>.../nvidia-580/nvidia.ko</code>（无 <code>open</code>）；NVRM 为 <code>NVIDIA UNIX Kernel Module</code>（无 <code>Open</code>）；<code>nvidia-smi</code> 正常。</p>
+<p>可选：专有模块下再跑一次长 prefill。若仍整机静默死机，需另查电源/固件，不能再单怪 open 模块。</p>
+<p>回滚：</p>
+<pre><code class="language-bash">sudo apt install -y nvidia-driver-580-open linux-modules-nvidia-580-open-nvidia-hwe-24.04
+sudo reboot
+</code></pre>
+<hr>
+<h2>参考</h2>
+<ol>
+<li>社区实操：长 prefill（约 69K+）静默死机，对比指向 <code>nvidia-580-open</code> 活锁；缓解为同版本专有模块并重启。</li>
+<li><a href="https://forums.developer.nvidia.com/t/dgx-spark-silent-hard-freeze-under-sustained-llama-cpp-inference-no-xid-oom-panic-10-second-telemetry-captured-warranty-ends-oct-14-requesting-cas/383624">Silent hard-freeze under sustained inference</a></li>
+<li><a href="https://forums.developer.nvidia.com/t/spark-hangs-requires-a-hard-reset-physically-unplugging/358951">Spark hangs — hard-reset required</a></li>
+<li><a href="https://forums.developer.nvidia.com/t/dgx-spark-nvidia-driver-issue/351828">Default / open driver notes</a> · <a href="https://forums.developer.nvidia.com/t/apt-upgrade-has-broken-nvidia-driver/371799">Apt upgrade broke driver</a></li>
+<li><a href="https://forums.developer.nvidia.com/t/dgx-spark-apt-upgrade-to-driver-580-173-02-breaks-gpu-on-ota2607-nvidia-smi-no-devices-found/378200">Driver vs OTA firmware pairing</a></li>
+<li><a href="https://github.com/NVIDIA/open-gpu-kernel-modules">NVIDIA/open-gpu-kernel-modules</a> · <a href="http://ports.ubuntu.com/ubuntu-ports/">Ubuntu ports (noble)</a></li>
+</ol>
+<p><em>系统级变更请在维护窗口操作并自备回滚；本文非正式官方支持说明。</em></p>
+]]></content:encoded>
+    </item>
     <item>
       <title>工程师视角解读 Qwen Next 架构：Engram + MTP 如何让本地模型提速 + 省显存</title>
       <link>https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.html</link>
@@ -218,8 +295,6 @@ Engram 门控（layer 2，O(d)）≈ 5120 FLOPs/token
 <li><strong>原始 BF16</strong>：128 shards × 2,500,012 行 × 160 列 = <strong>102.4 GB</strong></li>
 <li><strong>NVFP4 量化</strong>：~51 GB</li>
 </ul>
-<p>社区仓库 <strong><code>dolf3131/qwen3.8-flash-next-dgx-spark</code></strong>：在单台 <strong>DGX Spark（121 GiB 统一内存）</strong> 上，用 <strong>NVFP4</strong> 量化主权重，把 <strong>51B 的 Engram 表页到 SSD swap</strong>——装不进内存的表，靠 NVMe 跑起来。</p>
-<p>仓库 <strong><code>Felliks/qwen38-flash-next-one-dgx-spark</code></strong>：SGLang + MTP + 原生 262K context + <strong>NVMe-backed PLE cache</strong>，可复现部署。</p>
 <p><strong>推荐（需要 prefix caching 的多轮 / agent 场景）：<code>blazux/qwen3.8-Flash-DGX</code>（PLE mmap）</strong>。它 patch 官方 vLLM 镜像，把 51B PLE 表用 <strong>mmap 从 NVMe 直接 serve</strong>——权重降到 ~75 GiB，KV pool 到 ~680k tokens，500k context，确定性 greedy，已被独立复现（其 <a href="https://github.com/blazux/qwen3.8-Flash-DGX/issues/1">issue #1</a>）。</p>
 <p>推荐理由是<strong>其它 vLLM 路线的 prefix caching 是坏的</strong>：</p>
 <ul>
@@ -12637,39 +12712,6 @@ sudo yum install yum-plugin-downloadonly
 # 下载supervisor的所有rpm到当前目录
 sudo yum install --downloadonly --downloaddir=. supervisor
 
-</code></pre>
-]]></content:encoded>
-    </item>
-    <item>
-      <title>warning messages and solutions in redis docker deployment</title>
-      <link>https://iintothewind.github.io/posts/warning-messages-and-solutions-in-redis-docker-deployment.html</link>
-      <guid isPermaLink="true">https://iintothewind.github.io/posts/warning-messages-and-solutions-in-redis-docker-deployment.html</guid>
-      <pubDate>Fri, 15 Jan 2021 21:42:02 GMT</pubDate>
-      <description>warning The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is se</description>
-      <dc:creator>Ivar.Chen</dc:creator>
-      <content:encoded><![CDATA[<h1>warning</h1>
-<p>The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.</p>
-<h2>solution</h2>
-<pre><code class="language-bash">vim /etc/sysctl.conf
-net.core.somaxconn = 2048
-
-sysctl -p
-</code></pre>
-<h1>warning</h1>
-<p>overcommit_memory is set to 0! Background save may fail under low memory condition. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.</p>
-<h2>solution</h2>
-<pre><code class="language-bash">vim /etc/sysctl.conf
-vm.overcommit_memory = 1
-</code></pre>
-<h1>warning</h1>
-<p>you have Transparent Huge Pages (THP) support enabled in your kernel. This will create latency and memory usage issues with Redis. To fix this issue run the command 'echo never &gt; /sys/kernel/mm/transparent_hugepage/enabled' as root, and add it to your /etc/rc.local in order to retain the setting after a reboot. Redis must be restarted after THP is disabled.</p>
-<h2>solution</h2>
-<pre><code class="language-bash">echo never &gt; /sys/kernel/mm/transparent_hugepage/enabled
-
-vim /etc/rc.local
-if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
-  echo never &gt; /sys/kernel/mm/transparent_hugepage/enabled
-fi
 </code></pre>
 ]]></content:encoded>
     </item>

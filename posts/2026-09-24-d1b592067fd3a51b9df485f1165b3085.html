@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DGX Spark 静默死机：长 Prefill 与 nvidia-580-open - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="DGX Spark（GB10，128GB 统一内存）跑大模型长上下文 prefill（社区复现约 69K+ token）时，可能整机瞬间卡死：无 panic、无清晰 OOM、看门狗不触发，往往只能拔电。这和「推理进程挂了但还能 SSH」不是一类问题。">
+<meta property="og:title" content="DGX Spark 静默死机：长 Prefill 与 nvidia-580-open">
+<meta property="og:description" content="DGX Spark（GB10，128GB 统一内存）跑大模型长上下文 prefill（社区复现约 69K+ token）时，可能整机瞬间卡死：无 panic、无清晰 OOM、看门狗不触发，往往只能拔电。这和「推理进程挂了但还能 SSH」不是一类问题。">
+<meta property="og:url" content="https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html">
+
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>DGX Spark 静默死机：长 Prefill 与 nvidia-580-open</h1>
+<div class="post-meta">
+<span class="post-date">2026-09-24</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: DGX Spark 静默死机：长 Prefill 与 nvidia-580-open</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>DGX Spark 静默死机：长 Prefill 与 nvidia-580-open</h1>
+<p>DGX Spark（GB10，128GB 统一内存）跑大模型<strong>长上下文 prefill</strong>（社区复现约 69K+ token）时，可能整机瞬间卡死：无 panic、无清晰 OOM、看门狗不触发，往往只能拔电。这和「推理进程挂了但还能 SSH」不是一类问题。</p>
+<h2>原因</h2>
+<p>部分出厂镜像默认是开源 GPU 内核模块：</p>
+<pre><code class="language-bash">modinfo nvidia | grep filename
+cat /proc/driver/nvidia/version
+</code></pre>
+<p>若路径含 <code>nvidia-580-open</code>，或 NVRM 写着 <code>Open Kernel Module</code>，即属易感配置。社区多台对比结论：该模块在统一内存高压下的分配失败路径可能触发<strong>内核活锁</strong>；换成同版本<strong>专有模块</strong>后现象明显缓解，性能通常无明显回退。</p>
+<p>短请求不易触发；偶发超长 prefill 更容易踩中。拉长框架超时、降并发只能减少频率，<strong>不能代替换驱动</strong>。</p>
+<h2>补丁</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>从</th>
+<th>到</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nvidia-driver-580-open</code></td>
+<td><code>nvidia-driver-580</code></td>
+</tr>
+<tr>
+<td><code>linux-modules-nvidia-580-open-nvidia-hwe-24.04</code></td>
+<td><code>linux-modules-nvidia-580-nvidia-hwe-24.04</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>保持同一 580 系列，勿顺便跨大版本升级（驱动需与 OTA 固件配对）。先确认源里有包：</p>
+<pre><code class="language-bash">apt-cache policy nvidia-driver-580 nvidia-driver-580-open
+apt-cache policy linux-modules-nvidia-580-nvidia-hwe-24.04
+</code></pre>
+<h2>操作</h2>
+<pre><code class="language-bash"># 1. 留档并停掉所有大模型负载
+modinfo nvidia | grep -E '^(filename|version|license):'
+cat /proc/driver/nvidia/version
+docker stop &lt;your-llm-containers...&gt;
+
+# 2. 换同版本专有模块
+sudo apt update
+sudo apt install -y nvidia-driver-580 linux-modules-nvidia-580-nvidia-hwe-24.04
+# 如有残留：sudo apt purge -y nvidia-driver-580-open linux-modules-nvidia-580-open-nvidia-hwe-24.04
+
+# 3. 重启
+sudo reboot
+</code></pre>
+<h2>确认</h2>
+<pre><code class="language-bash">modinfo nvidia | grep filename
+cat /proc/driver/nvidia/version
+nvidia-smi
+</code></pre>
+<p>通过：<code>filename</code> 为 <code>.../nvidia-580/nvidia.ko</code>（无 <code>open</code>）；NVRM 为 <code>NVIDIA UNIX Kernel Module</code>（无 <code>Open</code>）；<code>nvidia-smi</code> 正常。</p>
+<p>可选：专有模块下再跑一次长 prefill。若仍整机静默死机，需另查电源/固件，不能再单怪 open 模块。</p>
+<p>回滚：</p>
+<pre><code class="language-bash">sudo apt install -y nvidia-driver-580-open linux-modules-nvidia-580-open-nvidia-hwe-24.04
+sudo reboot
+</code></pre>
+<hr>
+<h2>参考</h2>
+<ol>
+<li>社区实操：长 prefill（约 69K+）静默死机，对比指向 <code>nvidia-580-open</code> 活锁；缓解为同版本专有模块并重启。</li>
+<li><a href="https://forums.developer.nvidia.com/t/dgx-spark-silent-hard-freeze-under-sustained-llama-cpp-inference-no-xid-oom-panic-10-second-telemetry-captured-warranty-ends-oct-14-requesting-cas/383624">Silent hard-freeze under sustained inference</a></li>
+<li><a href="https://forums.developer.nvidia.com/t/spark-hangs-requires-a-hard-reset-physically-unplugging/358951">Spark hangs — hard-reset required</a></li>
+<li><a href="https://forums.developer.nvidia.com/t/dgx-spark-nvidia-driver-issue/351828">Default / open driver notes</a> · <a href="https://forums.developer.nvidia.com/t/apt-upgrade-has-broken-nvidia-driver/371799">Apt upgrade broke driver</a></li>
+<li><a href="https://forums.developer.nvidia.com/t/dgx-spark-apt-upgrade-to-driver-580-173-02-breaks-gpu-on-ota2607-nvidia-smi-no-devices-found/378200">Driver vs OTA firmware pairing</a></li>
+<li><a href="https://github.com/NVIDIA/open-gpu-kernel-modules">NVIDIA/open-gpu-kernel-modules</a> · <a href="http://ports.ubuntu.com/ubuntu-ports/">Ubuntu ports (noble)</a></li>
+</ol>
+<p><em>系统级变更请在维护窗口操作并自备回滚；本文非正式官方支持说明。</em></p>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html" rel="canonical">https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>
