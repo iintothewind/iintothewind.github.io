@@ -6,6 +6,18 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-28-77cdcd54084f1cc0d60be33fc8e35fd2.html</loc>
+    <lastmod>2026-09-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-28-ab4f001206ae5ec4aff221e84b40c1f1.html</loc>
+    <lastmod>2026-09-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html</loc>
     <lastmod>2026-09-24</lastmod>
     <changefreq>monthly</changefreq>
@@ -393,6 +405,18 @@
     <loc>https://iintothewind.github.io/llms.txt</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-28-77cdcd54084f1cc0d60be33fc8e35fd2.md</loc>
+    <lastmod>2026-09-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://iintothewind.github.io/posts/2026-09-28-ab4f001206ae5ec4aff221e84b40c1f1.md</loc>
+    <lastmod>2026-09-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.md</loc>

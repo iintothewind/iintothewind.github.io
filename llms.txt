@@ -15,7 +15,9 @@ Each post is also published as Markdown for automated readers:
 
 - [llms-full.txt](https://iintothewind.github.io/llms-full.txt) — all posts in one file
 
-## Posts (64)
+## Posts (66)
+- [高盛《China Matters: Path of Least Resistance》(2026-09-20)中文精读](https://iintothewind.github.io/posts/2026-09-28-77cdcd54084f1cc0d60be33fc8e35fd2.md) — 高盛《China Matters: 阻力最小的路径》精读 China Matters: Path of Least Resistance 原文：Goldman Sachs Global Investm
+- [K型分化：国家这么强，为什么你觉得活得不够好？](https://iintothewind.github.io/posts/2026-09-28-ab4f001206ae5ec4aff221e84b40c1f1.md) — 视频来源：https://www.bilibili.com/video/BV13vhn6ZEya 国家这么强，为什么你觉得活得不够好？ ——K型分化的完整拆解 这个国家真他妈的强。然后你低头看了一眼工
 - [DGX Spark 静默死机：长 Prefill 与 nvidia-580-open](https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.md) — DGX Spark 静默死机：长 Prefill 与 nvidia-580-open DGX Spark（GB10，128GB 统一内存）跑大模型长上下文 prefill（社区复现约 69K+ tok
 - [工程师视角解读 Qwen Next 架构：Engram + MTP 如何让本地模型提速 + 省显存](https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.md) — 工程师视角解读: Engram + MTP (Qwen Next架构) 如何让本地模型提速 + 省显存 从 DeepSeek Engram 论文到 Qwen3.8-Flash-Next 的落地，讲清楚
 - [omp 官方文档高效读取方法（实测版）](https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.md) — omp 官方文档高效读取方法（实测版） 写给自己和其他 agent 复用。目标：读 omp.sh/docs 时少花 token、少踩坑。 实测时间：2026-09；probe 复测修订 2026-09
