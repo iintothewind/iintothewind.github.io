@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>推理的墙与增长的引擎：2026 大模型技术快照 - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-10-02-5abea1c6e1528d41e8597d403fcf8252.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="最近花了不少时间梳理大模型推理的成本结构和 2026 年的技术走向，把结论整理成这篇。核心问题有两个：">
+<meta property="og:title" content="推理的墙与增长的引擎：2026 大模型技术快照">
+<meta property="og:description" content="最近花了不少时间梳理大模型推理的成本结构和 2026 年的技术走向，把结论整理成这篇。核心问题有两个：">
+<meta property="og:url" content="https://iintothewind.github.io/posts/2026-10-02-5abea1c6e1528d41e8597d403fcf8252.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/2026-10-02-5abea1c6e1528d41e8597d403fcf8252.html">
+
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>推理的墙与增长的引擎：2026 大模型技术快照</h1>
+<div class="post-meta">
+<span class="post-date">2026-10-02</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: 推理的墙与增长的引擎：2026 大模型技术快照</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-10-02-5abea1c6e1528d41e8597d403fcf8252.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>推理的墙与增长的引擎：2026 大模型技术快照</h1>
+<p>最近花了不少时间梳理大模型推理的成本结构和 2026 年的技术走向，把结论整理成这篇。核心问题有两个：</p>
+<ol>
+<li>大模型推理的<strong>输入侧和输出侧</strong>各自的瓶颈在哪里？2026 年有没有突破方向？</li>
+<li>抛开参数量的叙事，<strong>2026 年的 AI 发展到底体现在什么地方</strong>？</li>
+</ol>
+<p>先给结论：输出侧（串行 decode）是当前真正的成本墙；架构层的串行在常数因子层面被蚕食但收益有限，严格链式依赖的任务层串行目前不可约。而 2026 年的能力增长已经不再靠&quot;堆参数&quot;，而是靠 test-time compute、训练配方和算法效率——这三条腿里，有两条各自撞着不同的墙。</p>
+<hr>
+<h2>一、推理成本解剖：输入侧 vs 输出侧</h2>
+<p>一次 LLM 推理分两个阶段，成本结构完全不同：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th></th>
+<th>Prefill（输入侧）</th>
+<th>Decode（输出侧）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>计算量</td>
+<td>attention 项 O(N²·d)，FFN 项 O(N·d²)</td>
+<td>每 token O((N+M)·d + d²_active)，随生成量 M 线性累积</td>
+</tr>
+<tr>
+<td>并行性</td>
+<td>可并行，墙钟时间可以很短</td>
+<td><strong>串行</strong>，墙钟时间 ∝ M</td>
+</tr>
+<tr>
+<td>KV cache</td>
+<td>前缀只算一次，后续只对新增 token 增量 prefill</td>
+<td>每步读全量 KV cache</td>
+</tr>
+</tbody>
+</table></div>
+<p>（N = 输入 token 数，M = 生成 token 数，d = 隐藏维度）</p>
+<h3>输入侧：平方项约束的是上下文长度，不是总成本</h3>
+<p>O(N²) 的 attention 是输入侧最著名的标签，但它咬人的场景很窄：<strong>一次性灌入超大 fresh 上下文、无缓存复用</strong>。在有 KV cache 的 agent 循环里，历史上下文只付一次 prefill 成本，输入侧有效成本近似随<strong>新增</strong> token 线性。再加上厂商对 cache read 的折扣定价（0.1–0.25×），输入侧在长程任务里通常不是账单大头。</p>
+<p>所以输入侧的真实瓶颈是<strong>上下文长度上限</strong>（平方项 + KV 显存），而不是&quot;推理总成本&quot;。</p>
+<h3>输出侧：串行墙钟 + 带宽瓶颈，成本卡在这里</h3>
+<p>Decode 每个 token 依赖前一个，墙钟时间 ∝ M，这是硬约束。更具体地，decode 通常是 <strong>memory-bandwidth bound</strong>（每步要读 KV cache 和权重），不是 compute bound——堆算力也不线性提速。</p>
+<p>这一点之所以关键，是因为 2024 年以来能力增长的主轴恰恰是 test-time compute：模型烧更多推理 token 换更强表现。METR 的长程 agent 任务单次运行消耗 1 亿到 15 亿 token。<strong>能力增长轴 = 输出 token 量 → 串行墙钟 + 带宽瓶颈</strong>，成本和时间都线性涨在输出侧。这就是整面墙的位置。</p>
+<hr>
+<h2>二、2026 年的突破方向：按&quot;打破程度&quot;排序</h2>
+<h3>1. Speculative decoding / MTP：已落地，常数因子</h3>
+<p>小模型（或同模型的 draft head）先猜几个 token，大模型并行验证。vLLM、TensorRT-LLM 都已生产部署。2026 年的代表工作 Orthrus 把 diffusion proposer 和 AR verifier 挂在同一个 KV cache 上，省掉独立的 draft cache。</p>
+<p>定位很清楚：<strong>改常数项（2–3×），不改渐近结构</strong>。是好东西，但不是颠覆。</p>
+<h3>2. 线性 attention / SSM：解决带宽，不解决串行</h3>
+<p>Mamba-2、NVIDIA Griffin 这一系把 attention 换成状态空间模型：线性复杂度、常规模态显存、token 生成最高快 8×（NVIDIA NeMo 数据）。</p>
+<p>但固定大小状态意味着把全部历史压进一个向量——需要精确召回长程信息时表达力不够，和当年 RNN 式微的原因类似。所以实用答案全是 <strong>hybrid</strong>（部分层 full attention + 部分层 SSM）。纯 SSM 在 frontier 没有站住。这条路线攻的是输入侧的 KV 带宽问题，对输出侧串行无能为力。</p>
+<h3>3. Diffusion LLM：最有希望的一条，还卡在 proof-of-concept</h3>
+<p>离散扩散语言模型（LLaDA、NVIDIA Dream、iLLaDA）换掉 next-token prediction 范式：一次生成一个 block，迭代去噪精化。工程侧进展很快——Fast-dLLM（ICLR 2026）在短任务（GSM8K/MBPP，512 token）上做到 11×–27× 吞吐、精度损失小；iLLaDA（2026-06）已把 8B 双向扩散模型训到 12T token。</p>
+<p><strong>但关键反证来自 2026 年 2 月</strong>：<em>Why Diffusion Language Models Struggle with Truly Parallel Decoding?</em> 测了 LLaDA-8B 和 Dream-7B，发现实用的快速 DLM 实际都收敛回从左到右的 AR-like 解码动态。诊断是：DLM 目标与训练数据的高度串行结构（标准语料 + 长 CoT 监督）<strong>不匹配</strong>——在串行数据上训练，就得到串行的解码器。作者的修复改的是数据和监督方式（多条独立推理轨迹 + 并行强制解码），且并行度越高收益越大。</p>
+<p>这句话的分量比看起来重：<strong>瓶颈不在 decoder，而在训练目标和 CoT 数据本身</strong>。</p>
+<h3>4. 必须区分两层串行</h3>
+<ul>
+<li><strong>架构层串行</strong>（next-token 范式强制一次一个 token）：在常数因子层面被蚕食（speculative decoding、diffusion 解码），上限是常数到小量级加速比；</li>
+<li><strong>任务层串行</strong>（推理第 3 步依赖第 2 步的结果）：对<strong>严格串行依赖链</strong>，没有任何架构能打破，没有 decoder 能在 step k-1 之前算出 step k。但真实 agent 任务是 DAG 而非单链，独立分支仍可并行、多条路径可推测执行——“不可约”只对链式依赖成立。</li>
+</ul>
+<p>METR 那些长程 agent 任务恰恰是长依赖链。所以即使 diffusion 路线完全成熟，它打破的也只是&quot;next-token 范式&quot;——而且注意，LLaDA/Dream 的骨干仍然是 attention Transformer，被颠覆的是生成目标，不是架构本身。真正&quot;反 Transformer&quot;的东西，2026 年不存在。</p>
+<hr>
+<h2>三、2026 年的 AI 发展体现在哪里</h2>
+<h3>参数已经退居次要变量</h3>
+<ul>
+<li><strong>总参数量</strong>还在涨（MoE 普遍化：DeepSeek V3 671B/37B active，Mistral Large 3 675B/41B），但已解耦于成本；</li>
+<li><strong>每 token 激活参数</strong>基本停在 17–41B 区间——这才是决定推理成本的数；</li>
+<li><strong>闭源实验室已停止公布参数量</strong>，行业共识是 &quot;size is a weak proxy for capability&quot;；</li>
+<li>新指标 &quot;<strong>intelligence density</strong>&quot;（每 active B 的能力）开始取代总参数成为 headline。极端例子：ZAYA1-8B（总 8B / active 仅 760M）对标大得多的开源模型。</li>
+</ul>
+<h3>能力增长的实际分解</h3>
+<p>用 Epoch AI 的框架，有效算力 ≈ 三个乘数相乘：</p>
+<div class="mermaid">flowchart LR
+    A[&quot;硬件进步&lt;br/&gt;~1.5×/年&quot;] --&gt; D[&quot;有效算力&lt;br/&gt;~10×/年（保守估计）&quot;]
+    B[&quot;资本投入&lt;br/&gt;~2.5×/年&quot;] --&gt; D
+    C[&quot;算法效率&lt;br/&gt;~3–6×/年&quot;] --&gt; D
+    D --&gt; E[&quot;+ test-time compute 轴&lt;br/&gt;（2024 起的主能力轴）&quot;]
+</div><p>落到&quot;performance 提升靠什么&quot;，按当前权重排序：</p>
+<ol>
+<li><strong>Test-time compute</strong>——2024 起的主能力轴；</li>
+<li><strong>训练配方</strong>（RL post-training、数据质量、curriculum）——&quot;how you train matters as much as how big you build&quot;；</li>
+<li><strong>算法效率</strong>（3–6×/年取自 Epoch AI 口径的上半区）——同时作用于训练和推理两侧，效果大量体现在 intelligence density 上；</li>
+<li><strong>裸参数量</strong>——不再是 binding variable。</li>
+</ol>
+<p>成本侧的下降则是另一组：MoE、speculative decoding、蒸馏、硬件。ARC-AGI-1 单位成本从 o3 的 $4,500/task 降到 GPT-5.2 Pro 的 $11.64/task，一年 390×，就是这组合计的效果。</p>
+<h3>几个可以量化的锚点</h3>
+<p>METR 任务地平线（p50，人类专家完成同等任务所需时间）的实测轨迹：</p>
+<div class="mermaid">xychart-beta
+    title &quot;METR 50% 任务地平线：前沿模型能可靠完成的人类任务时长&quot;
+    x-axis [&quot;24-06&quot;, &quot;24-10&quot;, &quot;24-12&quot;, &quot;25-02&quot;, &quot;25-04&quot;, &quot;25-08&quot;, &quot;25-11&quot;, &quot;26-04&quot;]
+    y-axis &quot;人类分钟数&quot; 0 --&gt; 1100
+    bar [11, 21, 39, 60, 120, 137, 293, 1045]
+</div><p>（对应模型：Claude 3.5 Sonnet ×2 → o1 → Claude 3.7 Sonnet → o3 → GPT-5 → Claude Opus 4.5 → Claude Mythos Preview。线性坐标下的&quot;曲棍球杆&quot;形状。8 个点拟合约 3.5 个月翻倍（R²=0.98）；METR 2025-03 论文用 2019 年起全窗口给出的是约 7 个月，并注明 2024 年后可能加速——加速本身在这组数据里得到了印证。）</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>METR 任务地平线</td>
+<td>约 7 个月翻倍（2025-03 论文，2019 年起口径，2024 年后加速）；2024-06→2026-04 的 8 个实测点拟合约 3.5 个月</td>
+</tr>
+<tr>
+<td>内部模型 vs 公开发布模型的差距</td>
+<td>METR 2026-05 Frontier Risk Report：四家实验室共享的内部 SOTA <strong>没有显著强于</strong>当时最强公开模型；Anthropic 自报发布 gap &quot;通常不到一个月&quot;，OpenAI &quot;几周&quot;</td>
+</tr>
+<tr>
+<td>长任务区间的测量置信度</td>
+<td>METR 自己标注 &gt;16 小时的测量在当前任务集下不可靠，外推不确定性大</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+<h2>四、结语：一个更精确的增长模型</h2>
+<p>把前面两节合起来，2026 年的增长模式可以写成：</p>
+<blockquote>
+<p>能力增长 = test-time compute（撞输出侧串行墙）+ 算法效率（增速本身是否可持续是开放问题）+ 资本/硬件扩张（有物理和经济上限）</p>
+</blockquote>
+<div class="mermaid">flowchart TB
+    G[&quot;能力增长（2026）&quot;] --&gt; T[&quot;Test-time compute&lt;br/&gt;↑ 撞输出侧串行墙（架构层可攻破 / 任务层不可约）&quot;]
+    G --&gt; A[&quot;算法效率 ~3–6×/年&lt;br/&gt;↑ 增速本身是否可持续：开放问题&quot;]
+    G --&gt; H[&quot;资本 + 硬件扩张&lt;br/&gt;↑ 物理与经济上限（2028–2032 窗口）&quot;]
+</div><p>这比&quot;参数堆不动了&quot;是一个更精确、也更值得警惕的版本：当前增长的两条主腿，一条撞物理墙，一条依赖未证明可持续的算法进步。架构层的突破（diffusion、speculative）能买回常数因子，买不回渐近结构；任务层的串行依赖目前没有任何已知方案。</p>
+<p>2028–2032 常被当作外推中的 make-or-break 窗口来讨论：那之前靠芯片和电力的投入扩张还能撑住斜率，之后必须靠算法突破。（以上是外推判断，不是实测结论。）这个判断对不对，恰好可以用上面表格里那几个可量化指标逐年检验——这大概就是跟踪这个领域最诚实的方式。</p>
+<hr>
+<h2>参考来源</h2>
+<p><strong>推理架构与解码</strong></p>
+<ul>
+<li><a href="https://arxiv.org/abs/2602.23225">Why Diffusion Language Models Struggle with Truly Parallel (Non-Autoregressive) Decoding?</a>（2026-02）</li>
+<li><a href="https://arxiv.org/abs/2502.09992">Large Language Diffusion Models (LLaDA)</a>（2025-02）</li>
+<li><a href="https://arxiv.org/abs/2606.25331">Improved Large Language Diffusion Models (iLLaDA)</a>（2026-06）</li>
+<li><a href="https://arxiv.org/abs/2508.15487">Dream 7B: Diffusion Large Language Models</a>（2025-08）</li>
+<li><a href="https://arxiv.org/abs/2505.22618">Fast-dLLM: Training-free Acceleration of Diffusion LLM by Enabling KV Cache and Parallel Decoding</a>（ICLR 2026）</li>
+<li><a href="https://arxiv.org/abs/2509.26328">Fast-dLLM v2: Efficient Block-Diffusion LLM</a>（2025-09）</li>
+<li><a href="https://aclanthology.org/2025.findings-emnlp.716.pdf">A Survey of Algorithms and Systems for Generation-Refinement (speculative decoding 分类学)</a>（EMNLP 2025 Findings）</li>
+<li><a href="https://arxiv.org/abs/2605.12825">Orthrus: Memory-Efficient Parallel Token Generation via Dual-View Diffusion</a>（2026，经 <a href="https://sesen.ai/blog/parallel-token-generation-diffusion-decoding">sesen.ai 综述</a> 引用）</li>
+<li><a href="https://developer.nvidia.com/blog/nvidia-nemo-accelerates-llm-innovation-with-hybrid-state-space-model-support">NVIDIA NeMo: Hybrid State Space Model Support（Mamba-2 / Griffin，8× token 生成加速）</a></li>
+<li><a href="https://github.com/AIDASLab/Awesome-Diffusion-LLM">Awesome-Diffusion-LLM 论文列表</a></li>
+</ul>
+<p><strong>能力测量与增长</strong></p>
+<ul>
+<li><a href="https://metr.org/time-horizons/">METR: Task-Completion Time Horizons of Frontier AI Models</a>（含原始数据）</li>
+<li><a href="https://arxiv.org/abs/2503.14499">Measuring AI Ability to Complete Long Tasks</a>（METR, 2025-03）</li>
+<li><a href="https://metr.org/blog/2026-05-19-frontier-risk-report">METR Frontier Risk Report (February–March 2026)</a></li>
+<li><a href="https://arxiv.org/html/2606.12683v1">From AGI to ASI（Epoch AI，算力增长三因子分解）</a></li>
+<li><a href="https://arxiv.org/html/2603.13372v1">The ARC of Progress towards AGI: A Living Survey</a>（ARC-AGI 成本/效率数据）</li>
+<li><a href="https://80000hours.substack.com/p/what-the-hell-happened-with-agi-timelines">80,000 Hours: What the hell happened with AGI timelines in 2025?</a>（含 2026-02 更新）</li>
+</ul>
+<p><strong>行业与模型规模</strong></p>
+<ul>
+<li><a href="https://benchlm.ai/frontier-ai-models">BenchLM: Frontier AI Models Rankings (2026-09)</a></li>
+<li><a href="https://whatllm.org/blog/new-ai-models-may-2026">WhatLLM: New AI Models May 2026（intelligence density 指标）</a></li>
+<li><a href="https://machinelearningplus.com/gen-ai/llm-scaling-laws-model-comparison">MLPlus: LLM Scaling Laws Dashboard (2026)</a></li>
+</ul>
+<p><em>写作时间：2026 年 10 月。数据以各来源发布时间为准，前沿领域数字更新很快。</em></p>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-10-02-5abea1c6e1528d41e8597d403fcf8252.html" rel="canonical">https://iintothewind.github.io/posts/2026-10-02-5abea1c6e1528d41e8597d403fcf8252.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

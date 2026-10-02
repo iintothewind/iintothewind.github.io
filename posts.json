@@ -1,6 +1,19 @@
 [
   {
-    "title": "高盛《China Matters: Path of Least Resistance》(2026-09-20)中文精读",
+    "title": "推理的墙与增长的引擎：2026 大模型技术快照",
+    "date": "2026-10-02T23:05:54.000Z",
+    "formattedDate": "2026-10-02",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-10-02-5abea1c6e1528d41e8597d403fcf8252",
+    "url": "posts/2026-10-02-5abea1c6e1528d41e8597d403fcf8252.html",
+    "excerpt": "推理的墙与增长的引擎：2026 大模型技术快照 最近花了不少时间梳理大模型推理的成本结构和 2026 年的技术走向，把结论整理成这篇。核心问题有两个： 大模型推理的输入侧和输出侧各自的瓶颈在哪里？20"
+  },
+  {
+    "title": "高盛《China Matters: 阻力最小的路径》精读",
     "date": "2026-09-28T05:06:23.000Z",
     "formattedDate": "2026-09-28",
     "tags": [
