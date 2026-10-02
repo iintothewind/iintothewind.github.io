@@ -114,7 +114,7 @@
 <p>所以输入侧的真实瓶颈是<strong>上下文长度上限</strong>（平方项 + KV 显存），而不是&quot;推理总成本&quot;。</p>
 <h3>输出侧：串行墙钟 + 带宽瓶颈，成本卡在这里</h3>
 <p>Decode 每个 token 依赖前一个，墙钟时间 ∝ M，这是硬约束。更具体地，decode 通常是 <strong>memory-bandwidth bound</strong>（每步要读 KV cache 和权重），不是 compute bound——堆算力也不线性提速。</p>
-<p>这一点之所以关键，是因为 2024 年以来能力增长的主轴恰恰是 test-time compute：模型烧更多推理 token 换更强表现。METR 的长程 agent 任务单次运行消耗 1 亿到 15 亿 token。<strong>能力增长轴 = 输出 token 量 → 串行墙钟 + 带宽瓶颈</strong>，成本和时间都线性涨在输出侧。这就是整面墙的位置。</p>
+<p>这一点之所以关键，是因为 2024 年以来能力增长的主轴恰恰是 test-time compute（<strong>测试时算力</strong>，即推理时算力）：不再靠把模型训得更大，而是让同一个模型在回答问题时“想更久”——生成更长的推理链、采样多个候选再选优（best-of-N）、自我修正迭代。注意它和“效率”是反方向：训练效率是“同样能力花更少训练算力”，test-time compute 是“同样模型，推理时烧更多 token 换更强表现”。METR 的长程 agent 任务单次运行消耗 1 亿到 15 亿 token。<strong>能力增长轴 = 输出 token 量 → 串行墙钟 + 带宽瓶颈</strong>，成本和时间都线性涨在输出侧。这就是整面墙的位置。</p>
 <hr>
 <h2>二、2026 年的突破方向：按&quot;打破程度&quot;排序</h2>
 <h3>1. Speculative decoding / MTP：已落地，常数因子</h3>
