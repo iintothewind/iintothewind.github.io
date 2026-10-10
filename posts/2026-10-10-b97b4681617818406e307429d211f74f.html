@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 不是许愿机：五个决定 AI 输出质量的关键 - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-10-10-b97b4681617818406e307429d211f74f.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="&quot;会用 AI&quot;常被误解成&quot;会写 prompt&quot;，但 prompt 只是载体。真正的分水岭在 prompt 之前——你有没有把问题界定清楚。">
+<meta property="og:title" content="AI 不是许愿机：五个决定 AI 输出质量的关键">
+<meta property="og:description" content="&quot;会用 AI&quot;常被误解成&quot;会写 prompt&quot;，但 prompt 只是载体。真正的分水岭在 prompt 之前——你有没有把问题界定清楚。">
+<meta property="og:url" content="https://iintothewind.github.io/posts/2026-10-10-b97b4681617818406e307429d211f74f.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/2026-10-10-b97b4681617818406e307429d211f74f.html">
+
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>AI 不是许愿机：五个决定 AI 输出质量的关键</h1>
+<div class="post-meta">
+<span class="post-date">2026-10-10</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: AI 不是许愿机：五个决定 AI 输出质量的关键</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-10-10-b97b4681617818406e307429d211f74f.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>AI 不是许愿机：五个决定输出质量的关键</h1>
+<h2>一、问题界定能力：AI 的上限是你，不是模型</h2>
+<p>&quot;会用 AI&quot;常被误解成&quot;会写 prompt&quot;，但 prompt 只是载体。真正的分水岭在 prompt 之前——<strong>你有没有把问题界定清楚</strong>。</p>
+<div class="mermaid">flowchart LR
+    subgraph A[&quot;❌ 许愿式&quot;]
+        direction TB
+        A1[&quot;模糊的一句话&lt;br/&gt;帮我写个方案&quot;] --&gt; A2[&quot;AI 靠猜补全细节&quot;] --&gt; A3[&quot;看起来很专业&lt;br/&gt;用不上，返工&quot;]
+    end
+    subgraph B[&quot;✅ 先界定，再下指令&quot;]
+        direction TB
+        B1[&quot;聊清边界 / 范围 / 约束&quot;] --&gt; B2[&quot;写出完整工程指令&quot;] --&gt; B3[&quot;AI 执行，一次可用&quot;]
+    end
+</div><p>许愿式提问把&quot;界定问题&quot;这份工作甩给了 AI，AI 只能猜。猜对是运气，猜错是常态。</p>
+<h2>二、完整的工程指令：六个要素</h2>
+<div class="mermaid">mindmap
+  root((完整工程指令))
+    背景
+      谁，在什么处境下
+    目标
+      要解决什么问题
+    当前阶段
+      已经做到哪一步
+    约束
+      不能碰的边界有哪些
+    输出格式
+      先结论后展开，800 字以内
+    验收标准
+      怎样才算做对了
+</div><p>六个要素缺一个，AI 就要在那个位置上猜一次。猜的次数越多，输出离你的预期越远。<strong>你给的是许愿还是工程指令，决定了 AI 回你的是废话还是答案。</strong></p>
+<h2>三、信息四象限：最大的敌人是看不见的盲区</h2>
+<div class="mermaid">quadrantChart
+    title 信息四象限：AI 能不能用对，看你处在哪个象限
+    x-axis &quot;没意识到&quot; --&gt; &quot;意识到了&quot;
+    y-axis &quot;没说出来&quot; --&gt; &quot;说出来了&quot;
+    quadrant-1 &quot;已知-已知&quot;
+    quadrant-2 &quot;未知-已知&quot;
+    quadrant-3 &quot;未知-未知&quot;
+    quadrant-4 &quot;已知-未知&quot;
+    &quot;你知道且说了，AI 直接能用&quot;: [0.85, 0.85]
+    &quot;隐性知识：你会但没意识到，没说，AI 只能猜&quot;: [0.15, 0.85]
+    &quot;盲区：无意识遗漏，翻车重灾区&quot;: [0.15, 0.15]
+    &quot;知道自己不知道，可以主动追问&quot;: [0.85, 0.15]
+</div><ul>
+<li><strong>已知-已知</strong>（你知道且说了的）：这是工程指令的六要素能覆盖的部分。</li>
+<li><strong>已知-未知</strong>（你知道自己不知道的）：意识到了就能处理——直接问 AI，让它帮你扫盲。</li>
+<li><strong>未知-已知</strong>（你不知道自己知道的）：隐性知识。比如业务员天天手动用 Excel 收集报价，但她说不出&quot;报价&quot;二字背后有哪些业务约束——她会，但她没意识到要说。</li>
+<li><strong>未知-未知</strong>（你不知道自己不知道的）：真正的盲区。开发者输入 &quot;freeze the code&quot;，本意是暂停变更，AI 却删了生产库——他没说冻结范围和操作边界，因为他不知道自己漏了。</li>
+</ul>
+<p>前两类你处理得了，后两类会无意识遗漏。<strong>而恰恰是后两类，决定了你是第几次返工。</strong></p>
+<h2>四、一条约束链：盲区 → 理解深度 → 指令质量 → 输出质量</h2>
+<div class="mermaid">flowchart LR
+    A[&quot;🔍 看不见的盲区&lt;br/&gt;未知-未知 / 未知-已知&quot;] --&gt;|&quot;设上限&quot;| B[&quot;🧠 你对问题的理解深度&quot;]
+    B --&gt;|&quot;设上限&quot;| C[&quot;📝 你能写出的指令质量&quot;]
+    C --&gt;|&quot;决定&quot;| D[&quot;🤖 AI 的输出质量&quot;]
+    style A fill:#f9e2e2,stroke:#c00
+    style D fill:#e2f0e2,stroke:#090
+</div><p>这条链只能从左往右突破：缩小盲区（让 AI 帮你扫盲、让 AI 反过来问你）→ 加深理解 → 写出好指令。**模型再强，也只是在链条的最右端等你。**左边没做功，右边的模型能力再强也传导不过来。</p>
+<h2>五、Coding agent 没有改变软件工程的本质</h2>
+<p>以我最近做的一个项目为例：两周前接到任务，给一家货运公司做内部订单管理系统。启动时只跟业务负责人开过会，听她讲了一遍日常工作——手动用 Excel 收集报价的流程，拿到一堆邮件、PDF、Excel，然后就没了。然后是很多天、很多轮：聊需求边界、业务范围、数据约束 → 需求文档 → 设计文档 → 数据建模 → UI mockup 改了三版 → API specs → <strong>最后</strong>才让 coding agent 写代码。这条链走完，agent 才&quot;不会轻易跑偏&quot;。</p>
+<div class="mermaid">flowchart LR
+    A[&quot;📋 需求&lt;br/&gt;边界 / 范围 / 约束&lt;br/&gt;跟干系人一轮轮聊&quot;] --&gt; B[&quot;📐 设计&lt;br/&gt;数据建模 / mockup / API specs&quot;]
+    B --&gt; C[&quot;🧪 测试&lt;br/&gt;验收标准先行&quot;]
+    C --&gt; D[&quot;💻 实现&lt;br/&gt;coding agent 写代码&quot;]
+    D --&gt; E{&quot;验证通过？&quot;}
+    E --&gt;|&quot;否&quot;| A
+    E --&gt;|&quot;是&quot;| F[&quot;✅ 交付&quot;]
+    style D fill:#e8f0fe,stroke:#06c
+</div><p>注意 coding agent 在图里的位置：它只负责&quot;实现&quot;这一格。而企业应用的复杂度根本不在&quot;实现&quot;——</p>
+<div class="mermaid">flowchart TB
+    S1[&quot;业务员&lt;br/&gt;每天手动 Excel 收集报价&quot;] --&gt; R[&quot;📋 需求分析&lt;br/&gt;把各方诉求翻译成&lt;br/&gt;统一的数据模型与约束&quot;]
+    S2[&quot;管理层&lt;br/&gt;要报表，要管控&quot;] --&gt; R
+    S3[&quot;终端用户&lt;br/&gt;要好用，不出错&quot;] --&gt; R
+    S4[&quot;开发者&lt;br/&gt;要可维护，可扩展&quot;] --&gt; R
+    R --&gt; D[&quot;设计 → 测试 → 实现&quot;]
+</div><p>业务员、管理层、终端用户、开发者要的东西互相打架，coding agent 听谁的？它只能听那个把各方诉求翻译成统一约束的人。**这个人，就是做工程的人。**跳过&quot;需求 → 设计 → 测试 → 实现&quot;直接许愿，得到的不是一个系统，而是一个精致的幻觉——能跑、像样，但没人敢用。</p>
+<hr>
+<p><strong>一句话收束：</strong> coding agent 把&quot;实现&quot;的成本打到了接近零，于是&quot;实现&quot;之前的每一步——界定问题、写工程指令、照亮盲区、走完需求设计测试实现——反而变得更值钱了。你越把工程做扎实，agent 越强；你跳过工程直接许愿，AI 就只会放大你的草率。</p>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-10-10-b97b4681617818406e307429d211f74f.html" rel="canonical">https://iintothewind.github.io/posts/2026-10-10-b97b4681617818406e307429d211f74f.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>
