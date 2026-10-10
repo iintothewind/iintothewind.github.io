@@ -78,19 +78,6 @@
     "excerpt": "工程师视角解读: Engram + MTP (Qwen Next架构) 如何让本地模型提速 + 省显存 从 DeepSeek Engram 论文到 Qwen3.8-Flash-Next 的落地，讲清楚"
   },
   {
-    "title": "omp 官方文档高效读取方法（实测版）",
-    "date": "2026-09-20T22:35:26.000Z",
-    "formattedDate": "2026-09-20",
-    "tags": [
-      "gist",
-      "summary"
-    ],
-    "categories": [],
-    "slug": "2026-09-20-004bfcd6e45614e8b7e0d599209429b1",
-    "url": "posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html",
-    "excerpt": "omp 官方文档高效读取方法（实测版） 写给自己和其他 agent 复用。目标：读 omp.sh/docs 时少花 token、少踩坑。 实测时间：2026-09；probe 复测修订 2026-09"
-  },
-  {
     "title": "omp 上下文压缩实战：snapcompact 到底省了什么、又贵在哪里",
     "date": "2026-09-20T22:35:26.000Z",
     "formattedDate": "2026-09-20",
@@ -102,6 +89,19 @@
     "slug": "2026-09-20-455b6903e4dc7d01da6157a80716ad0a",
     "url": "posts/2026-09-20-455b6903e4dc7d01da6157a80716ad0a.html",
     "excerpt": "omp 上下文压缩实战：snapcompact 到底省了什么、又贵在哪里 写给我自己和其他在长会话里被 context window 卡住的人。客观论述，只讲我实测和读源码得到的。 实测对象：omp（"
+  },
+  {
+    "title": "omp 官方文档高效读取方法（实测版）",
+    "date": "2026-09-20T22:35:26.000Z",
+    "formattedDate": "2026-09-20",
+    "tags": [
+      "gist",
+      "summary"
+    ],
+    "categories": [],
+    "slug": "2026-09-20-004bfcd6e45614e8b7e0d599209429b1",
+    "url": "posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html",
+    "excerpt": "omp 官方文档高效读取方法（实测版） 写给自己和其他 agent 复用。目标：读 omp.sh/docs 时少花 token、少踩坑。 实测时间：2026-09；probe 复测修订 2026-09"
   },
   {
     "title": "TypeSafe AI 文档高效读取方法（Agent 版）",
@@ -546,18 +546,6 @@
     "excerpt": "深圳地铁安检吐槽 背景 V2EX 帖子 「恶心你，还得说是为你好，深圳地铁」 节点：生活 发帖人：SilenceLL 回复数：280（截至 2026-07-19） 主题：深圳地铁因 APEC 全面升级"
   },
   {
-    "title": "怒之铁拳 SOR2XCombo CN",
-    "date": "2026-06-20T19:21:34.000Z",
-    "formattedDate": "2026-06-20",
-    "tags": [
-      "game"
-    ],
-    "categories": [],
-    "slug": "SOR2XCombo_cn",
-    "url": "posts/SOR2XCombo_cn.html",
-    "excerpt": "怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大"
-  },
-  {
     "title": "Streets of Rage SOR2XCombo EN",
     "date": "2026-06-20T19:21:34.000Z",
     "formattedDate": "2026-06-20",
@@ -568,6 +556,18 @@
     "slug": "SOR2XCombo_en",
     "url": "posts/SOR2XCombo_en.html",
     "excerpt": "Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-'em-up "
+  },
+  {
+    "title": "怒之铁拳 SOR2XCombo CN",
+    "date": "2026-06-20T19:21:34.000Z",
+    "formattedDate": "2026-06-20",
+    "tags": [
+      "game"
+    ],
+    "categories": [],
+    "slug": "SOR2XCombo_cn",
+    "url": "posts/SOR2XCombo_cn.html",
+    "excerpt": "怒之铁拳 SOR2XCombo 介绍 SOR2XCombo是基于OpenBor引擎由Kratus开发的横版卷轴过关游戏SOR2X项目的MOD作品. 因为SOR2X原项目所有可操作人物, 招式硬直比较大"
   },
   {
     "title": "fixed CORS problem caused by shiro",

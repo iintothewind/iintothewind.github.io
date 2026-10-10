@@ -167,7 +167,7 @@
 <li><strong>根因链</strong>（Block 公司逆向，最完整的技术披露）：
 <ol>
 <li>Coinkite 有自己的硬件 RNG 包装器，生产配置将 MicroPython 宏设为 <code>MICROPY_HW_ENABLE_RNG = 0</code>；</li>
-<li>libngu 加密库检查该宏时用的是**「宏是否被定义」<strong>而非</strong>「宏是否为真」**；</li>
+<li>libngu 加密库检查该宏时用的是<strong>「宏是否被定义」</strong>而非<strong>「宏是否为真」</strong>；</li>
 <li>宏存在（值 0）→ libngu 误以为硬件 RNG 可用 → 实际绑定 MicroPython 的兜底 PRNG <strong>Yasmarang</strong>（玩具级非密码学 PRNG）；</li>
 <li>Yasmarang 以<strong>芯片唯一 ID + 定时器寄存器</strong>为种子，<strong>初始化后不再收集新熵</strong>；</li>
 <li>种子空间从 128 位坍缩到 <strong>Mk3 约 40 位 / Mk4/Mk5/Q 约 72 位</strong>。</li>
