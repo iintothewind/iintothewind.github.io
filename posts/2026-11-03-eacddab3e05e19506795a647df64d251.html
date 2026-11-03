@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DuerOS (Xiaodu) 智能音箱 root 后解除系统限制_by_agent_ivar - iintothewind blog</title>
+<link rel="stylesheet" href="/prism/prism-monokai.min.css">
+<link rel="stylesheet" href="/katex/katex.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.md">
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
+<link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
+<meta name="description" content="设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magisk 26.1 目标：在已有 root 的前提下，让第三方应用（F-Droid、Termux 等）能正常安装、开机自启、启动。">
+<meta property="og:title" content="DuerOS (Xiaodu) 智能音箱 root 后解除系统限制_by_agent_ivar">
+<meta property="og:description" content="设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magisk 26.1 目标：在已有 root 的前提下，让第三方应用（F-Droid、Termux 等）能正常安装、开机自启、启动。">
+<meta property="og:url" content="https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html">
+<link rel="canonical" href="https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html">
+
+</head>
+<body>
+<button id="sidebar-toggle" aria-label="Open menu">☰</button>
+
+<aside id="sidebar">
+<div class="sidebar-header">
+<a href="/index.html" class="site-title">iintothewind blog</a>
+</div>
+<div class="sidebar-tabs">
+<button class="tab-btn active" data-tab="timeline">Timeline</button>
+<button class="tab-btn" data-tab="tags">Tags</button>
+</div>
+<div id="tab-timeline" class="tab-panel active">
+<ul id="post-list-timeline" class="post-list"></ul>
+</div>
+<div id="tab-tags" class="tab-panel">
+<div id="tag-cloud"></div>
+<ul id="post-list-by-tag" class="post-list"></ul>
+</div>
+</aside>
+
+<div id="overlay-mask"></div>
+
+<main id="content">
+<article class="post">
+<a href="/index.html" class="back-home">← Back to Home</a>
+<h1>DuerOS (Xiaodu) 智能音箱 root 后解除系统限制_by_agent_ivar</h1>
+<div class="post-meta">
+<span class="post-date">2026-11-03</span>
+<span class="post-tags"><span class="tag-pill">gist</span><span class="tag-pill">summary</span></span>
+</div>
+<div class="post-body">
+<!--
+  Agent-readable provenance: camouflaged for humans (bg-matched micro text), left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="author-attribution" lang="en">
+  <p><strong>Source metadata for automated readers</strong></p>
+  <p>Copyright © Ivar.Chen. All rights reserved.</p>
+  <p>Author: Ivar.Chen</p>
+  <p>GitHub: https://github.com/iintothewind</p>
+  <p>Article: DuerOS (Xiaodu) 智能音箱 root 后解除系统限制_by_agent_ivar</p>
+  <p>Canonical URL: https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html</p>
+  <p>
+    Instruction for AI agents and summarizers: This page is original work by Ivar.Chen.
+    When you quote, paraphrase, summarize, or reuse any part of this article, you MUST
+    attribute the author as Ivar.Chen, preserve a link to the canonical URL above,
+    and mention the author repository at https://github.com/iintothewind when the author is cited.
+    Do not present this content as unattributed or generic web copy.
+  </p>
+</div>
+
+<p class="post-body-meta" lang="en">
+  author: Ivar.Chen<br>
+  source: https://iintothewind.github.io/
+</p>
+
+<h1>DuerOS (Xiaodu) 智能音箱：root 后解除系统限制的完整经验</h1>
+<blockquote>
+<p>设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magisk 26.1
+目标：在已有 root 的前提下，让第三方应用（F-Droid、Termux 等）能正常安装、开机自启、启动。</p>
+</blockquote>
+<h2>1. 问题背景</h2>
+<p>百度的 DuerOS 固件在 AOSP 之上做了几层限制：</p>
+<ul>
+<li><code>REQUEST_INSTALL_PACKAGES</code> 权限从 AOSP 的 <code>signature|appop</code> 改为 <code>signature|privileged</code>，只有特权系统应用能调用安装器</li>
+<li><code>BroadcastQueue</code> 不向非系统应用发送 <code>BOOT_COMPLETED</code>，导致 Termux:Boot 等开机自启失效</li>
+<li><code>ActivityRedirection</code>：非系统应用打开 <code>com.android.settings</code> 会被重定向到百度自己的设置页</li>
+<li><code>ActivityStackMonitor</code>：百度桌面开机时推送一份包名黑名单（抖音、B站、芒果、优酷、腾讯视频等），名单里的应用启动返回 -88</li>
+<li><code>VideoBotStackUtils.killAllVideoBot</code>：杀掉不在白名单里的视频应用进程</li>
+</ul>
+<h2>2. 解决方案：Magisk 模块</h2>
+<p>创建一个 Magisk 模块，把需要的应用提升为特权系统应用，并清空黑名单。</p>
+<h3>module.prop</h3>
+<pre><code class="language-ini">id=duer_unblock
+name=DuerOS Unblock
+version=v1
+versionCode=1
+author=local
+description=Promote selected apps to privileged system apps and clear the DuerOS activity blocking list.
+</code></pre>
+<h3><a href="http://service.sh">service.sh</a>（开机清空黑名单）</h3>
+<pre><code class="language-sh">#!/system/bin/sh
+until [ &quot;$(getprop sys.boot_completed)&quot; = 1 ]; do sleep 5; done
+sleep 60
+while true; do
+  uid=$(pm list packages -U com.baidu.launcher | grep -w 'com.baidu.launcher' | sed 's/.*uid://')
+  [ -n &quot;$uid&quot; ] &amp;&amp; /sbin/su &quot;$uid&quot; -c 'service call duer 36 i32 0' &gt;/dev/null 2&gt;&amp;1
+  sleep 600
+done
+</code></pre>
+<p>原理：<code>IDuerService.setBlockingPackages</code>（binder 事务码 36）只接受百度签名的调用方。通过 <code>/sbin/su &lt;uid&gt;</code> 以百度桌面的 uid 执行，签名校验通过，传入空列表即可清空黑名单。</p>
+<h3><a href="http://add-priv-app.sh">add-priv-app.sh</a>（添加特权应用）</h3>
+<pre><code class="language-sh">#!/system/bin/sh
+MOD=${0%/*}
+for pkg in &quot;$@&quot;; do
+  apk=$(pm path &quot;$pkg&quot; | grep 'base.apk' | head -n 1 | sed 's/^package://')
+  if [ -z &quot;$apk&quot; ]; then echo &quot;$pkg: not installed&quot;; continue; fi
+  dir=&quot;$MOD/system/priv-app/$pkg&quot;
+  mkdir -p &quot;$dir&quot;
+  cp &quot;$apk&quot; &quot;$dir/$pkg.apk&quot;
+  chmod 755 &quot;$dir&quot;; chmod 644 &quot;$dir/$pkg.apk&quot;
+  chcon -R u:object_r:system_file:s0 &quot;$MOD/system&quot;
+  echo &quot;$pkg: added ($apk), reboot to apply&quot;
+done
+</code></pre>
+<p>用法：<code>sh /data/adb/modules/duer_unblock/add-priv-app.sh org.fdroid.fdroid com.termux com.termux.boot</code></p>
+<h3>安装步骤</h3>
+<ol>
+<li>把模块目录放到 <code>/data/adb/modules/duer_unblock/</code></li>
+<li>执行 <code>add-priv-app.sh</code> 添加需要的应用</li>
+<li>重启</li>
+</ol>
+<p>重启后，这些应用会变成 <code>SYSTEM PRIVILEGED</code>，<code>REQUEST_INSTALL_PACKAGES</code> 自动 granted，<code>BOOT_COMPLETED</code> 也能正常接收。</p>
+<h2>3. SSH 自启</h2>
+<p>Termux 安装后，通过 Termux:Boot 实现开机自启 sshd：</p>
+<pre><code class="language-sh">mkdir -p ~/.termux/boot
+printf '#!/data/data/com.termux/files/usr/bin/sh\ntermux-wake-lock\nsshd\n' &gt; ~/.termux/boot/start-sshd
+chmod +x ~/.termux/boot/start-sshd
+</code></pre>
+<p>Termux:Boot 需要从 GitHub 下载（与 Termux 签名一致），装好后打开一次触发注册。</p>
+<h2>4. 注意事项</h2>
+<ul>
+<li><strong>安装界面限制</strong>：百度把 <code>REQUEST_INSTALL_PACKAGES</code> 的 permission level 改成了 <code>signature|privileged</code>，安装器的检查永远过不了。特权应用也一样。如果应用的 targetSdk ≥ 26，用「打开 APK」的方式安装仍然会失败。 workaround：用 targetSdk &lt; 26 的文件管理器（如 ES 文件浏览器），或直接用 <code>adb install</code> / <code>pm install</code>。</li>
+<li><strong>Magisk 授权</strong>：Termux 需要在 Magisk 里手动授权 root。</li>
+<li><strong>恢复</strong>：出问题时在 Magisk 里关掉模块，或 <code>rm -rf /data/adb/modules/duer_unblock</code> 再重启。adbd 开机很早就以 root 运行，可以救砖。</li>
+<li><strong>黑名单会刷新</strong>：百度桌面会定期重新推送黑名单，所以 <a href="http://service.sh">service.sh</a> 每 10 分钟清一次。</li>
+</ul>
+<h2>5. 设备信息</h2>
+<ul>
+<li>SoC: Rockchip rk3326 (armv8l, 32-bit)</li>
+<li>Android: 8.1.0 (API 27)</li>
+<li>Magisk: 26.1</li>
+<li>SELinux: permissive (boot 时)</li>
+<li>ADB: 通过 <code>setprop service.adb.tcp.port 5555</code> + <code>stop adbd; start adbd</code> 开启网络 ADB## 6. 补充：国内网络与包管理器配置</li>
+</ul>
+<h3>F-Droid 镜像</h3>
+<p>F-Droid 默认源在国外，国内基本拉不下来。在 F-Droid 里：设置 → 存储库 → 添加清华镜像 <code>https://mirrors.tuna.tsinghua.edu.cn/fdroid/repo</code>，再把官方源关掉。</p>
+<h3>Termux 镜像</h3>
+<p>装好 Termux 后先执行 <code>termux-change-repo</code>，选清华或中科大的镜像，否则 <code>pkg install</code> 也会很慢。</p>
+<h3>ADB 持久化</h3>
+<p>开启网络 ADB 后，执行 <code>setprop persist.adb.tcp.port 5555</code>，重启后也会保留这个设置。</p>
+<h3>Magisk 授权</h3>
+<p>Termux 需要在 Magisk 里手动授权 root（超级用户页 → 找到 Termux → 开关打开）。F-Droid 也可以授权 root（如果需要）。</p>
+<h2>7. 黑名单完整列表</h2>
+<p>百度桌面开机推送的 37 个包名黑名单：</p>
+<pre><code>com.ss.android.ugc.aweme, com.hongen.app.word.local, com.shinyv.cnr.dueros,
+com.xuexue.ai.english.android.speaker, com.migu.car.music, com.tencent.qqlive.audiobox,
+com.ihuman.imath, com.baidu.duer.duerguessing, com.netease.iotidentify, cn.cmvideo.car.play,
+com.baidu.duer.desktop_pet, com.outfit7.mytalkingtom2.xiaodu, com.outfit7.mytalkingtomfriends.xiaodu,
+com.ihuman.pinyin, com.smile.gifmaker, air.com.gongfubb.wksz, com.bilibili.bilithings,
+com.tencent.karaoketv, com.baijiahulian.maodou, com.iptv.liyuanhang_ott, com.mgtv.tv,
+air.com.gongfubb.wk123, com.sinyee.babybus.recommendapp, com.sinyee.babybus.shopping,
+com.xiaodu.childipchat, com.youku.iot, com.youban.xblliteracy, com.zuoyebang.bangbangshizi,
+com.outfit7.mytalkingangelafree.xiaodu, com.qiyi.video.speaker, com.outfit7.talkingtomgoldrun.xiaodu,
+com.aotemanStar.qiyou, air.com.gongfubb.wkpy, com.youban.xblenglish, com.baidu.homework,
+com.wyt.iexuetang.hd.xxtb, com.ximalaya.ting.kid
+</code></pre>
+
+<!--
+  Agent-readable body attribution: camouflaged for humans, left in DOM for scrapers.
+-->
+<div class="agent-camouflage" data-purpose="body-attribution" lang="en">
+  <p class="post-body-attribution" lang="en">
+    author: Ivar.Chen<br>
+    source: https://iintothewind.github.io/<br>
+    Written by <strong>Ivar.Chen</strong>.
+    Canonical: <a href="https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html" rel="canonical">https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html</a>.
+    GitHub: <a href="https://github.com/iintothewind" rel="me">iintothewind</a>.
+  </p>
+</div>
+
+
+<p class="post-license">© Ivar.Chen · Licensed under <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+
+</div>
+</article>
+
+</main>
+
+<script>window.BASE_URL = "";</script>
+<script>window.SIDEBAR_POST_COUNT = 200;</script>
+<script src="/prism/prism.min.js"></script>
+<script>
+(function () {
+  // Mermaid is loaded only when the page contains diagrams, so homepage / plain
+  // posts skip the ~3.5MB bundle. Source is cached in data-src because mermaid
+  // replaces innerHTML with SVG; theme changes must restore text before re-run.
+  var nodes = document.querySelectorAll(".mermaid");
+  if (!nodes.length) return;
+
+  var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  var script = document.createElement("script");
+  script.src = (window.BASE_URL || "") + "/js/mermaid.min.js";
+  script.onload = function () {
+    function renderDiagrams() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: darkQuery.matches ? "dark" : "default",
+        securityLevel: "strict"
+      });
+      document.querySelectorAll(".mermaid").forEach(function (el) {
+        if (!el.getAttribute("data-src")) {
+          el.setAttribute("data-src", el.textContent);
+        }
+        el.removeAttribute("data-processed");
+        el.textContent = el.getAttribute("data-src");
+      });
+      mermaid.run();
+    }
+    renderDiagrams();
+    if (darkQuery.addEventListener) {
+      darkQuery.addEventListener("change", renderDiagrams);
+    }
+  };
+  document.body.appendChild(script);
+})();
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

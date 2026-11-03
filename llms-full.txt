@@ -6,6 +6,797 @@ Individual mirrors remain available under posts/<slug>.md.
 
 ---
 
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# DuerOS (Xiaodu) 智能音箱 root 后解除系统限制_by_agent_ivar
+
+> Published: 2026-11-03 · Tags: gist, summary
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# DuerOS (Xiaodu) 智能音箱：root 后解除系统限制的完整经验
+
+> 设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magisk 26.1
+> 目标：在已有 root 的前提下，让第三方应用（F-Droid、Termux 等）能正常安装、开机自启、启动。
+
+## 1. 问题背景
+
+百度的 DuerOS 固件在 AOSP 之上做了几层限制：
+
+- `REQUEST_INSTALL_PACKAGES` 权限从 AOSP 的 `signature|appop` 改为 `signature|privileged`，只有特权系统应用能调用安装器
+- `BroadcastQueue` 不向非系统应用发送 `BOOT_COMPLETED`，导致 Termux:Boot 等开机自启失效
+- `ActivityRedirection`：非系统应用打开 `com.android.settings` 会被重定向到百度自己的设置页
+- `ActivityStackMonitor`：百度桌面开机时推送一份包名黑名单（抖音、B站、芒果、优酷、腾讯视频等），名单里的应用启动返回 -88
+- `VideoBotStackUtils.killAllVideoBot`：杀掉不在白名单里的视频应用进程
+
+## 2. 解决方案：Magisk 模块
+
+创建一个 Magisk 模块，把需要的应用提升为特权系统应用，并清空黑名单。
+
+### module.prop
+
+```ini
+id=duer_unblock
+name=DuerOS Unblock
+version=v1
+versionCode=1
+author=local
+description=Promote selected apps to privileged system apps and clear the DuerOS activity blocking list.
+```
+
+### service.sh（开机清空黑名单）
+
+```sh
+#!/system/bin/sh
+until [ "$(getprop sys.boot_completed)" = 1 ]; do sleep 5; done
+sleep 60
+while true; do
+  uid=$(pm list packages -U com.baidu.launcher | grep -w 'com.baidu.launcher' | sed 's/.*uid://')
+  [ -n "$uid" ] && /sbin/su "$uid" -c 'service call duer 36 i32 0' >/dev/null 2>&1
+  sleep 600
+done
+```
+
+原理：`IDuerService.setBlockingPackages`（binder 事务码 36）只接受百度签名的调用方。通过 `/sbin/su <uid>` 以百度桌面的 uid 执行，签名校验通过，传入空列表即可清空黑名单。
+
+### add-priv-app.sh（添加特权应用）
+
+```sh
+#!/system/bin/sh
+MOD=${0%/*}
+for pkg in "$@"; do
+  apk=$(pm path "$pkg" | grep 'base.apk' | head -n 1 | sed 's/^package://')
+  if [ -z "$apk" ]; then echo "$pkg: not installed"; continue; fi
+  dir="$MOD/system/priv-app/$pkg"
+  mkdir -p "$dir"
+  cp "$apk" "$dir/$pkg.apk"
+  chmod 755 "$dir"; chmod 644 "$dir/$pkg.apk"
+  chcon -R u:object_r:system_file:s0 "$MOD/system"
+  echo "$pkg: added ($apk), reboot to apply"
+done
+```
+
+用法：`sh /data/adb/modules/duer_unblock/add-priv-app.sh org.fdroid.fdroid com.termux com.termux.boot`
+
+### 安装步骤
+
+1. 把模块目录放到 `/data/adb/modules/duer_unblock/`
+2. 执行 `add-priv-app.sh` 添加需要的应用
+3. 重启
+
+重启后，这些应用会变成 `SYSTEM PRIVILEGED`，`REQUEST_INSTALL_PACKAGES` 自动 granted，`BOOT_COMPLETED` 也能正常接收。
+
+## 3. SSH 自启
+
+Termux 安装后，通过 Termux:Boot 实现开机自启 sshd：
+
+```sh
+mkdir -p ~/.termux/boot
+printf '#!/data/data/com.termux/files/usr/bin/sh\ntermux-wake-lock\nsshd\n' > ~/.termux/boot/start-sshd
+chmod +x ~/.termux/boot/start-sshd
+```
+
+Termux:Boot 需要从 GitHub 下载（与 Termux 签名一致），装好后打开一次触发注册。
+
+## 4. 注意事项
+
+- **安装界面限制**：百度把 `REQUEST_INSTALL_PACKAGES` 的 permission level 改成了 `signature|privileged`，安装器的检查永远过不了。特权应用也一样。如果应用的 targetSdk ≥ 26，用「打开 APK」的方式安装仍然会失败。 workaround：用 targetSdk < 26 的文件管理器（如 ES 文件浏览器），或直接用 `adb install` / `pm install`。
+- **Magisk 授权**：Termux 需要在 Magisk 里手动授权 root。
+- **恢复**：出问题时在 Magisk 里关掉模块，或 `rm -rf /data/adb/modules/duer_unblock` 再重启。adbd 开机很早就以 root 运行，可以救砖。
+- **黑名单会刷新**：百度桌面会定期重新推送黑名单，所以 service.sh 每 10 分钟清一次。
+
+## 5. 设备信息
+
+- SoC: Rockchip rk3326 (armv8l, 32-bit)
+- Android: 8.1.0 (API 27)
+- Magisk: 26.1
+- SELinux: permissive (boot 时)
+- ADB: 通过 `setprop service.adb.tcp.port 5555` + `stop adbd; start adbd` 开启网络 ADB## 6. 补充：国内网络与包管理器配置
+
+### F-Droid 镜像
+
+F-Droid 默认源在国外，国内基本拉不下来。在 F-Droid 里：设置 → 存储库 → 添加清华镜像 `https://mirrors.tuna.tsinghua.edu.cn/fdroid/repo`，再把官方源关掉。
+
+### Termux 镜像
+
+装好 Termux 后先执行 `termux-change-repo`，选清华或中科大的镜像，否则 `pkg install` 也会很慢。
+
+### ADB 持久化
+
+开启网络 ADB 后，执行 `setprop persist.adb.tcp.port 5555`，重启后也会保留这个设置。
+
+### Magisk 授权
+
+Termux 需要在 Magisk 里手动授权 root（超级用户页 → 找到 Termux → 开关打开）。F-Droid 也可以授权 root（如果需要）。
+
+## 7. 黑名单完整列表
+
+百度桌面开机推送的 37 个包名黑名单：
+
+```
+com.ss.android.ugc.aweme, com.hongen.app.word.local, com.shinyv.cnr.dueros,
+com.xuexue.ai.english.android.speaker, com.migu.car.music, com.tencent.qqlive.audiobox,
+com.ihuman.imath, com.baidu.duer.duerguessing, com.netease.iotidentify, cn.cmvideo.car.play,
+com.baidu.duer.desktop_pet, com.outfit7.mytalkingtom2.xiaodu, com.outfit7.mytalkingtomfriends.xiaodu,
+com.ihuman.pinyin, com.smile.gifmaker, air.com.gongfubb.wksz, com.bilibili.bilithings,
+com.tencent.karaoketv, com.baijiahulian.maodou, com.iptv.liyuanhang_ott, com.mgtv.tv,
+air.com.gongfubb.wk123, com.sinyee.babybus.recommendapp, com.sinyee.babybus.shopping,
+com.xiaodu.childipchat, com.youku.iot, com.youban.xblliteracy, com.zuoyebang.bangbangshizi,
+com.outfit7.mytalkingangelafree.xiaodu, com.qiyi.video.speaker, com.outfit7.talkingtomgoldrun.xiaodu,
+com.aotemanStar.qiyou, air.com.gongfubb.wkpy, com.youban.xblenglish, com.baidu.homework,
+com.wyt.iexuetang.hd.xxtb, com.ximalaya.ting.kid
+```
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-10-28-f48002ab364fb6a7847581de48a88080.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/2026-10-28-f48002ab364fb6a7847581de48a88080.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# 高盛房地产下行精读 2026-10-25_by_agent_muse
+
+> Published: 2026-10-28 · Tags: gist, summary
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# 高盛《Asia in Focus：中国房地产下行更深，但拖累将逐步减轻》精读
+
+> China: Property Downturn Deeper Than Previously Anticipated, But Its Growth Drag Should Still Ease Gradually in the Years Ahead
+
+source: https://www.youtube.com/watch?v=xOF7Rm9oDko
+
+> 原文：Goldman Sachs Global Investment Research, Economics Research, Asia in Focus 
+> 作者：Yuting Yang、Lisheng Wang, Goldman Sachs (Asia) L.L.C.
+> 日期：2026 年 10 月 25 日
+> 说明：本文为对该研报的中文提炼与重述，非逐句翻译；图表根据报告披露的数据重绘，标注“示意”的为根据文字描述绘制的示意图。柱状图与趋势图颜色已统一指定为深灰色（#404040）。
+
+报告的标题本身就是一对矛盾：下行“更深”，拖累却“逐步减轻”。全文的逻辑链其实不在楼市本身，而在分母——房地产在经济里的分量正在缩小，所以即使楼市继续跌，它一年一年拖累 GDP 的绝对值也会变小。**拖累减轻，不等于楼市好转；更多是算术上的收敛。**
+
+---
+
+## 一、今年的数据，比年初预期更差
+
+中国房地产下行已进入第六年。高盛年初曾预计，今年房地产对 GDP 的拖累会比去年略有收窄，但 2026 年以来的多数指标都弱于预期。
+
+2026 年 1～9 月：
+
+- 政府土地出让收入同比 -28%
+- 新房开工同比 -25%
+- 房地产固定资产投资同比 -21%
+
+```mermaid
+---
+config:
+  themeVariables:
+    xyChart:
+      plotColorPalette: "#404040"
+---
+xychart-beta
+    title "2026年1-9月主要房地产活动指标（同比 %，零线以下为负增长）"
+    x-axis ["土地出让收入", "新房开工", "房地产固定资产投资"]
+    y-axis "同比%" -30 --> 5
+    bar [-28, -25, -21]
+```
+
+到 2026 年 9 月，多数活动指标较 2020～2021 年高峰已下跌 60%～90%，包括新房开工、销售和房地产固定资产投资。也就是说，这轮调整的深度已经不是“回调”，而是量级上的收缩。
+
+政策面又加了一层下行压力：近期宣布从预售制转向现房销售，并加强项目级资金监管。这意味着开发商资金更紧，未来几年的房地产投资更低。地产团队据此下调了 2027 年展望中的多数指标，其中 2025～2035 年的长期预测是：新房开工再跌 30%、竣工再跌 46%、房地产固定资产投资再跌 61%、新房销售再跌 70%。
+
+需要注意一个口径差异：经济学团队的新基线输入与地产团队的预测不完全一致，因为两者要做定性调整，例如 300 城土地出让金额与地方政府土地出让收入的差异、商品房建筑与整体房地产建筑的差异。所以下面基线里的数字，和上面地产团队的长期预测不能直接混用。
+
+---
+
+## 二、模型怎么算：五条直接渠道，两处技术修正
+
+这套住房模型是高盛 2018 年引入、此后不断更新的框架。它把房地产对实际 GDP 同比增长的贡献拆成五条直接渠道：
+
+- 建筑施工
+- 房地产服务
+- 上游效应，主要是通过大宗商品需求
+- 入住相关消费
+- 土地出让相关的财政渠道
+
+输入是一组房地产指标，包括新房开工、销售、在建面积、房地产固定资产投资和土地出让收入，以及它们与相关经济活动的历史关系。
+
+这次更新做了两处技术修正，值得单独提，因为它们说明官方序列本身也在变化：
+
+- **在建面积失真：** 近年资金严重短缺，大量开发商项目停工或终止，这些“卡住”的库存仍留在国家统计局的在建统计里，导致官方在建面积的跌幅看起来比新房开工暗示的要小。报告因此改用新房开工重估在建面积。历史上新房开工是在建面积较好的领先指标，但这一关系自 2023 年以来已明显弱化。
+- **土地数据断档：** 国家统计局已停止发布开发商购地量序列，报告改用财政部的土地出让收入序列来替代开发商购地量和地价输入。
+
+---
+
+## 三、拖累的路径：2026 年最重，之后逐步收窄
+
+先看分量。房地产在 GDP 中的占比，高峰期 2010～2021 年约为 30%，到 2025 年降至约 15%，新基线预计会继续下降，2030 年起稳定在约 8% 左右。
+
+```mermaid
+---
+config:
+  themeVariables:
+    xyChart:
+      plotColorPalette: "#404040"
+---
+xychart-beta
+    title "房地产占中国 GDP 比重（%）"
+    x-axis ["2010-2021年高峰期", "2025年", "2030年起"]
+    y-axis "占比%" 0 --> 35
+    bar [30, 15, 8]
+```
+
+再看拖累。更新后的估计是：房地产 2026 年拖累实际 GDP 增长 1.8 个百分点，略高于 2025 年的 1.7 个百分点，也明显高于此前对 2026 年 1.5 个百分点的估计。预计 2027 年收窄约 0.5 个百分点至 1.3 个百分点，2030 年前基本消退。
+
+```mermaid
+---
+config:
+  themeVariables:
+    xyChart:
+      plotColorPalette: "#404040"
+---
+xychart-beta
+    title "房地产对实际 GDP 增长的直接拖累（百分点，零线以下为负贡献）"
+    x-axis ["2025年", "2026年", "2027年"]
+    y-axis "百分点" -2 --> 0.5
+    bar [-1.7, -1.8, -1.3]
+```
+
+新基线里，2026 年预计的跌幅是：土地出让收入 -30%、新房开工 -22%、新房销售 -8%、房地产固定资产投资 -20%；2027 年再跌：土地出让收入 -20%、新房开工 -20%、新房销售 -10%、房地产固定资产投资 -17%。
+
+```mermaid
+---
+config:
+  themeVariables:
+    xyChart:
+      plotColorPalette: "#404040"
+---
+xychart-beta
+    title "新基线：2027年主要房地产指标预计跌幅（同比 %，零线以下为负增长）"
+    x-axis ["土地出让收入", "新房开工", "新房销售", "房地产固定资产投资"]
+    y-axis "同比%" -25 --> 5
+    bar [-20, -20, -10, -17]
+```
+
+这里的关键不是 2027 年跌幅比 2026 年小，而是基数已经大幅缩水：同样的百分比，落在更小的盘子上，对 GDP 的百分点拖累自然收窄。
+
+---
+
+## 四、间接渠道：财富效应放大拖累，但不改变方向
+
+上面的估计主要是直接影响，第二轮效应特别是住房财富效应也很重要。房产占中国家庭资产的一半以上，房价变动会实质影响信心和消费。
+
+报告的测算方法是：用城镇房产价值乘以自建二手房价格序列的变动，得到家庭住房财富的年度变化；再用财富效应系数换算，即房产价值每变动 1 元，同向带动年消费变动 0.01 元。
+
+按这一口径，负向住房财富效应在 2024～2025 年见顶。假设全国二手房价格如地产团队预期在 2030 年见底，负向财富效应会在未来几年逐步消退，2030 年代初完全消失。
+
+算上间接财富效应，房地产对增长的影响会被放大，但报告的结论不变：**房地产对实际 GDP 增长的拖累，未来几年仍会逐步减轻。**
+
+---
+
+## 五、三个宏观含义
+
+**第一，施工下行更深、更久。** 政府的目标是显著压减新房供给，所以施工 downturn 比此前预期更深、更持久。这意味着未来几年房地产对增长的拖累更大，只是会从今年的水平逐步缓和。
+
+**第二，房价分化。** 上海、深圳等顶级城市库存已经较低，房价可能较快开始恢复。但其余地区，特别是有显著库存积压的低线城市，房价未来几年可能继续下跌。一线企稳不等于全国企稳。
+
+**第三，地方财政压力持续。** 按开发商现金流测算，地产团队预计 2025～2035 年住宅土地出让量跌超 90%。这意味着地方政府融资压力会持续存在，尤其是在更依赖房地产相关收入的地区，需要另找收入来源或削减支出，才能保证财政可持续。
+
+报告由此看到一个政策空间：在“十五五”（2026～2030 年）末期或“十六五”（2031～2035 年）期间扩大全国性房产税，拓宽地方税基，部分抵消土地出让收入的损失。但时机和范围，很可能取决于住房市场状况和国内市场信心。
+
+---
+
+## 全文逻辑一张图
+
+```mermaid
+flowchart TD
+    A[2026年数据弱于预期<br/>土地出让-28% 开工-25% 房地产投资-21%] --> B[预售改现房<br/>开发商资金更紧 投资更低]
+    B --> C[房地产占GDP比重<br/>30% → 15% → 2030年起约8%]
+    C --> D[直接拖累先升后降<br/>2026年-1.8pp 2027年-1.3pp 2030年前基本消退]
+    E[住房财富效应<br/>2024-25年见顶 2030年代初消失] --> D
+    D --> F[房价分化<br/>沪深库存低或先企稳 低线城市继续跌]
+    D --> G[地方财政缺口<br/>2025-2035年住宅土地出让量跌超90%]
+    G --> H[政策空间<br/>十五五末或十六五扩大房产税]
+```
+
+## 一句话总结
+
+这篇报告不是在说楼市要反转，而是在说楼市的“系统重要性”正在不可逆地缩小：拖累减轻，是因为房地产在经济里变小了，而不是因为它变好了；真正的悬念不在拖累的百分点，而在土地财政这个缺口由谁来补、以及补不补得上。
+
+## 延伸讨论：拖累消退之后，什么还在
+
+*以下为讨论观点，非报告原文。*
+
+第一，“拖累基本消退”这个表述容易被误读。按报告的口径，2030 年房地产占比稳定在约 8%，拖累消失意味着它不再是 GDP 增长的减项，不意味着它重新成为增长引擎。一个 8% 的行业，和一个 30% 的行业，对政策、对银行资产负债表、对地方财政的意义完全不同。
+
+第二，土地财政的替代方案，报告只点到房产税这一个方向，但没有展开政治难度：房产税扩围的税基、税率、豁免和征收能力，都是硬约束；如果房产税迟迟落不了地，缺口就只能由转移支付、发债或支出削减来填，每一种的分配含义都不一样。
+
+第三，预售改现房是一次风险再分配：过去是购房者承担期房风险，现在风险更多压向开发商和为其融资的银行。这对购房者是保护，对供给是收缩，短期看是净负面，长期看能不能换来更稳的供给，取决于开发商还有没有能力在现房模式下算得过账。
+
+第四，房价分化会放大区域分化。沪深先企稳、低线继续跌，意味着资产负债表修复的速度也不一样；全国性的平均数，未来会越来越掩盖区域之间的真实差异。
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-10-19-ca64966f90ed96b67b4e63927a824331.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/2026-10-19-ca64966f90ed96b67b4e63927a824331.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# LobsterAI《中国办公 Agent 用户行为报告》2026 年 9 月版 — 内容抽取（Markdown + Mermaid 图表）
+
+> Published: 2026-10-19 · Tags: gist, summary
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# LobsterAI《中国办公 Agent 用户行为报告》2026 年 9 月版
+
+> 数据来源：LobsterAI 真实用户行为数据——报告基于其自有产品的用户行为数据整理（非第三方全行业抽样）；报告未披露具体样本量，第三方报道称其 8 月用户数已突破 100 万。
+>
+> 原文出处：LobsterAI 官网博客《中国办公 Agent 用户行为报告（2026 年 9 月版）》，发布于 2026-10-19，
+> https://lobsterai.youdao.com/blog/china-office-agent-user-behavior-report-2026-10
+>
+> 本文已逐项核对官网原长图（1080×12270 webp，单张完整长图），10 个章节无缺失、数字与原图一致。
+> 图表数据按原图逐项还原，并用 Mermaid 重绘为可交互视图。报告声明：基于 LobsterAI 真实用户行为数据整理，仅供行业观察与参考，不构成任何投资或商业建议；统计口径可能随产品迭代调整，请以官方后续发布为准。
+
+## 报告导语
+
+第一期《中国办公 Agent 用户行为报告》发布后，引发了媒体和用户的关注与讨论。从本期起，按月发布报告，持续记录用户使用习惯的变化。本期聚焦 9 月的用户行为，并额外补充十一假期的使用变化。
+
+9 月要点预告：用户单次任务规模继续增长；泛编程/IT 仍是办公 Agent 的主要用途，但设计与内容创作正在升温；缓存策略的差异为何能导致使用成本相差七倍多？哪些城市的用户深夜还在派活给 Agent？十一假期期间，使用高峰和任务需求又发生了什么变化？
+
+---
+
+## 01 办公 Agent 的第一大使用场景仍是泛编程；设计与内容创作正在升温
+
+和 8 月相比，设计与内容创作的份额在上升，金融、教育、互联网产品运营在下降。
+
+| 行业 | 任务份额 | 环比趋势 |
+|---|---|---|
+| 泛编程/IT | 40.1% | ↑ |
+| 设计/影视/创作 | 17.2% | ↑ |
+| 金融/财务 | 7.7% | ↓ |
+| 工程/制造/建筑 | 7.0% | ↑ |
+| 教育/教研 | 5.5% | ↓ |
+| 销售/电商/客服 | 4.8% | ↑ |
+| 学生/学业 | 3.6% | ↓ |
+| 互联网产品运营 | 3.5% | ↓ |
+| 市场营销/新媒体 | 3.1% | ↑ |
+| 行政/人事 | 2.1% | ↓ |
+| 医疗/健康 | 2.0% | ↑ |
+| 政务 | 1.7% | ↑ |
+| 法律/合规 | 1.5% | ↓ |
+
+```mermaid
+pie title 各行业任务份额（2026年9月）
+    "泛编程/IT" : 40.1
+    "设计/影视/创作" : 17.2
+    "金融/财务" : 7.7
+    "工程/制造/建筑" : 7.0
+    "教育/教研" : 5.5
+    "销售/电商/客服" : 4.8
+    "学生/学业" : 3.6
+    "互联网产品运营" : 3.5
+    "市场营销/新媒体" : 3.1
+    "行政/人事" : 2.1
+    "医疗/健康" : 2.0
+    "政务" : 1.7
+    "法律/合规" : 1.5
+```
+
+---
+
+## 02 用户单次任务规模持续增长，越来越多的工作由 Agent 完成
+
+用户单次任务规模达到历史峰值：从 3 月的 6.3 万增长至 9 月的 20.2 万，约为 3 月的 3.2 倍。
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "用户单次任务规模（万 Token）"
+    x-axis ["3月", "4月", "5月", "6月", "7月", "8月", "9月"]
+    line [6.3, 6.7, 8.6, 10.5, 12.9, 19.7, 20.2]
+```
+
+| 月份 | 3月 | 4月 | 5月 | 6月 | 7月 | 8月 | 9月 |
+|---|---|---|---|---|---|---|---|
+| 单次任务规模（万 Token） | 6.3 | 6.7 | 8.6 | 10.5 | 12.9 | 19.7 | 20.2 |
+
+---
+
+## 03 郑州跻身 Agent 活跃用户城市前 10；重庆的 Agent 深夜还在干活
+
+### 活跃用户城市 Top10
+
+| 排名 | 城市 | 占比 |
+|---|---|---|
+| 1 | 北京 | 5.7% |
+| 2 | 上海 | 4.3% |
+| 3 | 广州 | 4.2% |
+| 4 | 深圳 | 3.4% |
+| 5 | 杭州 | 3.2% |
+| 6 | 成都 | 2.5% |
+| 7 | 重庆 | 2.3% |
+| 8 | 武汉 | 2.3% |
+| 9 | 郑州 | 1.9% |
+| 10 | 东莞 | 1.9% |
+
+```mermaid
+pie title 活跃用户城市Top10
+    "北京" : 5.7
+    "上海" : 4.3
+    "广州" : 4.2
+    "深圳" : 3.4
+    "杭州" : 3.2
+    "成都" : 2.5
+    "重庆" : 2.3
+    "武汉" : 2.3
+    "郑州" : 1.9
+    "东莞" : 1.9
+```
+
+### 晚 10 点到凌晨 2 点占全天调用的比例（深夜干活榜）
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "深夜调用占比（22点–凌晨2点 / 全天）"
+    x-axis ["重庆", "广州", "深圳", "北京", "成都", "武汉", "上海", "杭州"]
+    bar [19.1, 13.9, 13.4, 12.9, 11.3, 10.7, 10.5, 9.4]
+```
+
+| 城市 | 深夜占比 |
+|---|---|
+| 重庆 | 19.1% |
+| 广州 | 13.9% |
+| 深圳 | 13.4% |
+| 北京 | 12.9% |
+| 成都 | 11.3% |
+| 武汉 | 10.7% |
+| 上海 | 10.5% |
+| 杭州 | 9.4% |
+
+---
+
+## 04 微信是 IM 派活的第一入口；不少人早上通勤时已经开始安排工作
+
+### 用户在哪些聊天软件里派活
+
+注：同一个用户可使用多个 IM，比例合计可能超过 100%。
+
+| IM | 占比 |
+|---|---|
+| 微信 | 77% |
+| 飞书 | 14.3% |
+| QQ | 6.5% |
+| 企业微信 | 5% |
+| 其他 | 5% |
+
+```mermaid
+pie title 用户在哪些聊天软件里派活
+    "微信" : 77
+    "飞书" : 14.3
+    "QQ" : 6.5
+    "企业微信" : 5
+    "其他" : 5
+```
+
+### 7 点到 11 点，用户更喜欢通过 IM 给 Agent 派活
+
+24 小时曲线（桌面 vs IM）关键读数：
+
+- 凌晨 0–6 点为全天低谷，桌面与 IM 均不足 1%。
+- 早上 7 点后 IM 派活快速爬升，9–11 点超过桌面：9 点 IM 6.3% vs 桌面 4.8%；10 点 IM 7.1% vs 桌面 6.4%，为 IM 全天最高点。
+- 下午 15–16 点为桌面小高峰（约 7%），IM 同步回落；18 点后两者趋同并缓慢下降。
+
+结论：不少人早上通勤时已经在 IM 里给 Agent 安排工作。
+
+---
+
+## 05 国庆假期改变了 Agent 的工作节奏：使用高峰推迟，晚间使用占比上升
+
+### 白天出门玩耍，晚上回家用 Agent 工作
+
+十一假期里，凌晨 0 到 7 点的份额从 13% 升到 17%，高峰从下午 4 点推迟到晚上 10 点。
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "凌晨0–7点调用份额：日常 vs 十一假期"
+    x-axis ["日常", "十一假期"]
+    bar [13, 17]
+```
+
+### 十一假期里，泛编程类工作占比升高
+
+除泛编程任务外，学习、个人生活、文案相关的任务相比其他时间有增长（单位：份额百分点变化）。
+
+| 任务类型 | 假期份额变化 |
+|---|---|
+| 泛编程/IT | +4.0 |
+| 学习与教育 | +1.6 |
+| 个人生活事务 | +1.6 |
+| 营销文案 | +0.1 |
+| 网页与工具制作 | -0.1 |
+| 自动化配置 | -0.1 |
+| 图像视频生成 | -0.2 |
+| 信息检索与研究 | -0.3 |
+| 法律财税 | -0.4 |
+| 演示文稿 | -0.4 |
+| 文档写作 | -0.5 |
+| 金融与投资 | -0.7 |
+| 翻译润色 | -1.6 |
+| 数据与表格 | -2.9 |
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "十一假期任务份额变化（百分点）"
+    x-axis ["泛编程/IT", "学习与教育", "个人生活事务", "营销文案", "网页与工具制作", "自动化配置", "图像视频生成", "信息检索与研究", "法律财税", "演示文稿", "文档写作", "金融与投资", "翻译润色", "数据与表格"]
+    bar [4.0, 1.6, 1.6, 0.1, -0.1, -0.1, -0.2, -0.3, -0.4, -0.4, -0.5, -0.7, -1.6, -2.9]
+```
+
+---
+
+## 06 近七成用户只使用一个模型；重度用户更倾向于搭配更多模型使用
+
+重度用户人均使用 2.4 个模型，普通用户人均使用 1.6 个。
+
+| 使用模型数 | 重度用户 | 普通用户 |
+|---|---|---|
+| 1 个 | 44.7% | 73.6% |
+| 2 个 | 24.7% | 14.7% |
+| 3 个 | 13.1% | 5.1% |
+| 4 个及以上 | 17.6% | 6.6% |
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "使用模型数量分布（%）"
+    x-axis ["1个", "2个", "3个", "4个及以上"]
+    bar [44.7, 24.7, 13.1, 17.6]
+    bar [73.6, 14.7, 5.1, 6.6]
+```
+
+*注：橙色为重度用户，蓝色为普通用户。*
+
+### 最常见的模型搭配
+
+| 搭配 | 占比 |
+|---|---|
+| DeepSeek Flash 系列 + GLM 5.3 Flash | 14.0% |
+| DeepSeek Flash 系列 + V4 Pro | 12.4% |
+| DeepSeek Flash 系列 + GLM 5.3 FlashX | 2.2% |
+| DeepSeek Flash 系列 + Qwen 3.8 Max | 2.1% |
+| DeepSeek Flash 系列 + Qwen 3.8 Flash | 2.1% |
+| DeepSeek Flash 系列 + GLM 5.3 | 1.8% |
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "最常见的模型搭配（%）"
+    x-axis ["DS Flash + GLM 5.3 Flash", "DS Flash + V4 Pro", "DS Flash + GLM 5.3 FlashX", "DS Flash + Qwen 3.8 Max", "DS Flash + Qwen 3.8 Flash", "DS Flash + GLM 5.3"]
+    bar [14.0, 12.4, 2.2, 2.1, 2.1, 1.8]
+```
+
+---
+
+## 07 哪家模型厂商的缓存策略最好？最省钱？DeepSeek V4 系列模型一骑绝尘！
+
+### 各模型 9 月的缓存命中率情况
+
+| 模型 | 缓存命中率 |
+|---|---|
+| DeepSeek V4.1 Flash | 97.3% |
+| DeepSeek V4 Flash | 95.7% |
+| DeepSeek V4 Pro | 95.7% |
+| DeepSeek V4 Flash Vision | 95.2% |
+| GLM 5.3 | 93.9% |
+| MiniMax M3 | 93.7% |
+| Qwen 3.8 Max | 93.2% |
+| Qwen 3.8 Flash | 92.8% |
+| GLM 5.3 Flash | 91.1% |
+| GLM 5.3 FlashX | 91.0% |
+| Kimi K3 | 88.7% |
+| Qwen 3.7 Plus | 76.7% |
+
+### 算上缓存后，实际费用是原价的多少？
+
+为什么命中率都在九成上下，花费却相差很多？关键在缓存折扣力度。
+
+| 模型 | 实际费用 / 原价 | 缓存命中率 | 缓存价（折扣价 / 原价） |
+|---|---|---|---|
+| DeepSeek V4.1 Flash | 4.6% | 97% | 2% |
+| DeepSeek V4 Flash | 6.2% | 96% | 2% |
+| DeepSeek V4 Flash Vision | 6.7% | 95% | 2% |
+| DeepSeek V4 Pro | 7.5% | 96% | 3.3% |
+| Qwen 3.8 Max | 18.5% | 93% | 12.5% |
+| Qwen 3.8 Flash | 18.8% | 93% | 12.5% |
+| Kimi K3 | 20.2% | 89% | 10% |
+| GLM 5.3 | 29.6% | 94% | 25% |
+| GLM 5.3 Flash | 35.1% | 91% | 28.8% |
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "算上缓存后，实际费用是原价的多少（%）"
+    x-axis ["DS V4.1 Flash", "DS V4 Flash", "DS V4 Flash Vision", "DS V4 Pro", "Qwen 3.8 Max", "Qwen 3.8 Flash", "Kimi K3", "GLM 5.3", "GLM 5.3 Flash"]
+    bar [4.6, 6.2, 6.7, 7.5, 18.5, 18.8, 20.2, 29.6, 35.1]
+```
+
+*解读：Agent 在执行任务时，往往需要反复读取任务要求和前期输入，不少费用就花在这些重复读取上。缓存会将读过的内容记住，再次读取并命中缓存时，用户即可享受折扣。各模型的折扣力度不同，最终省下的费用也不同——DeepSeek V4 系列缓存价仅为原价的 2%–3.3%，而 GLM 5.3 系列为 25%–28.8%，这就是"成本相差七倍多"的来源。*
+
+---
+
+## 08 头部模型厂商格局稳定；GLM 新模型带动智谱强势增长
+
+### 国内模型厂商 Token 份额环比变化
+
+| 厂商 | 环比变化 |
+|---|---|
+| 智谱 GLM | 约 +166.7% |
+| DeepSeek | 约 -0.3% |
+| 阿里 Qwen | 约 -18.2% |
+| MiniMax | 约 -66.7% |
+| 月之暗面 Kimi | 约 -78.6% |
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "国内模型厂商 Token 份额环比变化（%）"
+    x-axis ["智谱 GLM", "DeepSeek", "阿里 Qwen", "MiniMax", "月之暗面 Kimi"]
+    bar [166.7, -0.3, -18.2, -66.7, -78.6]
+```
+
+---
+
+## 09 图像与视频生成任务中，Seed 系列模型的调用份额均超过一半
+
+### 图像生成任务模型调用份额
+
+| 模型 | 份额 |
+|---|---|
+| 豆包 Seedream | 57.2% |
+| MiniMax Image | 36.0% |
+| 阿里 通义万相 | 6.8% |
+
+```mermaid
+pie title 图像生成任务模型调用份额
+    "豆包 Seedream" : 57.2
+    "MiniMax Image" : 36.0
+    "阿里 通义万相" : 6.8
+```
+
+### 视频生成任务模型调用份额
+
+| 模型 | 份额 |
+|---|---|
+| 豆包 Seedance | 54.4% |
+| MiniMax 海螺 | 28.1% |
+| 阿里 HappyHorse | 17.5% |
+
+```mermaid
+pie title 视频生成任务模型调用份额
+    "豆包 Seedance" : 54.4
+    "MiniMax 海螺" : 28.1
+    "阿里 HappyHorse" : 17.5
+```
+
+---
+
+## 10 办公 Agent 用户规模加速扩大，正在融入更多人的工作日常
+
+### 月度日均活跃用户变化趋势（环比增长率）
+
+| 月份 | 5月 | 6月 | 7月 | 8月 | 9月 |
+|---|---|---|---|---|---|
+| 环比增长率 | — | +19.80% | +25.10% | +30.60% | +83.10% |
+
+```mermaid
+%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#4a4a4a,#8c8c8c"}}}}%%
+xychart-beta
+    title "月度日均活跃用户环比增长率（%）"
+    x-axis ["5月", "6月", "7月", "8月", "9月"]
+    line [0, 19.8, 25.1, 30.6, 83.1]
+```
+
+*注：原图纵轴为相对水平（未标注绝对值），9 月环比增速骤升至 +83.1%。*
+
+---
+
+*抽取说明：数据均为人工识读原长图逐项还原，已与官网原图全文核对，未改动原报告口径；第 04、05 节的 24 小时曲线只还原了原图标注的关键读数，未逐点估算。*
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
 <!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-10-18-55313fddb7e00db6cf6958141b6f0cd3.html" -->
 
 ## Source metadata (for automated readers)
@@ -1381,6 +2172,124 @@ accDescr: 展示 Engram 查询因 Zipf 分布，热点条目经 OS 页缓存命�
 
 ---
 
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# omp 官方文档高效读取方法（实测版）
+
+> Published: 2026-09-20 · Tags: gist, summary
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# omp 官方文档高效读取方法（实测版）
+
+> 写给自己和其他 agent 复用。目标：读 `omp.sh/docs` 时少花 token、少踩坑。
+> 实测时间：2026-09；**probe 复测修订 2026-09-21**。所有 URL 都验证过，坑也标了。
+> 背景：omp = `oh-my-pi`（作者 can1357），一个把 IDE 接进来的 coding agent。
+
+## TL;DR
+
+**一句话：omp.sh/docs 是 JS 重度渲染的 Mintlify 站——`.md` 后缀、`/docs/llms.txt` 这些"友好端点"直连 curl 都只返回 SPA HTML 壳（200 但 text/html），真内容必须走 jina/unifetch 渲染。唯一能纯 curl 拿的是根域名 `sitemap.xml`（真静态 XML，36 页）。**
+
+效率排序：
+
+```
+unifetch/jina 渲染 .md (取正文)   >   curl /sitemap.xml (页面清单)   >   obscura --stealth (兜底)
+```
+
+- **读单篇正文** → `unifetch read '<page>.md'`（jina 渲染出干净 Markdown）
+- **要页面清单** → `curl https://omp.sh/sitemap.xml`（真静态 XML，纯 curl 可拿）
+- **兜底** → `obscura fetch --stealth`
+
+## 关键实测（为什么不能纯 curl）
+
+| 端点 | 直连 curl | 说明 |
+|---|---|---|
+| `<page>.md` | ⚠️ 200 但 text/html（SPA 壳 ~5.8KB） | JS 渲染，curl 拿不到正文 |
+| `/docs/llms.txt` | ⚠️ 200 但 text/html（SPA 壳） | 同上，需 jina |
+| `/docs/llms-full.txt` | ⚠️ 200 但 text/html | 名存实亡 |
+| `/sitemap.xml`（根域名） | ✅ 真 XML，36 `<loc>` | **唯一纯 curl 可拿** |
+| `/.well-known/mcp/*` | ⚠️ SPA 壳 | 无 MCP server |
+
+> ⚠️ **和 TypeSafe 的关键区别**：TypeSafe 是静态 Mintlify，`.md`/`llms.txt` 直连 curl 就是真内容；omp 是 JS 渲染，同样的端点直连 curl 全是壳。别按 TypeSafe 的经验去纯 curl omp。
+
+## URL 模式（精确，可直接粘）
+
+**1. 页面清单（纯 curl，最省）**
+
+```bash
+curl -s 'https://omp.sh/sitemap.xml' | grep -o '<loc>[^<]*' | sed 's/<loc>//'
+# → 36 个真实 URL：/docs /docs/quickstart /docs/using /docs/slash ...
+# 这是 omp 唯一能纯 curl 直接拿的端点
+```
+
+**2. 读单篇正文（要 jina/unifetch 渲染）**
+
+```bash
+bash ~/.zeroclaw/shared/skills/infra/unifetch/scripts/unifetch.sh read 'https://omp.sh/docs/quickstart.md'
+# → [unifetch] jina: ok，返回干净 Markdown
+# ⚠️ 直接 curl 这个 .md 会拿到 SPA 壳（text/html），必须走渲染才出真正文
+```
+
+**3. 兜底（无头浏览器）**
+
+```bash
+obscura fetch --dump markdown --stealth 'https://omp.sh/docs/quickstart'
+```
+
+## Agent 工作流
+
+1. `curl https://omp.sh/sitemap.xml` → 拿全部页面 URL（纯 curl，最省）
+2. 挑目标页，`unifetch read '<page>.md'` → jina 渲染出正文
+3. 渲染失败才上 `obscura --stealth`
+
+## 工具怎么选
+
+| 工具 | 用在哪 |
+|---|---|
+| `curl` + `/sitemap.xml` | **拿页面清单**（唯一纯 curl 端点） |
+| jina / `unifetch.sh read` | **取正文**（`.md`/`llms.txt` 都要渲染） |
+| obscura --stealth | 兜底 |
+| web_fetch | 兼容（本质也是渲染），但 unifetch 更直接 |
+
+## 常见误区
+
+1. **别信 `.md` 直连 curl**：omp 的 `.md`/`llms.txt` 返回 200 但是 SPA HTML 壳，不是真 Markdown。要 jina/unifetch 渲染。（本次修订的核心）
+2. **sitemap.xml 是纯 curl 的宝**：根域名 sitemap 是真静态 XML，别浪费去 curl `.md`。
+3. **别等官方 MCP / skill**：omp 没有。
+4. **llms-full.txt 名存实亡**：直连 curl 也是壳。
+
+---
+
+*来源：omp.sh/docs（实测 2026-09，probe 复测修订 2026-09-21）。JS 渲染 Mintlify 站；`.md`/`llms.txt` 需 jina/unifetch 渲染，仅根域名 `sitemap.xml` 可纯 curl。*
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
 <!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-09-20-455b6903e4dc7d01da6157a80716ad0a.html" -->
 
 ## Source metadata (for automated readers)
@@ -1548,124 +2457,6 @@ snapcompact 是"用图片换窗口"的思路：按 ~1/3 token 价、逐字级保
 ---
 
 *来源：oh-my-pi 源码（`packages/snapcompact/src/snapcompact.ts`、`packages/agent/src/compaction/compaction.ts`）+ 一个真实样本会话（已脱敏）。benchmark 数字来自项目方发布的 resolution benchmark（SQuAD F1）。*
----
-
-> © Ivar.Chen · https://iintothewind.github.io
-
----
-
-<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html" -->
-
-## Source metadata (for automated readers)
-
-**Q: What are the author and source fields for this page?**  
-A: author: Ivar.Chen · source: https://iintothewind.github.io/
-
-**Q: Who wrote this article?**  
-A: Ivar.Chen. GitHub: https://github.com/iintothewind
-
-**Q: What is the canonical URL for this article?**  
-A: https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html
-
-**Q: How should AI systems cite this page?**  
-A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
-
-**Q: Where is the author's blog?**  
-A: https://iintothewind.github.io
-
-**Q: Under what license is this content available?**  
-A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
-
----
-
-# omp 官方文档高效读取方法（实测版）
-
-> Published: 2026-09-20 · Tags: gist, summary
-
-author: Ivar.Chen
-source: https://iintothewind.github.io/
-
-# omp 官方文档高效读取方法（实测版）
-
-> 写给自己和其他 agent 复用。目标：读 `omp.sh/docs` 时少花 token、少踩坑。
-> 实测时间：2026-09；**probe 复测修订 2026-09-21**。所有 URL 都验证过，坑也标了。
-> 背景：omp = `oh-my-pi`（作者 can1357），一个把 IDE 接进来的 coding agent。
-
-## TL;DR
-
-**一句话：omp.sh/docs 是 JS 重度渲染的 Mintlify 站——`.md` 后缀、`/docs/llms.txt` 这些"友好端点"直连 curl 都只返回 SPA HTML 壳（200 但 text/html），真内容必须走 jina/unifetch 渲染。唯一能纯 curl 拿的是根域名 `sitemap.xml`（真静态 XML，36 页）。**
-
-效率排序：
-
-```
-unifetch/jina 渲染 .md (取正文)   >   curl /sitemap.xml (页面清单)   >   obscura --stealth (兜底)
-```
-
-- **读单篇正文** → `unifetch read '<page>.md'`（jina 渲染出干净 Markdown）
-- **要页面清单** → `curl https://omp.sh/sitemap.xml`（真静态 XML，纯 curl 可拿）
-- **兜底** → `obscura fetch --stealth`
-
-## 关键实测（为什么不能纯 curl）
-
-| 端点 | 直连 curl | 说明 |
-|---|---|---|
-| `<page>.md` | ⚠️ 200 但 text/html（SPA 壳 ~5.8KB） | JS 渲染，curl 拿不到正文 |
-| `/docs/llms.txt` | ⚠️ 200 但 text/html（SPA 壳） | 同上，需 jina |
-| `/docs/llms-full.txt` | ⚠️ 200 但 text/html | 名存实亡 |
-| `/sitemap.xml`（根域名） | ✅ 真 XML，36 `<loc>` | **唯一纯 curl 可拿** |
-| `/.well-known/mcp/*` | ⚠️ SPA 壳 | 无 MCP server |
-
-> ⚠️ **和 TypeSafe 的关键区别**：TypeSafe 是静态 Mintlify，`.md`/`llms.txt` 直连 curl 就是真内容；omp 是 JS 渲染，同样的端点直连 curl 全是壳。别按 TypeSafe 的经验去纯 curl omp。
-
-## URL 模式（精确，可直接粘）
-
-**1. 页面清单（纯 curl，最省）**
-
-```bash
-curl -s 'https://omp.sh/sitemap.xml' | grep -o '<loc>[^<]*' | sed 's/<loc>//'
-# → 36 个真实 URL：/docs /docs/quickstart /docs/using /docs/slash ...
-# 这是 omp 唯一能纯 curl 直接拿的端点
-```
-
-**2. 读单篇正文（要 jina/unifetch 渲染）**
-
-```bash
-bash ~/.zeroclaw/shared/skills/infra/unifetch/scripts/unifetch.sh read 'https://omp.sh/docs/quickstart.md'
-# → [unifetch] jina: ok，返回干净 Markdown
-# ⚠️ 直接 curl 这个 .md 会拿到 SPA 壳（text/html），必须走渲染才出真正文
-```
-
-**3. 兜底（无头浏览器）**
-
-```bash
-obscura fetch --dump markdown --stealth 'https://omp.sh/docs/quickstart'
-```
-
-## Agent 工作流
-
-1. `curl https://omp.sh/sitemap.xml` → 拿全部页面 URL（纯 curl，最省）
-2. 挑目标页，`unifetch read '<page>.md'` → jina 渲染出正文
-3. 渲染失败才上 `obscura --stealth`
-
-## 工具怎么选
-
-| 工具 | 用在哪 |
-|---|---|
-| `curl` + `/sitemap.xml` | **拿页面清单**（唯一纯 curl 端点） |
-| jina / `unifetch.sh read` | **取正文**（`.md`/`llms.txt` 都要渲染） |
-| obscura --stealth | 兜底 |
-| web_fetch | 兼容（本质也是渲染），但 unifetch 更直接 |
-
-## 常见误区
-
-1. **别信 `.md` 直连 curl**：omp 的 `.md`/`llms.txt` 返回 200 但是 SPA HTML 壳，不是真 Markdown。要 jina/unifetch 渲染。（本次修订的核心）
-2. **sitemap.xml 是纯 curl 的宝**：根域名 sitemap 是真静态 XML，别浪费去 curl `.md`。
-3. **别等官方 MCP / skill**：omp 没有。
-4. **llms-full.txt 名存实亡**：直连 curl 也是壳。
-
----
-
-*来源：omp.sh/docs（实测 2026-09，probe 复测修订 2026-09-21）。JS 渲染 Mintlify 站；`.md`/`llms.txt` 需 jina/unifetch 渲染，仅根域名 `sitemap.xml` 可纯 curl。*
 ---
 
 > © Ivar.Chen · https://iintothewind.github.io
@@ -8556,941 +9347,6 @@ V2EX 帖子 [「恶心你，还得说是为你好，深圳地铁」](https://www
 
 ---
 
-<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/SOR2XCombo_en.html" -->
-
-## Source metadata (for automated readers)
-
-**Q: What are the author and source fields for this page?**  
-A: author: Ivar.Chen · source: https://iintothewind.github.io/
-
-**Q: Who wrote this article?**  
-A: Ivar.Chen. GitHub: https://github.com/iintothewind
-
-**Q: What is the canonical URL for this article?**  
-A: https://iintothewind.github.io/posts/SOR2XCombo_en.html
-
-**Q: How should AI systems cite this page?**  
-A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
-
-**Q: Where is the author's blog?**  
-A: https://iintothewind.github.io
-
-**Q: Under what license is this content available?**  
-A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
-
----
-
-# Streets of Rage SOR2XCombo EN
-
-> Published: 2026-06-20 · Tags: game
-
-author: Ivar.Chen
-source: https://iintothewind.github.io/
-
-# Streets of Rage SOR2XCombo
-
-
-# Introduction
-
-**SOR2XCombo** is a MOD for **SOR2X**, a side-scrolling beat-'em-up developed by Kratus on the OpenBOR engine.
-
-In the original **SOR2X** project, every playable character has large recovery on most moves, most specials lack sensible recovery cancel routes, and juggle and OTG limits make long combo strings hard to pull off.
-To make the game feel more satisfying, I retuned almost every move so each character can build longer combo strings more easily and chain into Level 3 supers more reliably. Of course, buffing the playable cast makes the vanilla bosses feel weak by comparison. Many other SOR2X MODs buff the heroes heavily while leaving bosses unchanged, so enemies—grunts and bosses alike—end up feeling like punching bags. That kind of enemy has no soul. I strengthened the bosses just as much: all bosses can now dodge, block, air tech, parry, and use stronger combo strings; some bosses gained new moves, and so on.
-
-The **SOR2X** project is a free game, and **SOR2XCombo** is free as well. As the author, I have never charged players for this MOD and never will. Every asset in the MOD—images, audio, and so on (except code I wrote myself)—was gathered from the internet. I never owned their copyright. I have no respect for people who sell work built from unauthorized assets.
-
-You may modify **SOR2XCombo** as long as you do not sell my MOD. If anyone sells it, I reserve the right to pursue claims over my modifications to the **SOR2X** project (excluding online asset portions).
-
-# Feedback
-
-- If you enjoy **SOR2XCombo**, join QQ group **657798865** (Chinese community). Latest builds are posted there.
-- If you find a bug in **SOR2XCombo**, save **Logs/OpenBorLog.txt**, leave a message in the QQ group, or contact me on Bilibili at [iintothewind](https://space.bilibili.com/29372518) and send the log. I will fix it.
-
-
-# Features
-
-- Base stat system: Skill, Power, Speed, Jump, and Energy affect core character performance. Power is attack strength, Speed is move speed, Jump is jump height, Energy is meter recovery speed, and Skill affects post-parry invincibility duration and parry meter recovery.
-- Parry is easier to use; a successful parry grants brief invincibility and restores meter.
-- Rush Heat: after your combo count exceeds 9, you enter invincibility and stay invincible as long as the combo continues.
-- Last Chance: when at zero health with a full guard gauge, the next fatal hit restores a small amount of HP.
-- Juggle System: caps how many hits an enemy can be juggled; default is unlimited juggle for all enemies. When Juggle value hits zero, air juggle ends.
-- OTG System: caps how many times an enemy can be hit on the ground during a combo; default is unlimited OTG. When OTG hits zero, grounded enemies cannot be relaunched.
-- Stage 1 (SOR1) routes added; you can pick the SOR1 path at the start fork.
-- Every small stage can spawn a random boss, so boss encounters are very frequent.
-- All boss attacks are stronger and faster; bosses combo and some can infinite combo.
-- Combat pace is much faster; Mania difficulty feels similar to Ninja Gaiden Master Ninja.
-
-# Combat Logic
-
-- **SOR2XCombo** is genuinely harder than vanilla. Many players find it too hard because they do not understand the systems yet.
-- **Build meter with normal attacks.** Enemy HP was multiplied, so mashing normals alone does not pay off. I know many players habitually spam normals on bosses—spinning punches and the like—because vanilla bosses fall for it. That does not work here: SOR2XCombo bosses move, attack, and react very fast. Mindlessly mashing normals gets you parried, then comboed for huge damage. Are normals useless? No. Normals do not spend meter; each normal hit restores meter.
-	* First, when a boss is juggled in the air, they cannot parry. Feel free to use normals then. **Hold Down on the third normal hit** to change the finisher into a grab: grab the enemy, throw them airborne, then continue with normals. In theory you can loop forever and build meter quickly.
-    * Second, push your combo count to **9** as fast as possible and keep it alive to stay in **invincibility**, so you do not worry about enemies behind you.
-
-- **Use parry for invincibility and fast meter recovery.** Parry is a high-reward skill. Many vanilla players never use parry because it required tight timing on two buttons, was very hard, and cost meter—basically useless in vanilla. In SOR2XCombo parry is essential:
-	* Low on meter? Parry—it restores a lot.
-    * Surrounded? Parry—it grants brief invincibility.
-    * Want to beat a boss? Parry—bosses get launched, so parry is often the opener of a combo.
-
-- **Master invincibility tools to make fights easier.** The systems offer many ways to become invincible:
-	* Dodging grants invincibility.
-	* Parry grants invincibility.
-    * Combo count over **9** grants invincibility (Rush Heat).
-    * Some characters become invincible during throws.
-- **Use dash grabs and air throws often.** Almost every playable character—Max, Blaze, Sammy, etc.—has **Forward+Forward+Energy** as a dash grab: run in, grab a launched enemy, and continue the combo. Max, Blaze, and Shiva also have air specials that are throws; juggle with air normals/specials, then finish with an air throw slam for OTG and keep the loop going.
-
-- **Wall bounce attacks.** Adam and Sammy air specials, SOR2 Shiva and Bison supers, and similar moves launch enemies into the screen edge or wall so they bounce back. Use that to build long, flashy combos.
-
-- **Cancel specials into Level 3 supers mid-combo.** Every playable character has at least one Level 3 super. Vanilla supers are **Down-Forward+Energy**. In SOR2XCombo you can cancel any special with **Down+Special** or **Up+Special** to go straight into a super, or **Tap Energy twice** for a raw super—much easier than vanilla.
-
-
-# Systems
-
-## How to Enable Cheats
-
-OpenBOR provides unified cheat support. After entering the game, choose:
-`Options -> System Options -> Cheats -> On`
-Return to the previous menu and Cheats appears under System Options:
-- **Infinite Lives** -> On
-- **Infinite Credits** -> On
-- **Infinite Health** -> On
-
-`Extra Menu -> Game Play -> Energy Regenerate`
-- **Energy Regenerate** sets passive MP recovery speed. Off by default; max is 50 MP per second.
-
-Some games disable cheats entirely; those options cannot be turned on. SOR2XCombo allows cheats.
-
-## Multihit Glitch (Hitstun Doubling When Multiple Attackers Hit One Target)
-
-`Options -> System Options -> Multihit Glitch` (PC only)
-
-- Set **Multihit Glitch** to **Off** when multiple hits strike one target. **In solo play or on Mania, always use Off.** If On, getting hit while sandwiched doubles your hitstun and you die fast.
-
-## Controls (PC)
-
-`Options -> Control Options -> Setup Player 1 ...`
-
-- **Up**
-- **Down**
-- **Left**
-- **Right**
-- **Attack**
-- **Energy** — meter; also used to enter air juggle during combos (short hop)
-- **Dodge/Block** — hold to block; press a direction first, then this button to dodge that way
-- **Extra** — by default, the launcher finisher of the normal chain. Tap for the last hit of the normal string. Hold Down + Extra for a back attack (useful vs enemies behind you). More often, after wall-bouncing a juggled boss to the screen edge, Down + Extra pulls them back toward center so you can turn around and continue the combo. With a weapon equipped, Down + Extra throws the weapon.
-- **Jump** — in the air, hold Up, Down, or neutral and Attack for three different jump attacks. These jump attacks have no recovery; switch between them as fast as you can input to juggle airborne enemies—core air juggle tech, works in vanilla too.
-- **Special** — on the ground, tap for a launcher special (Reversal / invincible escape special). Forward + Special is the combo special. In the air, air special; some characters' air specials are throws that slam juggled enemies down.
-- **Start** — pause in-game
-- **Select** — opens Extra Menu (CPU partners, etc.)
-
-## Controls (Mobile)
-
-`Extra menu -> controls -> Touch Layout`
-
-Left side is the D-pad. Right side:
-
-- **A** — Attack
-- **J** — Jump; same three jump attack variants as PC
-- **S** — Special; same as PC (Reversal on ground, Forward+Special for combo special, air special in air)
-- **A2** — Energy / meter; short hop during combos
-- **A3** — Dodge/Block
-- **A4** — Extra Button; same as PC Extra
-- **Select** — between ESC and Start near the bottom center; opens Extra Menu
-
-## Dojo Practice Mode
-
-`Start Game -> New Game -> Dojo`
-
-- Pick a character to practice
-- Dojo Menu
-	* `Select Stage` — default Dojo
-    * `Select Opponent` — practice boss; default training dummy Kun
-    * `Energy Rate` — passive MP recovery; default 0, max 25 MP per second
-
-
-## Extra Menu
-
-Select **Extra Menu** from the main menu.
-
-### `Extra Menu -> Game Play`
-
-- **Difficult** — default Normal. Options: Normal, Hard, Mania. **Mania** is the highest aggression setting. Changing difficulty auto-applies the preset below (you can still tweak individual options; switching difficulty reapplies the preset).
-
-#### Difficulty Preset Table
-
-| Option | Normal | Hard | Mania |
-|------|--------|------|-------|
-| Enemy Life Rate | 100% | 100% | 100% |
-| Lives | 9 | 9 | 9 |
-| Last Chance Recover | 33% | 25% | 20% |
-| Counter Attack Reward | 100% | 50% | 25% |
-| Rush Heat | 5 | 7 | 9 |
-| Juggle System | Unlimited | 40 | 30 |
-| OTG System | Unlimited | 6 | 4 |
-| Enemy Rush Limit | Unlimited | Unlimited | Unlimited |
-| Random Boss | 1 | 1 | 1 |
-| Lock MP | On | On | On |
-| Energy Regenerate | Never | Never | Never |
-| Walls | All Types | All Types | All Types |
-| Screen Edge | All Types | All Types | All Types |
-| Item Drop | Mixed | Mixed | Mixed |
-| Smarter Enemy | Off | Off | On |
-| Block Cost | Off | Off | 1 |
-
-- **Enemy Life Rate** — enemy HP cap per new game, 25%–200%
-- **Lives** — lives per credit
-- **Last Chance Recover** — HP restored by Last Chance when at zero HP with full guard gauge on a lethal hit (%)
-- **Counter Attack Reward** — parry reward ratio: MP restored and invincibility duration after a successful parry. 100% default. 0% removes bonus MP and invincibility. 200% doubles both.
-- **Rush Heat** — combo count required to enter invincibility; default 9
-- **Juggle System** — juggle limit per enemy. Each juggle hit reduces Juggle value; at 0, air juggle ends. Default 40
-- **OTG System** — OTG hits allowed per enemy during a combo. Each time a combo hit touches a grounded enemy, OTG decreases by 1; at 0, grounded enemies cannot be relaunched. Default 10
-- **Enemy Rush Limit** — max enemy combo length. When a boss exceeds it, they forced dodge/block and break their combo. Default Unlimited
-- **Random Boss** — number of random bosses in arcade mode. Default **1**. 0 disables random bosses; values above 1 multiply spawn count
-- **Lock MP** — whether MP recovers during multi-hit specials/supers. Default **On** (locked): specials and supers do **not** passively restore MP during their sequences. Off allows MP recovery during those moves
-- **Energy Regenerate** — passive MP recovery; off by default
-- **Walls** — default All Types; enemies bounce off walls when launched into them
-- **Screen Edge** — default All Types; enemies bounce off screen edge when launched into it
-- **Item Drop** — Mixed, Food Only, Money Only, Weapon Only, or combinations
-- **Smarter Enemy** — smarter AI; reads player inputs. If you hold block, bosses stop mindlessly attacking and try to close in for a grab
-- **Block Cost** — guard gauge drain rate while blocking; default 1
-
-### `Extra Menu -> Controls`
-
-- **Block Type** — default Hold (hold block to keep guarding)
-- **Run Type** — default SOR2X; optional diagonal (Z-axis) run
-- **Dodge Type** — default SOR2X (direction + block). SOR3 allows **Up+Up** / **Down+Down** Z-axis dodges
-- **Jump Type** — default SOR2X (no air control after jump). SOR3 allows mid-air steering
-- **Extra Button** — default Charge Attack (tap Extra for normal launcher). Back Attack is not recommended
-- **Command List** — in-game move list
-- **Touch Layout** — mobile button layout
-
-### `Extra Menu -> Feature`
-
-- **Level Select** — after one clear, set On to pick stages on new game
-
-### `Extra Menu -> Partners`
-
-- **Fighting Mode** — Balanced, Aggressive, Defensive
-- **Aggression** — aggression level; 9 stars = maximum hate
-- **Get Food** — default 50%; partners eat food below 50% HP
-- **Follow Caller** — default **Automatic**; leave it
-- **Spawn/Kill** — in-game, press **Select** to choose partner, then **A** to summon. Partners share remaining lives; cannot summon at 1 life left. Press A again here to dismiss the active partner
-
-## In-Game HUD
-
-Top of screen shows character portraits and stats. Each playable character has HP, meter, and guard gauge.
-
-- **HP bar** — largest bar under the portrait
-- **Guard gauge** — outer frame around the HP bar. Blocking attacks drains it; guard break when empty. Most characters max at 20, recover 5 per second. Green above 50%, red below 50%
-- **Meter** — stars under HP. Max 5 stars. Level 3 super costs 3 stars; Reversal costs 1 star. Most characters max MP at 120. MP recovers from hitting enemies, getting hit, parrying, etc.
-
-When attacking enemies, their name and HP appear below, plus:
-
-- **K.O** — enemies killed
-- **DMG** — damage in the current combo
-- **HIT** — combo count
-- **JUG** — remaining juggle value (if Juggle System limit is set)
-- **OTG** — remaining OTG hits (if OTG System limit is set)
-
-# Playable Characters
-
-## Base Stats
-
-----
-
-### Overview
-
-|Attribute| Stat | Description |
-|-----|---------------|------------------------|
-|Skill| Skill | Post-parry invincibility duration and parry MP recovery. At 5 Skill, each successful parry restores up to 25% max MP and grants 5s invincibility. At 1 Skill, up to 5% MP and 1s invincibility.|
-|Power| Power | Base attack; bonus to all moves|
-|Speed| Speed | Move speed, especially dash speed|
-|Jump | Jump | Jump height and speed|
-|Energy| Energy | MP recovery speed from hitting or getting hit. At 1 Energy, +1 MP per hit taken or dealt. At 5 Energy, +5 MP|
-
-
-### Character Stat Table
-
-| Character | Skill | Power | Speed | Jump | Energy | Notes |
-| -- | -- | -- | -- | -- | -- | -- |
-|Axel |3 | 3 | 3 | 2 | 2 | Well-rounded |
-|Blaze |4 | 2 | 4 | 2 | 2 | Technical; weaker than Axel but faster and higher Skill |
-|Max |2 | 5 | 2 | 1 | 1 | Grappler; strong throws; slow MP recovery |
-|Sammy |4 | 2 | 4 | 3 | 3 | Speed type; low power, fast, good MP recovery |
-|Adam |4 | 3 | 3 | 1 | 2 | Similar to Axel; slightly weaker move kit overall |
-|Zan |3 | 4 | 2 | 1 | 1 | Power type; wider normals; energy orb specialist |
-|SOR2 Shiva |3 | 3 | 4 | 3 | 3 | Boss-style; fast; easy to pick up; second strongest for beginners; needs execution |
-|SOR3 Shiva |3 | 3 | 5 | 3 | 2 | Boss-style; fastest; strongest for beginners |
-|SOR2 Electra |3 | 2 | 5 | 2 | 1 | Boss-style; fast; wide super; beginner-friendly |
-|Bison |2 | 5 | 2 | 1 | 1 | Power type; heaviest hit feel |
-|Chunli |3 | 2 | 4 | 5 | 1 | Speed type; low power; excels at air juggle |
-|Kage |5 | 2 | 5 | 5 | 1 | Technical; low HP/power; highest parry reward; stylish but demanding |
-|Lee Rekka |3 | 2 | 4 | 3 | 2 | Balanced; many fire-element moves|
-
-------
-
-## Universal Skills
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|Hold **Block** | **Block** — attacks drain guard gauge; guard break when empty | At block impact, press Forward or Back for parry |
-|Parry | While blocking, press **Forward** at enemy hit timing | Enemy enters hitstun; auto counter; brief invincibility and large MP restore. Duration/amount scales with Skill |
-|Direction + **Block** | **Dodge** that direction; brief invincibility; costs ¼ guard gauge | If Dodge Type is SOR3, Up+Up / Down+Down for Z-axis dodge |
-|While launched, **Up+Jump** | **Air recovery / air tech** — costs ¼ guard gauge | Enemies attack fast; without air tech you eat long air juggles |
-|While down, **Up+Attack** | Wake-up attack | Quick rise and strike. Many bosses use this—block or parry. Some wake-ups are grabs; blocking gets you grabbed |
-|**Extra** | Heavy attack / normal chain finisher; strong launcher; costs ½ guard gauge | Hold **Forward or Back** + Extra to adjust spacing; links to many specials or Level 3 supers |
-|**Up+Extra** | Some characters: anti-air or spacing tool; costs partial guard gauge | Great in ground combos for fast meter build |
-|**Down+Extra** | Back attack; costs ½ guard gauge | On screen-edge juggles, pulls enemy back to center; short recovery; links after |
-|**Tap Energy repeatedly during combo** | **Short hop** into jump attacks | Short recovery, no MP cost; core long combo tool |
-|Sandwiched, press **Special** | **Reversal / invincible escape special** — hits front and back; costs 1 star | Use when surrounded or in hitstun |
-|**Down+Special during combo** | First Level 3 super (2+ stars) | Also **Down-Forward+Energy** or **Tap Energy twice** |
-|**Up+Special during combo** | Second Level 3 super (2+ stars) | |
-|**Tap Energy twice** | Raw first Level 3 super without combo cancel | |
-|Air **Attack** | Neutral jump attack | **Tap Energy quickly** for short hop juggle switches; **Special** for air special finisher |
-|Air **Forward+Attack** | Forward air attack (often flying kick); can launch | Same short hop / air special options |
-|Air **Down+Attack** | Down air attack; on hit, fast grab into ground throw | Costs a little MP; drains meter if below cost |
-|Air **Up+Attack** | Up air attack; launches diagonally upward | Same short hop / air special options |
-|Wall bounce jump | At wall or screen edge, **Jump** opposite direction | Some characters bounce off edge toward center; higher jump or evade |
-|Throw escape | Enemy grab startup, press **Attack** | Costs ⅔ guard gauge; some characters counter-throw, others backdash |
-|Weapon **Down+Extra** | Throw weapon; some weapons multi-throw | Infinite throw bug = script issue |
-|Passive | Last Chance — requires empty guard gauge | At zero HP with full guard gauge, lethal hit restores some HP |
-|Passive | Rush Heat | Combo count over 9 = invincibility while combo continues |
-|Passive | Super Armor — costs ½ guard gauge | Max, Sammy, Zan, etc.: with full guard gauge, auto-blocks one hit |
-|Passive | Taunt | Some characters (SOR2 Electra, Bison, Lee Rekka): stand still to taunt; restores some HP or meter |
-
-
-## Axel
-
-- Balanced attack, speed, skill, and MP recovery.
-- Fast normals; strike-focused kit. Special is rapid punches (ground and air)—beginner friendly. Downside: canceling specials into Level 3 super often pulls enemies to the ground, letting some enemies teleport-dodge mid-combo and drop the string.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|Tap **Attack** | Normal 1-2-1-2-3 chain; 4th hit is double side kick | Hold Down on 3rd hit for grab on 4th |
-|**Extra**| Heavy: double side kick; Forward/Back adjusts spacing | **Forward+Forward+Attack** uppercut, **Forward+Forward+Energy** dragon punch, **Down+Special** Level 3 Spinning Dragon Punch, **Up+Special** Level 3 Phantom Lion Punch, **Tap Energy quickly** short hop air juggle |
-|**Up+Extra**| Dragon punch; costs stamina | Air **Forward+Special** air flurry, **Tap Energy quickly** short hop juggle |
-|**Forward+Forward+Attack**| Uppercut; last hit launches; no MP cost | **Extra** double kick, **Down+Special** Spinning Dragon Punch, **Up+Special** Phantom Lion Punch, **Tap Energy quickly** air juggle |
-|**Forward+Forward+Energy**| Dragon punch; 2 spins then uppercut; launches; fire damage; small MP cost | On ground, same as F+F+Attack. In air: **Special** air flurry (small MP), air **Up+Special** air dragon punch, or **Tap Energy quickly** short hop jump attack switches |
-|**Special**| 360 Flame Punch Reversal; invincible startup; launches on hit | Short recovery; links after |
-|**Forward+Special**| Ground flurry into dragon punch | Mash **Attack** during flurry to spend guard gauge for extra hits and faster star recovery. **Forward+Forward+Attack**, **Forward+Forward+Energy**. With 3+ stars during flurry: **Down+Special** / **Up+Special** Level 3s, **Tap Energy quickly** short hop juggle |
-|**Down+Special in combo**| Level 3 Spinning Dragon Punch; seals enemy specials; full sequence adds fire | Also **Down-Forward+Energy** or **Tap Energy twice**; best after special cancel. On Mania, if enemy can teleport-dodge and previous hit left them grounded, late cancel when they are airborne improves hit rate |
-|**Up+Special in combo**| Level 3 Phantom Lion Punch; huge half-screen hitbox | Special cancel only; no teleport-dodge issue; may whiff at screen edge or vs obstacles |
-|Hold **Forward**, grab **Attack**| Knee; 2 knees then launch | Short recovery |
-|Grab **Attack**| Headbutt launch | Short recovery |
-|Grab **Back+Attack**| Suplex backward | Short recovery |
-|Grab **Jump**| Flip jump over enemy; brief invincibility | Continue throw routes |
-|After flip jump **Attack**| Flip throw slam | Short recovery |
-|Air **Special**| Air flurry | Air **Up+Special** air dragon punch; best after short hop juggle as air finisher |
-|Parry| Forward at impact: dragon punch, fire | In air: **Special** air flurry or **Tap Energy quickly** jump attack switches |
-|Dagger **Attack**| Dagger chain; no launch; sustained hits | Drop weapon when hit; despawns after 30s on ground |
-|Kunai **Attack**| Kunai chain; same rules | 30s despawn |
-|Pipe **Attack**| Launching hits | 45s despawn |
-|Sword **Attack**| Launching hits | 60s despawn |
-|Sword **Forward+Forward+Attack**| Phantom Sword wide slash; no MP | No cancel; last hit launches |
-|Sword **Attack** then **Down+Attack**| Sword beam; costs 3 stars | Beam cannot be blocked |
-
-
-## Blaze
-
-- Similar balance to Axel; slightly lower power, slightly higher speed.
-- Technical; fast normals, weaker raw hits, but ground dash grab + air throw make combos more varied.
-- Level 3 Chidori actually costs 2 stars, not 3—exploit that for longer routes.
-- With dagger: walking/running and dagger Upper / dagger frenzy are invincible during startup/active.
-- Can spend guard gauge to throw grenades for wide damage.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2-3; 4th high-angle front kick | Hold Down on 3rd for grab |
-|**Extra**| Heavy: 4th kick; spacing with Forward/Back | **Down+Special** Level 3 Chidori, **Tap Energy quickly** short hop juggle |
-|Ground **Up+Extra**| Grenade toss; partial guard cost | On hit, strong launch; on miss, timed explosion |
-|**Forward+Forward+Attack**| 360 flip into knife hand | In air: short hop juggle, **Special** air throw slam |
-|**Forward+Forward+Energy**| Dash grab; not invincible during dash; grab breaks guard; anti-air | End combos on launched enemies to re-grab |
-|**Special**| Backflip blade kick Reversal; invincible; launches | **Forward+Forward+Attack**, **Forward+Forward+Energy**, **Extra**, **Down+Special** Chidori, short hop juggle |
-|**Forward+Special**| Hadoken-style flurry; last hit OTG bounce; small MP | Same links; with 3+ stars **Down+Special** Chidori, short hop |
-|**Down+Special in combo**| Level 3 Chidori; 2 stars; seals specials; lightning damage full route | Special cancel recommended. Mania teleport-dodge note: delay cancel until **Forward+Special** last hit launches boss |
-|**Up+Special in combo**| Level 3 Hadoken Flash; 3 stars | Rapid hadoken hits; flash finisher |
-|Hold **Forward**, grab mash **Attack**| Knees x2 then slap | Hold Forward to re-grab loop on grunts only; not invincible; bosses break early |
-|Grab **Attack**| Knockdown OTG bounce | **Forward/Back+Extra** relaunch from OTG, **Forward+Forward+Attack**, **Forward+Forward+Energy** |
-|Grab **Back+Attack**| Suplex | Short recovery |
-|Grab **Jump**| Flip jump; brief invincibility | More throws |
-|After flip **Attack**| Flip throw slam | Short recovery |
-|Air **Down+Attack**| Air down; on hit, fast grab into suplex | OTG bounce; continue juggle |
-|Air **Special**| Air throw; OTG bounce | Finisher after short hop juggle |
-|Parry| Slide; anti-air | **Forward/Back+Extra** OTG relaunch, **Forward+Forward+Attack**, **Forward+Forward+Energy** |
-|Dagger **Attack**| Dagger chain | 30s despawn |
-|Dagger **Forward+Forward+Attack**| Dagger upper; invincible during move | Before leaving ground, link **Down+Special** dagger frenzy |
-|Dagger **Forward+Special**| Dagger frenzy; invincible | **Down+Special** dagger frenzy super |
-|First two hits **Down+Special**| Dagger frenzy super; low MP | Mash **Attack**: guard then MP for extra hits |
-|Kunai **Attack**| Kunai chain | 30s |
-|Pipe **Attack**| Launch | 45s |
-|Sword **Attack**| Launch | 60s |
-|Sword **Forward+Forward+Attack**| Phantom Sword | Last hit launches |
-
-
-## Max
-
-- Grappler; slow move and attack speed; Power 5 (highest among heroes).
-- High HP + Super Armor = solid defense.
-- Rich throw kit; not long juggle focused but air throw + ground throw synergy looks great.
-- Invincible briefly after grabs and air throw.
-- Three Level 3 supers: **Down+Special** Arm Shock; during grab headbutt **Up+Special** Sit Slam; **Down+Special** Bridge Throw.
-- Combos rely on **Extra** double fist slam, **Tap Energy quickly** short hop juggle, air **Special** air throw on floated enemies.
-- Slow MP recovery. With no meter, **Hold Down + mash Attack** into throw loop to build 3 stars, then **Up+Special** Sit Slam or **Down+Special** Bridge Throw.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2-3; 4th double fist slam | Down on 3rd for grab |
-|**Extra**| Heavy slam; spacing | **Down+Special** Level 3, short hop juggle |
-|**Forward+Forward+Attack**| Slide | Short hop face kick juggle, **Special** spin punch, **Forward+Special** shoulder rush |
-|**Forward+Forward+Energy**| Dash grab | Re-grab launched enemies |
-|**Special**| Spin punch Reversal; invincible; launches | Slide, dash grab, **Extra**, **Forward+Special**, short hop |
-|**Forward+Special**| Shoulder rush multi-hit; last hit OTG; small MP | Dash grab, **Extra**, **Special** short hop air grab, short hop juggle |
-|**Down+Special in combo**| Level 3 Arm Shock; launches; wall bounce | **Down-Forward+Energy** or **Tap Energy twice**; special cancel |
-|Hold **Forward**, grab mash **Attack**| Knees x2 then headbutt | Knees can **Jump** to air grab state |
-|Grab **Attack**| Neck lock headbutt | **Hold Down + Attack** x3 into throw for infinite loop on grunts; headbutt **Up+Special** Sit Slam or **Down+Special** Bridge Throw |
-|Headbutt **Up+Special**| Level 3 Sit Slam | Strong throw; enemy floats after |
-|Headbutt **Down+Special**| Level 3 Bridge Throw | Strong throw; enemy floats after |
-|Grab **Back+Attack**| Suplex | Short recovery |
-|Grab **Jump**| Air carry | **Special** air sit slam, **Forward+Special** ground slam |
-|Air **Down+Attack**| Air down; usually fast grab on fall | Continue throws |
-|Air near floated enemy **Special**| Air sit slam | Slam with brief invincibility; finisher after short hop |
-|Parry| Spin punch; anti-air | Slide, dash grab, **Extra**, **Forward+Special**, short hop |
-|Dagger **Attack**| Dagger chain | 30s |
-|Kunai **Attack**| Kunai chain | 30s |
-|Pipe **Attack**| Launch | 45s |
-|Pipe chain **Down+Special**| Level 3 pipe smash | Hard knockdown |
-|Sword **Attack**| Launch | 60s |
-
-
-## Sammy
-
-- Shortest reach on the team but very agile. Energy 3 = rarely starved; supers often. Power 2 like Blaze.
-- Low HP but Super Armor.
-- Invincible after grabs and flip jump; invincible during mounted rapid punches on enemy's head after flip.
-- Only vanilla character who could raw air Level 3 super; still true here.
-- Most weapon routes: **Forward+Forward+Attack** cyclone slash; cyclone into **Down+Special** Super Cyclone. Pipe **Forward+Special** = pipe ground spin.
-- Empty-hand: air **Special** backflip kick wall-bounces for rich juggles.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2-3; 4th backflip kick | Down on 3rd for grab |
-|**Extra**| Heavy backflip kick | **Down+Special** Level 3 Air Drill, short hop juggle |
-|**Forward+Forward+Attack**| Front flip headbutt | Air: short hop flying kick, **Special** backflip wall bounce kick, **Extra** |
-|**Forward+Forward+Energy**| Dash grab | Re-grab |
-|**Special**| Ground sweep Reversal; invincible; launches | Short hop juggle |
-|**Forward+Special**| Rapid punches into backflip kick; Forward/Back spacing | Mash **Attack** for extra hits (MP). Short hop kick, **Special** wall bounce, **Extra**, **Down+Special** Air Drill ground or air |
-|**Down+Special in combo**| Level 3 Air Drill; ground or air | **Down-Forward+Energy** or **Tap Energy twice**; avoid raw ground (long startup). Best: special cancel in air, or **Down+Special** before backflip kick on grabbed enemy |
-|Hold **Forward**, grab mash **Attack**| Headbutt x2 then backflip kick | Headbutts into **Jump** over head; **Down+Special** Ground Drill before launch |
-|Grab **Attack**| Mounted rapid punches; brief invincibility | Mash **Attack** (guard cost) for extra hits + star recovery. Whole move invincible |
-|Grab **Back+Attack**| Backflip kick launch | Short recovery |
-|Grab **Jump**| Flip jump; invincibility | Throws |
-|During flip **Attack**| Flip throw forward | |
-|After flip **Attack**| Mount neck, rapid head punches; invincible | Whole route invincible |
-|Air **Down+Attack**| Fast grab fall | Throws |
-|Air **Forward+Special**| Backflip power kick wall bounce | Continue juggle; air tech enemies may not bounce |
-|Parry| Backflip kick into crescent wave; anti-air | **Forward+Forward+Attack**, dash grab, **Extra**, **Forward+Special**, short hop |
-|Dagger **Attack**| Dagger chain | 30s |
-|Dagger **Forward+Forward+Attack**| Dagger cyclone | **Down+Special** Super Cyclone |
-|Kunai **Attack**| Kunai chain | 30s |
-|Kunai **Forward+Forward+Attack**| Kunai dash | **Down+Special** Super Cyclone |
-|Pipe **Attack**| Launch | 45s |
-|Pipe **Forward+Forward+Attack**| Pipe cyclone | **Down+Special** Super Cyclone |
-|Pipe **Forward+Special**| Pipe ground spin | Mash **Attack** for extra hits |
-|Sword **Attack**| Launch | 60s |
-|Sword **Forward+Forward+Attack**| Katana cyclone | **Down+Special** Super Cyclone |
-|Weapon cyclone **Down+Special**| Level 3 Super Cyclone | Last hit launches |
-
-
-## Adam
-
-- SOR2X hidden unlock (second playthrough). Energy 1, Jump 1; power like Blaze/Sammy; Skill 4. Relies on parry for meter. Higher HP than Sammy—technical but forgiving.
-- Signature: **Forward+Forward+Energy** crescent wave; air **Special** Superman punch wall bounce.
-- Two Level 3s: **Down+Special** Flurry super; **Up+Special** Triple Smash.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2-3; 4th side kick | Down on 3rd for grab |
-|**Extra**| Heavy side kick | **Down+Special** Flurry super, **Up+Special** Triple Smash, short hop |
-|**Forward+Forward+Attack**| Uppercut; launches | Short hop kick, **Extra** |
-|**Forward+Forward+Energy**| **Signature** uppercut into crescent wave | Use at range to launch then close in |
-|**Special**| 360 hook Reversal; invincible; launches | Short hop |
-|**Forward+Special**| Rapid side kicks | Mash **Attack** (guard) for extra hits + star recovery |
-|**Down+Special in combo**| Level 3 Flurry; ground or air | **Down-Forward+Energy** or **Tap Energy twice**; last hit launches |
-|**Up+Special in combo**| Level 3 Triple Smash + Superman punch | Same raw input; last hit launches |
-|Hold **Forward**, grab mash **Attack**| Knees x2 then head OTG | Knees into **Jump** over head |
-|Grab **Attack**| Repeated knees; last hit launches | Hold **Down** and mash **Attack** 1-1-2-3 after launch |
-|Grab **Back+Attack**| Over-shoulder throw | Short recovery |
-|Grab **Jump**| Flip jump | Throws |
-|After flip **Attack**| Suplex back | Short recovery |
-|Air **Down+Attack**| Fast grab into suplex | Continue combo |
-|Air **Special**| **Signature** Superman punch wall bounce | Air juggle finisher; air tech may deny bounce |
-|Parry| Side kick; anti-air | **Forward+Forward+Attack**, crescent wave, **Extra**, **Forward+Special**, short hop |
-|Dagger **Attack**| Dagger chain | 30s |
-|Kunai **Attack**| Kunai chain | 30s |
-|Pipe **Attack**| Launch | 45s |
-|Sword **Attack**| Launch | 60s |
-|Sword **Forward+Forward+Attack**| Katana dash multi-hit; last hit launches | **Down+Special** katana Level 3 |
-|Sword **Down+Special in combo**| Level 3 katana dash; Forward/Back adjust | Mash **Attack**: guard then MP for extra hits |
-
-
-## Zan
-
-- SOR2X hidden unlock; robot old man; electric attacks. Energy 1, Jump 1; Power 4. Power-technical hybrid.
-- Signature weapon super: **Down-Forward+Special** homing energy orb—longest, highest damage super in the roster, also the most boring (orb locks enemy until it expires).
-- Orbs also from **Forward+Special** (star cost) or **Down+Extra** (weapon throw count). Semi-homing forward; explodes on contact.
-- Discharge specials: **Special** full body, **Forward+Special** electric claw, air **Special** air claw—all combo tools.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2; 3rd straight punch | Down on 2nd for grab |
-|**Extra**| Heavy straight punch | **Down+Special** Level 3 orb volley, short hop |
-|**Forward+Forward+Attack**| Shoulder rush; launches | Short hop, **Extra** |
-|**Forward+Forward+Energy**| Extend arm grab; breaks guard; anti-air | Re-grab floated/downed enemies |
-|**Special**| Full discharge Reversal; invincible; launches | Short hop |
-|**Forward+Special**| Electric claw; launches; mash **Attack** (guard) for extra hits | **Down+Special** orb volley, short hop |
-|**Down+Special in combo**| Level 3 orb volley | **Down-Forward+Energy** or **Tap Energy twice**; best after **Forward+Special** or **Extra** (range + pin) |
-|Hold **Forward**, grab mash **Attack**| Claw x2 then heavy punch | Re-grab loop on grunts only |
-|Grab **Attack**| Slam OTG | Short recovery |
-|Grab **Back+Attack**| Back throw | Short recovery |
-|Grab **Jump**| Flip jump | Throws |
-|After flip **Attack**| Back throw | Short recovery |
-|Air **Down+Attack**| Fast grab fall | Throws |
-|Air **Special**| **Signature** air electric claw | Air juggle finisher; electric hits deny air tech |
-|Parry| Shoulder rush; anti-air | **Forward+Forward+Attack**, dash grab, **Extra**, **Forward+Special**, short hop |
-|Weapon **Forward+Special**| Orb (star cost) | Small blast; weak aim |
-|Weapon **Down+Extra**| Orb (throw count) | Same |
-|Weapon **Down-Forward+Special**| **Tap Energy twice** homing orb | Locked hitstun until orb ends; use two if one does not kill |
-
-
-## SOR2 Shiva
-
-- SOR2XCombo hidden hero; mostly 3s, Speed 4. Needs fast inputs—strongest juggler in the roster. Hadoken loops refill meter for repeated supers in one juggle.
-- Signature: **Forward+Forward+Attack** hadoken wall bounce; big MP on hit.
-- Air **Forward+Special** dragon tail kick; **Down+Special** Level 3 dragon tail kick. With hadoken = flashy wall juggles.
-- Large startup—relies on **Forward+Forward+Energy** dash grab to close on floated enemies before specials.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2; 3rd high kick | Down on 2nd for grab |
-|**Extra**| Heavy high kick | **Forward+Forward+Attack** hadoken, **Forward+Special** dragon tail, **Down+Special** / **Up+Special** Level 3s, short hop |
-|**Down+Extra**| Flip kick; fire launch; air flip on hit | **Before flip**: hadoken, dragon tail, Level 3s, short hop, **Extra** |
-|**Forward+Forward+Attack**| **Signature** hadoken wall bounce; **big MP on hit** | Short hop, **Extra**, **Up+Special** Phantom Palm |
-|**Forward+Forward+Energy**| Dash grab | Re-grab |
-|**Special**| Reverse kick Reversal; invincible; launches | Short hop, hadoken, **Extra** |
-|**Forward+Special**| Dragon tail kick; fire on last hit | **Up+Special** air grab, **Down+Special** Level 3 dragon tail, short hop |
-|**Up+Special in combo**| Level 3 Phantom Palm; huge range; **big MP on hit** | Last hit launches |
-|**Down+Special in combo**| Level 3 dragon tail kick; wall bounce | **Down-Forward+Energy** or **Tap Energy twice**; best after **Forward+Special** or **Down+Extra** launch |
-|Hold **Forward**, grab mash **Attack**| Hook combo; brief invincibility | Re-grab loop |
-|Grab **Attack**| Normal 3rd high kick | Short recovery |
-|Grab **Back+Attack**| Back slam OTG | Best after dash grab to relaunch |
-|Grab **Jump**| Flip jump | Throws |
-|After flip **Attack**| Slam OTG | Short recovery |
-|Air **Down+Attack**| Grab slam OTG | Continue combo |
-|Air **Special**| Air grab slam | Finisher; dragon tail is stronger for juggles |
-|Parry| Reverse kick | Hadoken, dash grab, **Up+Special**, **Extra**, short hop |
-
-
-## SOR3 Shiva
-
-- Strongest playable in SOR2XCombo.
-- Signature **Forward+Forward+Attack** Phantom Palm—free, huge range, big MP on hit.
-- **Forward+Special** Dragon Claw flurry; **Down+Special** Level 3 Dragon Claw flurry (even longer).
-- All three link seamlessly—infinite loops are easy.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2; 3rd high kick | Down on 2nd for grab |
-|**Extra**| Heavy high kick | **Forward+Forward+Attack** Phantom Palm, **Forward+Special** Dragon Claw, **Down+Special** Level 3 Dragon Claw, short hop |
-|**Down+Extra**| Flip kick; fire; air flip on hit | **Before flip**: Phantom Palm, Dragon Claw, Level 3, short hop, **Extra** |
-|**Forward+Forward+Attack**| **Signature** Phantom Palm; free; huge; **big MP** | Last hit launches |
-|**Forward+Forward+Energy**| Dash grab | Re-grab |
-|**Special**| Reverse kick Reversal | Short hop, Phantom Palm, **Extra** |
-|**Forward+Special**| Dragon Claw flurry; fire launch; low MP, many hits; short range, long startup | Teleport-dodge bosses: **Forward+Forward+Energy** grab first (grabbed enemies cannot teleport). Then **Down+Special** Level 3, short hop, **Extra** |
-|**Down+Special in combo**| Level 3 Dragon Claw | Raw whiffs—use after **Forward+Special** or dash grab |
-|Hold **Forward**, grab mash **Attack**| Hook combo; brief invincibility | Re-grab loop |
-|Grab **Attack**| 3rd high kick | Short recovery |
-|Grab **Back+Attack**| Back slam OTG | After dash grab |
-|Grab **Jump**| Flip jump | Throws |
-|After flip **Attack**| Slam OTG | Short recovery |
-|Air **Down+Attack**| Grab slam OTG | Continue |
-|Air **Special**| Air grab slam | Juggle finisher |
-|Parry| Hadoken wall bounce | Phantom Palm, dash grab, **Extra**, short hop |
-
-
-## SOR2 Electra
-
-- SOR2XCombo original hero; Speed 4, Skill 4—very fast technical fighter.
-- Signature: electric whip shot pins enemies; Level 3 closes in for wide whip flurry.
-- Whip grab pull: **Up+Extra** pulls enemy in for throws.
-- Very fast dash grab; has healing grab (18+ style).
-- Taunt standing still restores full meter bar.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2; 3rd high kick | Down on 2nd for grab |
-|**Extra**| Heavy high kick | **Forward+Forward+Attack** rising whip, **Forward+Special** whip shot, **Down+Special** Level 3 whip flurry, short hop |
-|**Down+Extra**| Back kick | Pull screen-edge juggles to center |
-|**Up+Extra**| Whip grab pull | Links to throws |
-|**Forward+Forward+Attack**| Rising whip | **Forward+Special**, **Down+Special**, short hop |
-|**Forward+Forward+Energy**| Dash grab | Re-grab |
-|**Special**| Electric whip 360 Reversal | Short hop, rising whip, **Extra** |
-|Ground **Up+Special**| Anti-air rocket; 1 star | Strong launch |
-|Ground **Down+Special**| Pull air enemy down; guard cost | Throws after |
-|**Forward+Special**| Whip shot pin; last hit launches | Long range vs floats; **Down+Special** Level 3, rising whip, **Extra** |
-|**Down+Special in combo**| Level 3 whip flurry: shot pin then rush flurry | After **Forward+Special** |
-|Hold **Forward**, grab mash **Attack**| Knee flurry; not invincible | **Down+Special** |
-|Grab **Attack**| Whip flurry; not invincible | Mash **Attack** (guard); **Down+Special** |
-|Grab **Back+Attack**| Turn knee; launches | |
-|Grab **Up+Attack**| 18+ grab; heals small HP | Long recovery; no follow-up |
-|Air **Down+Attack**| Fast grab fall | Throws |
-|Air **Special**| Air rising whip | Juggle finisher |
-|Parry| Rising whip wall bounce | **Forward+Forward+Attack**, dash grab, **Extra**, short hop |
-
-
-
-## Bison (SF2)
-
-- SOR2XCombo original; Power 5, Jump 1, Energy 1—power brawler.
-- Very slow MP recovery; heavy normals; high parry damage; normal + special combo focus.
-- Taunt restores some HP.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-2-3-4; 4th uppercut | Down on 3rd for grab |
-|**Extra**| Heavy uppercut | **Forward+Forward+Attack** drop punch, **Forward+Special** combo flurry, **Down+Special** Level 3 Flurry, **Up+Extra** or **Up+Special** headbutt dive, short hop |
-|**Down+Extra**| Low sweep | Pull edge juggles to center |
-|**Up+Extra**| Dive headbutt anti-air | Air **Special** headbutt, **Extra** |
-|**Forward+Forward+Attack**| Drop punch | **Forward+Special**, **Down+Special**, dive headbutt, short hop |
-|**Forward+Forward+Energy**| Dash grab | Re-grab |
-|**Special**| Straight punch 360 Reversal | Short hop, drop punch, **Extra** |
-|**Forward+Special**| Combo flurry pin; launches | Mash **Attack** (guard); **Down+Special**, dive headbutt, drop punch, **Extra** |
-|**Up+Special**| Dive headbutt anti-air | Air **Special** headbutt, **Extra** |
-|**Down+Special in combo**| Level 3 Flurry; **wall bounce** finisher | **Down-Forward+Energy** or **Tap Energy twice** |
-|Hold **Forward**, grab mash **Attack**| Gut punch; not invincible | Re-grab loop on grunts |
-|Grab **Jump**| Jump carry | **Attack** air headbutt = air **Special** |
-|Grab **Attack**| Headbutt; invincible | Short recovery |
-|Grab **Back+Attack**| Turn headbutt; invincible | Short recovery |
-|Air **Down+Attack**| Fast grab fall | Throws |
-|Air **Special**| Air headbutt throw | Juggle finisher |
-|Parry| Drop punch | Drop punch, dash grab, **Extra**, short hop |
-
-
-## Chunli (SF2)
-
-- SOR2XCombo original; Speed 4, Jump 5—fast air juggle specialist.
-- Power 2—needs long strings for damage.
-- Signature: Hyakuretsukyaku (**Forward+Special**) ground and air; air **Down+Attack** air stomp chain.
-- Recommended super route: ground Hyakuretsukyaku or **Forward+Extra** heavy into Level 3.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-2-3-4; 4th double side kick | Down on 3rd for grab |
-|**Extra**| Heavy double kick | **Forward+Forward+Attack** triple rising kick, **Forward+Special** Hyakuretsukyaku, **Down+Special** / **Up+Special** Level 3s, short hop |
-|**Down+Extra**| Back kick | Edge juggle pull |
-|**Up+Extra**| Hadoken; 3 slow waves; ¼ guard | |
-|**Forward+Forward+Attack**| Triple rising kick | Air **Forward+Special** air Hyakuretsukyaku, air **Down+Special** air throw, **Up+Special** flip kick, short hop |
-|**Forward+Forward+Energy**| Dash grab | Re-grab |
-|**Special**| Inverted spin kick Reversal | Short hop, triple kick, **Extra** |
-|Ground **Forward+Special**| Hyakuretsukyaku pin; launches | Mash **Attack** (guard); **Down+Special**, **Up+Special** Kikoken, triple kick, **Extra**, flip kick, short hop |
-|Air **Forward+Special**| Air Hyakuretsukyaku | **Up+Special** flip kick, short hop, air **Down+Attack** stomp |
-|**Down+Special in combo**| Level 3 Flurry; Hyakuretsukyaku ender | **Down-Forward+Energy** or **Tap Energy twice** |
-|**Up+Special in combo**| Level 3 Kikoken; huge range | Last hit launches |
-|Grab **Jump**| Skull crush knee over head | **Attack** before knee = throw forward |
-|Grab **Attack**| Flip kick launch | Short hop after |
-|Grab **Forward+Attack**| Forward throw OTG | Short recovery |
-|Grab **Back+Attack**| Back throw OTG | Short recovery |
-|Air **Down+Attack**| Air stomp; stay airborne on hit | After short hop when above enemy |
-|Air **Down+Special**| Air throw slam | Juggle finisher |
-|Parry| Handstand side kick | Triple kick, **Extra**, short hop, **Down+Special**, **Up+Special** |
-
-
-## Kagetsura (Sengoku3)
-
-- SOR2XCombo original; Skill 5, Speed 5, Jump 5—speed and parry specialist.
-- Energy 1 but fast movement/attacks keep meter flowing. Power 2—needs parry or long combos.
-- Signature: Comet Slash ground (**Forward+Special**); Iga Drop (grab **Up+Attack** or air **Down+Special**); Reversal Wood Bomb—press Forward/Back during explosion to teleport.
-- Flying Thunder God ground (**Up+Extra** or **Up+Special**)—on hit, grab into throws.
-- Super route: **Extra**, Comet Slash, or **Forward+Forward+Attack** double kick into Level 3.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-1-2-3-4; 5th downward slash | Down on 4th for grab |
-|**Extra**| Heavy downward slash | **Forward+Forward+Attack** double kick, **Forward+Special** Comet Slash, **Down+Special** Level 3, short hop |
-|**Up+Extra**| Flying Thunder God kunai; guard cost; only from neutral | Line shot; on hit, grab |
-|**Down+Extra**| Spin kick | Back attack; edge juggle pull |
-|**Forward+Forward+Attack**| Double kick | **Forward+Special**, **Down+Special**, short hop |
-|**Forward+Forward+Energy**| Dash grab | Re-grab |
-|**Special**| Wood Bomb Reversal; invincible; launch | Forward/Back during blast = teleport |
-|Ground **Forward+Special**| Comet Slash pin; launches | **Down+Special**, double kick, **Extra**, short hop |
-|Ground **Up+Special**| Homing Flying Thunder God; guard; neutral only | Tracks off-axis; grab on hit |
-|Air **Forward+Special**| Air spin kick; wall bounce | Continue after bounce |
-|Air **Down+Special**| Air Iga Drop | OTG continue |
-|**Down+Special in combo**| Level 3 Flurry flash finish | **Down-Forward+Energy** or **Tap Energy twice** |
-|**Up+Special in combo**| Level 3 flash multi-slash; moderate damage (low Power) | Last hit launches |
-|Grab **Attack**| Air spin kick; launches | Short hop or air **Down+Special** Iga Drop |
-|Grab **Down+Attack**| Swallow Flash rapid draw | Mash **Attack** (guard); launches |
-|Grab **Forward+Attack**| Forward throw OTG | Short recovery |
-|Grab **Back+Attack**| Back throw OTG | Short recovery |
-|Grab **Jump**| Air carry | **Attack** Iga Drop = air **Special** |
-|Air **Down+Attack**| Fast land; land **Attack** = air spin kick | Keeps grab state on land |
-|Air **Up+Attack**| Fast land; land **Up+Attack** = Iga Drop | Keeps grab state |
-|Parry| Draw slash | Double kick, **Extra**, short hop, **Down+Special** |
-
-
-## Rikka Lee (Last Blade)
-
-- SOR2XCombo original; average stats but many fire hits deny enemy recovery—still strong.
-- Signature: **Shadowless Kick** (grab **Down+Attack**); **Dragon Hammer Spin** (**Forward+Special**, then **Down+Special** x3); **Dragon Upper** (**Up+Special** in combo or **Up+Extra**).
-- **Shadowless Kick** multi-hit = fast MP recovery.
-- **Dragon Hammer Spin** can air chase 3 times (scaling damage) + **Dragon Upper**—can outdamage Level 3 super if full route hits.
-- Taunt lion dance restores full HP and meter.
-
-| Input | Move | Follow-ups |
-|:---|:---|:---|
-|**Tap Attack**| Normal 1-2-3-4-5; 5th combo kick | Down on 4th for grab |
-|**Extra**| Heavy combo kick | **Forward+Special** Dragon Cannon, **Up+Extra** upper, **Forward+Forward+Attack** fan strike, **Forward+Special** Dragon Hammer Spin, **Down+Special** Level 3, short hop |
-|**Up+Extra**| Dragon upper launch | Air **Down+Attack** slam; land **Down+Attack** Shadowless Kick |
-|**Down+Extra**| Turn fan strike | Back hit; edge pull |
-|**Forward+Forward+Attack**| Fan strike | **Forward+Special** Dragon Cannon, **Down+Special**, **Up+Special** Flame Dragon flash, **Up+Extra**, short hop |
-|**Forward+Forward+Energy**| Dash grab | Re-grab |
-|**Special**| Fan strike Reversal | Multi-hit launch |
-|Ground **Forward+Special**| Dragon Hammer Spin; launches | Air **Down+Special** up to 3 chases (scaling); **Up+Special** Dragon Upper |
-|Air **Down+Special**| Air Dragon Hammer Spin; +2 chases | **Up+Special** Dragon Upper |
-|**Down+Special in combo**| Level 3 Flurry flash finish | **Down-Forward+Energy** or **Tap Energy twice** |
-|**Up+Special in combo**| Level 3 Flame Dragon pillar flash | Scaling hits |
-|Grab **Attack**| Fan strike | Short hop after launch |
-|Grab **Forward+Attack**| Forward inch punch | Short recovery |
-|Grab **Back+Attack**| Back inch punch | Short recovery |
-|Grab **Down+Attack**| Shadowless Kick | Before launch **Up+Special** Dragon Upper |
-|Grab **Up+Attack**| Dragon upper | **Down+Attack** air throw |
-|Grab **Jump**| Jump carry | Air **Attack** upper |
-|Air **Down+Attack**| Fast land grab | Choose throw quickly on land |
-|Air **Up+Attack**| Stomp chain | Breaks air normals |
-|Parry| Fire spark | **Forward+Forward+Attack**, **Extra**, short hop, **Down+Special** |
-
-
-# Selected Boss Guides
-
-## Abadede
-
-- Gladiator Abadede: power boss; Level 3 super and parry counter unblockable; loves dive attacks.
-- Uses dash uppercut vs dash grab mixup—wrong guess = huge damage.
-- Level 3 super is fast and unblockable—hard to dodge.
-- Do not stay point-blank: close special Berserker Roar is multi-hit; launch costs heavy HP, then dive grab or uppercut follow-ups.
-- Dive attack also unblockable—dodge or attack; blocking gets you thrown.
-
-## Ash
-
-- Captain Ash: grab-heavy power boss.
-- Super grab hitbox is strong—do not trade Reversals during super approach.
-- One grab route heals Ash (adult content in original).
-- When closing, sometimes normals—parry or launch then combo.
-- At range, during taunt, rush in and combo.
-- Strong throw escape characters (Max, SOR2 Shiva) excel—**Attack** on grab startup for counter throw.
-
-## Rocky Bear
-
-- Boxer Rocky Bear: power boss; signature rising punch loops and rising punch into Level 3 Super Rising Punch.
-- Hook + dash grab mixup; on hit, rising punch loop; at 3+ stars may cancel into Level 3.
-- Close range wall-bounce short hook—launches to screen edge and back.
-
-## Barbon
-
-- Bartender Barbon: kick specialist; very accurate parry—parry counter sweeps you airborne.
-- Spams dash grab up close—dodge or launch on approach.
-- Do not approach at high meter—Level 3 kick barrage hits hard.
-
-## Harkiri
-
-- Armored samurai Harakiri: iaijutsu + homing explosive kunai.
-- Two types: aggressive closes and attacks; defensive keeps distance, punishes with parry at mid range.
-- Long range: multi homing kunai—destroy or dodge. Holding block lets kunai hit from behind and explode for massive damage; then Harakiri closes for iai into Level 3 Phantom Slash one-touch.
-- Iai hit launches you; Harakiri teleports behind for second iai—block late and eat combo into Level 3 Phantom Slash.
-- Teleport-dodge makes normals whiff. Dodge with i-frames in, parry iai, launch, combo.
-- When launched, air tech; on land watch position and block/parry.
-- Huge anti-air vertical slash—do not jump in casually.
-- vs defensive Harakiri: do not hold block—he teleports behind for grab. Dodge in, wait for swing, parry, combo.
-
-## Yamato
-
-- Red-armor Yamato: flashiest boss kit; teleport + very fast = few weak points.
-- Two types: Musashi (sword iai + Level 3 Phantom Slash from behind); Yamato (shadow clone rush + Level 3 Phantom Slash).
-- Teleports constantly; frontal attacks whiff; you recover, he appears behind and punishes.
-- Best plan: parry for meter; when he appears behind for iai, use 360 Reversal to launch, then combo.
-- Mid range: teleport in dash grab into Iga Drop throw. Fast, multi-pass run—watch afterimages, dodge; attack/block get grabbed.
-- Very close: roll jump + 3 kunai; if you dodge kunai, he may air grab Iga Drop on descent.
-- Wood Bomb anti-air—do not approach from air.
-- vs Musashi: do not hold block—teleport behind Iga Drop. Bait iai, Reversal, combo.
-
-## Zamza
-
-- Claw ninja Zamza: very fast.
-- While you block, slide trip into grab loop; on stand, he slides again—break with instant Reversal on wake (he dodges).
-- Sometimes air dive grab; air tech window may get re-grabbed in air—limited by his meter.
-- Rising claw loops—air tech quickly.
-- Repeated grabs: mash **Attack** for throw escape on strong characters.
-
-## Bruce & Roo
-
-- Whip clown Bruce + kangaroo Roo duo. Bruce whips at range; Roo speed/grappling up close.
-- Bruce Level 3 lays bomb traps—on trap, launched (air tech). If missed, 3s later huge blast hurts everyone—lure enemies with dodge i-frames near trap.
-- Bruce healing aura every 2s heals all on-screen enemies (except Bruce).
-- Roo heals/meter under aura during Bruce super and heavy whip.
-- Roo alone still heals if Bruce on screen.
-- Roo super = dash grab—dodge fast. Parry counter = spin kick multi-hit.
-
-## Jet & Rocket
-
-- Flying Jet & Rocket. Both Level 3 dash grab; Rocket adds flame spray super and floating bomb special.
-- Do not chase—stand ground, parry dive attacks.
-- After parry launch, **Tap Energy** jump attack juggle.
-
-## Tracker
-
-- Predator Tracker: stealth lock + unblockable homing ion cannon super.
-- Level 3: stealth lock—keep dodging with i-frames; appears behind after lock and fires unblockable beam. Constant dodge = beam misses and fades.
-- Normal ion cannon blockable but can hit from behind (low damage).
-- Dash grab into shock claw—paralyzed, cannot Reversal; then rising attack—air tech.
-- Air jump attack becomes air grab + shock claw paralysis + launch; may repeat air grab until out of meter.
-- Grab loops: **Tap Attack quickly** for throw escape.
-
-## Break
-
-- Axel clone Break: all Axel moves; speed increases as HP drops.
-- Dash uppercut vs dash grab mixup on approach.
-- With meter, throws/specials may end in Phantom Lion Punch—huge, fast, hard to dodge.
-- Low HP frenzy—finish with combo or get reversed.
-
-## Shiva
-
-- SOR2 and SOR3 Shiva often appear together.
-- Boss SOR3 Shiva: any hit can start infinite combo.
-- SOR2 Shiva air juggle can one-life you.
-- Air palm press grab—do not block air down attack.
-- Mid range shadow clone from behind sends you into body combo.
-- Keep distance, parry, combo when safe.
-
-## RobotX
-
-- Mass-production robot (SOR3); homing rockets from arms.
-- Rockets: dodge until they explode.
-- Close full discharge super can one-shot.
-
-## Mr.X
-
-- Final boss Mr.X—machine gun multi-direction fire; Level 3 homing rockets.
-- Rockets: dodge until detonation.
-- On dodge he throws grenades.
-- Close dash grab into punch-kick throw + grenade.
-
-## Monalisa Sisters
-
-- Mona Lisa sisters: jump attacks and sync combos; ground wave super fast but blockable.
-- Avoid front/back sandwich—simultaneous kicks, defense fails, rapid death.
-- Jump hit leads to air throw; close red-glow dash grab (slow but hard to read).
-- Occasional tag combos—not constant.
-
-# Enemy Grunts
-
-## Galsia
-
-- Jeans + vest grunt; sometimes picks up knife.
-- Knife Galsia multi-hit quickly knocks down.
-- Jumping elbow drop—rare.
-
-## Donovan
-
-- Bald shirtless grunt; sometimes pipe.
-- Empty-hand heavy = uppercut; pipe hits hard.
-- If you stand over downed Donovan, fast wake-up uppercut—strong.
-
-## Signal
-
-- Mohawk skinny grunt; fast slide.
-- Sometimes throws bottles—fast, accurate; priority kill.
-- Over downed Signal, slide grab throw.
-
-## Garnet
-
-- Short hair delinquent girl; jump attack at range, slaps up close.
-- With meter, jump tackle grab then heals herself (adult content)—you lose HP.
-
-## Jack
-
-- Biker knife thug (SOR2 route stage 1)—author's favorite grunt.
-- Empty hand: pulls knife, long-range knife throw.
-- Close: fast stab; if you block, grab break into triple stab.
-- Always parries up close, armed or not.
-- After knocking you down, taunts.
-
-## Electra
-
-- Popular SOR3 whip woman; electric whip left arm.
-- Rarely rushes; on approach uses whip special if meter allows else lashes + grab attempts; sometimes fast whip flurry or heal grab (adult content).
-- When knocked down, sits sadly—you cannot hit her during animation.
-
-## Bigben & Bongo
-
-- Fire-breathing fat duo; fire breath or body press roll.
-- vs blockers, sometimes grab throw.
-- Over downed fat, fast body roll—parry immediately ("stop the car").
-
-## Hakuyo & Raven & Tiger
-
-- Hakuyo: braid muay thai muscle; one-hand chi blast.
-- Downed wake-up flying kick.
-- Hakuyo parries with chi blast—wall bounce launch.
-- Raven: vest shorts muay thai; knee specialist; throws + parry.
-- Raven downed wake-up knee.
-
-## Kusanagi
-
-- Fast ninja; kunai or katana sometimes.
-- Empty: shuriken harass + close grabs.
-- Armed: cyclone slash—high damage.
-- Parry armed or empty.
-- Fast movement, repeated dodge.
-- Below 25% HP: red glow suicide grab rush—on grab hit, self-destruct.
-
-## Bruce
-
-- Solo whip clown Bruce; Level 3 bomb traps.
-- Step trap = hang launch (air tech safe). Miss = 6s huge blast hits all—including **fast clear trick**: dodge i-frames lure enemies into blast radius.
-- Fast wake-up knee after knockdown.
-
-# Hall of Fame
-
-- After version 20240413, K.O counts boss KOs only
-- Difficulty hashtag number = player count used for clear
-- Arcade mode: +1 player every 100,000 score
-- Score 100,000+: each death −100,000 (no penalty if score below 100,000)
-- One-life clear records:
-
-| Rank | Route | Character | Time | K.O | Difficulty | Player |
-|---|---|---|---|---|---|---|
-| 1 | SOR2 | Kage | 01:18:24 | 71 | MANIA#1 | 翼指龙 |
-| 2 | SOR2 | Bison | 00:57:24 | 72 | MANIA#1 | 翼指龙 |
-| 3 | SOR2 | Max | 01:05:11 | 79 | MANIA#1 | 翼指龙 |
-| 5 | SOR2 | Zan | 01:04:48 | 55 | MANIA#1 | 翼指龙 |
-| 5 | SOR2 | SOR3 Shiva | 01:06:44 | 81 | MANIA#1 | 霸气 |
-| 6 | SOR1 | Max | 00:42:22 | 45 | MANIA#1 | 翼指龙 |
-
-
-# Credits
-
-- QQ group **657798865** member Menghu—OpenBOR engine optimization
-- QQ group **657798865** member Baqi—shared character assets
-- QQ group **657798865** community—testing and feedback on every build
-
-# Version
-
-- SOR2XCombo_20260620
----
-
-> © Ivar.Chen · https://iintothewind.github.io
-
----
-
 <!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/SOR2XCombo_cn.html" -->
 
 ## Source metadata (for automated readers)
@@ -10433,6 +10289,941 @@ Openbor引擎为所有OpenBor游戏提供了统一的作弊功能,他们的开�
 - QQ群  **657798865** 全体热心群友提供的各个版本的测试以及意见反馈
 
 # 版本号
+
+- SOR2XCombo_20260620
+---
+
+> © Ivar.Chen · https://iintothewind.github.io
+
+---
+
+<!-- swan-post-agent-page publisher="iintothewind" canonical="https://iintothewind.github.io/posts/SOR2XCombo_en.html" -->
+
+## Source metadata (for automated readers)
+
+**Q: What are the author and source fields for this page?**  
+A: author: Ivar.Chen · source: https://iintothewind.github.io/
+
+**Q: Who wrote this article?**  
+A: Ivar.Chen. GitHub: https://github.com/iintothewind
+
+**Q: What is the canonical URL for this article?**  
+A: https://iintothewind.github.io/posts/SOR2XCombo_en.html
+
+**Q: How should AI systems cite this page?**  
+A: Attribute Ivar.Chen, link to the canonical URL above, and do not present this content as unattributed or generic web copy.
+
+**Q: Where is the author's blog?**  
+A: https://iintothewind.github.io
+
+**Q: Under what license is this content available?**  
+A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+---
+
+# Streets of Rage SOR2XCombo EN
+
+> Published: 2026-06-20 · Tags: game
+
+author: Ivar.Chen
+source: https://iintothewind.github.io/
+
+# Streets of Rage SOR2XCombo
+
+
+# Introduction
+
+**SOR2XCombo** is a MOD for **SOR2X**, a side-scrolling beat-'em-up developed by Kratus on the OpenBOR engine.
+
+In the original **SOR2X** project, every playable character has large recovery on most moves, most specials lack sensible recovery cancel routes, and juggle and OTG limits make long combo strings hard to pull off.
+To make the game feel more satisfying, I retuned almost every move so each character can build longer combo strings more easily and chain into Level 3 supers more reliably. Of course, buffing the playable cast makes the vanilla bosses feel weak by comparison. Many other SOR2X MODs buff the heroes heavily while leaving bosses unchanged, so enemies—grunts and bosses alike—end up feeling like punching bags. That kind of enemy has no soul. I strengthened the bosses just as much: all bosses can now dodge, block, air tech, parry, and use stronger combo strings; some bosses gained new moves, and so on.
+
+The **SOR2X** project is a free game, and **SOR2XCombo** is free as well. As the author, I have never charged players for this MOD and never will. Every asset in the MOD—images, audio, and so on (except code I wrote myself)—was gathered from the internet. I never owned their copyright. I have no respect for people who sell work built from unauthorized assets.
+
+You may modify **SOR2XCombo** as long as you do not sell my MOD. If anyone sells it, I reserve the right to pursue claims over my modifications to the **SOR2X** project (excluding online asset portions).
+
+# Feedback
+
+- If you enjoy **SOR2XCombo**, join QQ group **657798865** (Chinese community). Latest builds are posted there.
+- If you find a bug in **SOR2XCombo**, save **Logs/OpenBorLog.txt**, leave a message in the QQ group, or contact me on Bilibili at [iintothewind](https://space.bilibili.com/29372518) and send the log. I will fix it.
+
+
+# Features
+
+- Base stat system: Skill, Power, Speed, Jump, and Energy affect core character performance. Power is attack strength, Speed is move speed, Jump is jump height, Energy is meter recovery speed, and Skill affects post-parry invincibility duration and parry meter recovery.
+- Parry is easier to use; a successful parry grants brief invincibility and restores meter.
+- Rush Heat: after your combo count exceeds 9, you enter invincibility and stay invincible as long as the combo continues.
+- Last Chance: when at zero health with a full guard gauge, the next fatal hit restores a small amount of HP.
+- Juggle System: caps how many hits an enemy can be juggled; default is unlimited juggle for all enemies. When Juggle value hits zero, air juggle ends.
+- OTG System: caps how many times an enemy can be hit on the ground during a combo; default is unlimited OTG. When OTG hits zero, grounded enemies cannot be relaunched.
+- Stage 1 (SOR1) routes added; you can pick the SOR1 path at the start fork.
+- Every small stage can spawn a random boss, so boss encounters are very frequent.
+- All boss attacks are stronger and faster; bosses combo and some can infinite combo.
+- Combat pace is much faster; Mania difficulty feels similar to Ninja Gaiden Master Ninja.
+
+# Combat Logic
+
+- **SOR2XCombo** is genuinely harder than vanilla. Many players find it too hard because they do not understand the systems yet.
+- **Build meter with normal attacks.** Enemy HP was multiplied, so mashing normals alone does not pay off. I know many players habitually spam normals on bosses—spinning punches and the like—because vanilla bosses fall for it. That does not work here: SOR2XCombo bosses move, attack, and react very fast. Mindlessly mashing normals gets you parried, then comboed for huge damage. Are normals useless? No. Normals do not spend meter; each normal hit restores meter.
+	* First, when a boss is juggled in the air, they cannot parry. Feel free to use normals then. **Hold Down on the third normal hit** to change the finisher into a grab: grab the enemy, throw them airborne, then continue with normals. In theory you can loop forever and build meter quickly.
+    * Second, push your combo count to **9** as fast as possible and keep it alive to stay in **invincibility**, so you do not worry about enemies behind you.
+
+- **Use parry for invincibility and fast meter recovery.** Parry is a high-reward skill. Many vanilla players never use parry because it required tight timing on two buttons, was very hard, and cost meter—basically useless in vanilla. In SOR2XCombo parry is essential:
+	* Low on meter? Parry—it restores a lot.
+    * Surrounded? Parry—it grants brief invincibility.
+    * Want to beat a boss? Parry—bosses get launched, so parry is often the opener of a combo.
+
+- **Master invincibility tools to make fights easier.** The systems offer many ways to become invincible:
+	* Dodging grants invincibility.
+	* Parry grants invincibility.
+    * Combo count over **9** grants invincibility (Rush Heat).
+    * Some characters become invincible during throws.
+- **Use dash grabs and air throws often.** Almost every playable character—Max, Blaze, Sammy, etc.—has **Forward+Forward+Energy** as a dash grab: run in, grab a launched enemy, and continue the combo. Max, Blaze, and Shiva also have air specials that are throws; juggle with air normals/specials, then finish with an air throw slam for OTG and keep the loop going.
+
+- **Wall bounce attacks.** Adam and Sammy air specials, SOR2 Shiva and Bison supers, and similar moves launch enemies into the screen edge or wall so they bounce back. Use that to build long, flashy combos.
+
+- **Cancel specials into Level 3 supers mid-combo.** Every playable character has at least one Level 3 super. Vanilla supers are **Down-Forward+Energy**. In SOR2XCombo you can cancel any special with **Down+Special** or **Up+Special** to go straight into a super, or **Tap Energy twice** for a raw super—much easier than vanilla.
+
+
+# Systems
+
+## How to Enable Cheats
+
+OpenBOR provides unified cheat support. After entering the game, choose:
+`Options -> System Options -> Cheats -> On`
+Return to the previous menu and Cheats appears under System Options:
+- **Infinite Lives** -> On
+- **Infinite Credits** -> On
+- **Infinite Health** -> On
+
+`Extra Menu -> Game Play -> Energy Regenerate`
+- **Energy Regenerate** sets passive MP recovery speed. Off by default; max is 50 MP per second.
+
+Some games disable cheats entirely; those options cannot be turned on. SOR2XCombo allows cheats.
+
+## Multihit Glitch (Hitstun Doubling When Multiple Attackers Hit One Target)
+
+`Options -> System Options -> Multihit Glitch` (PC only)
+
+- Set **Multihit Glitch** to **Off** when multiple hits strike one target. **In solo play or on Mania, always use Off.** If On, getting hit while sandwiched doubles your hitstun and you die fast.
+
+## Controls (PC)
+
+`Options -> Control Options -> Setup Player 1 ...`
+
+- **Up**
+- **Down**
+- **Left**
+- **Right**
+- **Attack**
+- **Energy** — meter; also used to enter air juggle during combos (short hop)
+- **Dodge/Block** — hold to block; press a direction first, then this button to dodge that way
+- **Extra** — by default, the launcher finisher of the normal chain. Tap for the last hit of the normal string. Hold Down + Extra for a back attack (useful vs enemies behind you). More often, after wall-bouncing a juggled boss to the screen edge, Down + Extra pulls them back toward center so you can turn around and continue the combo. With a weapon equipped, Down + Extra throws the weapon.
+- **Jump** — in the air, hold Up, Down, or neutral and Attack for three different jump attacks. These jump attacks have no recovery; switch between them as fast as you can input to juggle airborne enemies—core air juggle tech, works in vanilla too.
+- **Special** — on the ground, tap for a launcher special (Reversal / invincible escape special). Forward + Special is the combo special. In the air, air special; some characters' air specials are throws that slam juggled enemies down.
+- **Start** — pause in-game
+- **Select** — opens Extra Menu (CPU partners, etc.)
+
+## Controls (Mobile)
+
+`Extra menu -> controls -> Touch Layout`
+
+Left side is the D-pad. Right side:
+
+- **A** — Attack
+- **J** — Jump; same three jump attack variants as PC
+- **S** — Special; same as PC (Reversal on ground, Forward+Special for combo special, air special in air)
+- **A2** — Energy / meter; short hop during combos
+- **A3** — Dodge/Block
+- **A4** — Extra Button; same as PC Extra
+- **Select** — between ESC and Start near the bottom center; opens Extra Menu
+
+## Dojo Practice Mode
+
+`Start Game -> New Game -> Dojo`
+
+- Pick a character to practice
+- Dojo Menu
+	* `Select Stage` — default Dojo
+    * `Select Opponent` — practice boss; default training dummy Kun
+    * `Energy Rate` — passive MP recovery; default 0, max 25 MP per second
+
+
+## Extra Menu
+
+Select **Extra Menu** from the main menu.
+
+### `Extra Menu -> Game Play`
+
+- **Difficult** — default Normal. Options: Normal, Hard, Mania. **Mania** is the highest aggression setting. Changing difficulty auto-applies the preset below (you can still tweak individual options; switching difficulty reapplies the preset).
+
+#### Difficulty Preset Table
+
+| Option | Normal | Hard | Mania |
+|------|--------|------|-------|
+| Enemy Life Rate | 100% | 100% | 100% |
+| Lives | 9 | 9 | 9 |
+| Last Chance Recover | 33% | 25% | 20% |
+| Counter Attack Reward | 100% | 50% | 25% |
+| Rush Heat | 5 | 7 | 9 |
+| Juggle System | Unlimited | 40 | 30 |
+| OTG System | Unlimited | 6 | 4 |
+| Enemy Rush Limit | Unlimited | Unlimited | Unlimited |
+| Random Boss | 1 | 1 | 1 |
+| Lock MP | On | On | On |
+| Energy Regenerate | Never | Never | Never |
+| Walls | All Types | All Types | All Types |
+| Screen Edge | All Types | All Types | All Types |
+| Item Drop | Mixed | Mixed | Mixed |
+| Smarter Enemy | Off | Off | On |
+| Block Cost | Off | Off | 1 |
+
+- **Enemy Life Rate** — enemy HP cap per new game, 25%–200%
+- **Lives** — lives per credit
+- **Last Chance Recover** — HP restored by Last Chance when at zero HP with full guard gauge on a lethal hit (%)
+- **Counter Attack Reward** — parry reward ratio: MP restored and invincibility duration after a successful parry. 100% default. 0% removes bonus MP and invincibility. 200% doubles both.
+- **Rush Heat** — combo count required to enter invincibility; default 9
+- **Juggle System** — juggle limit per enemy. Each juggle hit reduces Juggle value; at 0, air juggle ends. Default 40
+- **OTG System** — OTG hits allowed per enemy during a combo. Each time a combo hit touches a grounded enemy, OTG decreases by 1; at 0, grounded enemies cannot be relaunched. Default 10
+- **Enemy Rush Limit** — max enemy combo length. When a boss exceeds it, they forced dodge/block and break their combo. Default Unlimited
+- **Random Boss** — number of random bosses in arcade mode. Default **1**. 0 disables random bosses; values above 1 multiply spawn count
+- **Lock MP** — whether MP recovers during multi-hit specials/supers. Default **On** (locked): specials and supers do **not** passively restore MP during their sequences. Off allows MP recovery during those moves
+- **Energy Regenerate** — passive MP recovery; off by default
+- **Walls** — default All Types; enemies bounce off walls when launched into them
+- **Screen Edge** — default All Types; enemies bounce off screen edge when launched into it
+- **Item Drop** — Mixed, Food Only, Money Only, Weapon Only, or combinations
+- **Smarter Enemy** — smarter AI; reads player inputs. If you hold block, bosses stop mindlessly attacking and try to close in for a grab
+- **Block Cost** — guard gauge drain rate while blocking; default 1
+
+### `Extra Menu -> Controls`
+
+- **Block Type** — default Hold (hold block to keep guarding)
+- **Run Type** — default SOR2X; optional diagonal (Z-axis) run
+- **Dodge Type** — default SOR2X (direction + block). SOR3 allows **Up+Up** / **Down+Down** Z-axis dodges
+- **Jump Type** — default SOR2X (no air control after jump). SOR3 allows mid-air steering
+- **Extra Button** — default Charge Attack (tap Extra for normal launcher). Back Attack is not recommended
+- **Command List** — in-game move list
+- **Touch Layout** — mobile button layout
+
+### `Extra Menu -> Feature`
+
+- **Level Select** — after one clear, set On to pick stages on new game
+
+### `Extra Menu -> Partners`
+
+- **Fighting Mode** — Balanced, Aggressive, Defensive
+- **Aggression** — aggression level; 9 stars = maximum hate
+- **Get Food** — default 50%; partners eat food below 50% HP
+- **Follow Caller** — default **Automatic**; leave it
+- **Spawn/Kill** — in-game, press **Select** to choose partner, then **A** to summon. Partners share remaining lives; cannot summon at 1 life left. Press A again here to dismiss the active partner
+
+## In-Game HUD
+
+Top of screen shows character portraits and stats. Each playable character has HP, meter, and guard gauge.
+
+- **HP bar** — largest bar under the portrait
+- **Guard gauge** — outer frame around the HP bar. Blocking attacks drains it; guard break when empty. Most characters max at 20, recover 5 per second. Green above 50%, red below 50%
+- **Meter** — stars under HP. Max 5 stars. Level 3 super costs 3 stars; Reversal costs 1 star. Most characters max MP at 120. MP recovers from hitting enemies, getting hit, parrying, etc.
+
+When attacking enemies, their name and HP appear below, plus:
+
+- **K.O** — enemies killed
+- **DMG** — damage in the current combo
+- **HIT** — combo count
+- **JUG** — remaining juggle value (if Juggle System limit is set)
+- **OTG** — remaining OTG hits (if OTG System limit is set)
+
+# Playable Characters
+
+## Base Stats
+
+----
+
+### Overview
+
+|Attribute| Stat | Description |
+|-----|---------------|------------------------|
+|Skill| Skill | Post-parry invincibility duration and parry MP recovery. At 5 Skill, each successful parry restores up to 25% max MP and grants 5s invincibility. At 1 Skill, up to 5% MP and 1s invincibility.|
+|Power| Power | Base attack; bonus to all moves|
+|Speed| Speed | Move speed, especially dash speed|
+|Jump | Jump | Jump height and speed|
+|Energy| Energy | MP recovery speed from hitting or getting hit. At 1 Energy, +1 MP per hit taken or dealt. At 5 Energy, +5 MP|
+
+
+### Character Stat Table
+
+| Character | Skill | Power | Speed | Jump | Energy | Notes |
+| -- | -- | -- | -- | -- | -- | -- |
+|Axel |3 | 3 | 3 | 2 | 2 | Well-rounded |
+|Blaze |4 | 2 | 4 | 2 | 2 | Technical; weaker than Axel but faster and higher Skill |
+|Max |2 | 5 | 2 | 1 | 1 | Grappler; strong throws; slow MP recovery |
+|Sammy |4 | 2 | 4 | 3 | 3 | Speed type; low power, fast, good MP recovery |
+|Adam |4 | 3 | 3 | 1 | 2 | Similar to Axel; slightly weaker move kit overall |
+|Zan |3 | 4 | 2 | 1 | 1 | Power type; wider normals; energy orb specialist |
+|SOR2 Shiva |3 | 3 | 4 | 3 | 3 | Boss-style; fast; easy to pick up; second strongest for beginners; needs execution |
+|SOR3 Shiva |3 | 3 | 5 | 3 | 2 | Boss-style; fastest; strongest for beginners |
+|SOR2 Electra |3 | 2 | 5 | 2 | 1 | Boss-style; fast; wide super; beginner-friendly |
+|Bison |2 | 5 | 2 | 1 | 1 | Power type; heaviest hit feel |
+|Chunli |3 | 2 | 4 | 5 | 1 | Speed type; low power; excels at air juggle |
+|Kage |5 | 2 | 5 | 5 | 1 | Technical; low HP/power; highest parry reward; stylish but demanding |
+|Lee Rekka |3 | 2 | 4 | 3 | 2 | Balanced; many fire-element moves|
+
+------
+
+## Universal Skills
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|Hold **Block** | **Block** — attacks drain guard gauge; guard break when empty | At block impact, press Forward or Back for parry |
+|Parry | While blocking, press **Forward** at enemy hit timing | Enemy enters hitstun; auto counter; brief invincibility and large MP restore. Duration/amount scales with Skill |
+|Direction + **Block** | **Dodge** that direction; brief invincibility; costs ¼ guard gauge | If Dodge Type is SOR3, Up+Up / Down+Down for Z-axis dodge |
+|While launched, **Up+Jump** | **Air recovery / air tech** — costs ¼ guard gauge | Enemies attack fast; without air tech you eat long air juggles |
+|While down, **Up+Attack** | Wake-up attack | Quick rise and strike. Many bosses use this—block or parry. Some wake-ups are grabs; blocking gets you grabbed |
+|**Extra** | Heavy attack / normal chain finisher; strong launcher; costs ½ guard gauge | Hold **Forward or Back** + Extra to adjust spacing; links to many specials or Level 3 supers |
+|**Up+Extra** | Some characters: anti-air or spacing tool; costs partial guard gauge | Great in ground combos for fast meter build |
+|**Down+Extra** | Back attack; costs ½ guard gauge | On screen-edge juggles, pulls enemy back to center; short recovery; links after |
+|**Tap Energy repeatedly during combo** | **Short hop** into jump attacks | Short recovery, no MP cost; core long combo tool |
+|Sandwiched, press **Special** | **Reversal / invincible escape special** — hits front and back; costs 1 star | Use when surrounded or in hitstun |
+|**Down+Special during combo** | First Level 3 super (2+ stars) | Also **Down-Forward+Energy** or **Tap Energy twice** |
+|**Up+Special during combo** | Second Level 3 super (2+ stars) | |
+|**Tap Energy twice** | Raw first Level 3 super without combo cancel | |
+|Air **Attack** | Neutral jump attack | **Tap Energy quickly** for short hop juggle switches; **Special** for air special finisher |
+|Air **Forward+Attack** | Forward air attack (often flying kick); can launch | Same short hop / air special options |
+|Air **Down+Attack** | Down air attack; on hit, fast grab into ground throw | Costs a little MP; drains meter if below cost |
+|Air **Up+Attack** | Up air attack; launches diagonally upward | Same short hop / air special options |
+|Wall bounce jump | At wall or screen edge, **Jump** opposite direction | Some characters bounce off edge toward center; higher jump or evade |
+|Throw escape | Enemy grab startup, press **Attack** | Costs ⅔ guard gauge; some characters counter-throw, others backdash |
+|Weapon **Down+Extra** | Throw weapon; some weapons multi-throw | Infinite throw bug = script issue |
+|Passive | Last Chance — requires empty guard gauge | At zero HP with full guard gauge, lethal hit restores some HP |
+|Passive | Rush Heat | Combo count over 9 = invincibility while combo continues |
+|Passive | Super Armor — costs ½ guard gauge | Max, Sammy, Zan, etc.: with full guard gauge, auto-blocks one hit |
+|Passive | Taunt | Some characters (SOR2 Electra, Bison, Lee Rekka): stand still to taunt; restores some HP or meter |
+
+
+## Axel
+
+- Balanced attack, speed, skill, and MP recovery.
+- Fast normals; strike-focused kit. Special is rapid punches (ground and air)—beginner friendly. Downside: canceling specials into Level 3 super often pulls enemies to the ground, letting some enemies teleport-dodge mid-combo and drop the string.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|Tap **Attack** | Normal 1-2-1-2-3 chain; 4th hit is double side kick | Hold Down on 3rd hit for grab on 4th |
+|**Extra**| Heavy: double side kick; Forward/Back adjusts spacing | **Forward+Forward+Attack** uppercut, **Forward+Forward+Energy** dragon punch, **Down+Special** Level 3 Spinning Dragon Punch, **Up+Special** Level 3 Phantom Lion Punch, **Tap Energy quickly** short hop air juggle |
+|**Up+Extra**| Dragon punch; costs stamina | Air **Forward+Special** air flurry, **Tap Energy quickly** short hop juggle |
+|**Forward+Forward+Attack**| Uppercut; last hit launches; no MP cost | **Extra** double kick, **Down+Special** Spinning Dragon Punch, **Up+Special** Phantom Lion Punch, **Tap Energy quickly** air juggle |
+|**Forward+Forward+Energy**| Dragon punch; 2 spins then uppercut; launches; fire damage; small MP cost | On ground, same as F+F+Attack. In air: **Special** air flurry (small MP), air **Up+Special** air dragon punch, or **Tap Energy quickly** short hop jump attack switches |
+|**Special**| 360 Flame Punch Reversal; invincible startup; launches on hit | Short recovery; links after |
+|**Forward+Special**| Ground flurry into dragon punch | Mash **Attack** during flurry to spend guard gauge for extra hits and faster star recovery. **Forward+Forward+Attack**, **Forward+Forward+Energy**. With 3+ stars during flurry: **Down+Special** / **Up+Special** Level 3s, **Tap Energy quickly** short hop juggle |
+|**Down+Special in combo**| Level 3 Spinning Dragon Punch; seals enemy specials; full sequence adds fire | Also **Down-Forward+Energy** or **Tap Energy twice**; best after special cancel. On Mania, if enemy can teleport-dodge and previous hit left them grounded, late cancel when they are airborne improves hit rate |
+|**Up+Special in combo**| Level 3 Phantom Lion Punch; huge half-screen hitbox | Special cancel only; no teleport-dodge issue; may whiff at screen edge or vs obstacles |
+|Hold **Forward**, grab **Attack**| Knee; 2 knees then launch | Short recovery |
+|Grab **Attack**| Headbutt launch | Short recovery |
+|Grab **Back+Attack**| Suplex backward | Short recovery |
+|Grab **Jump**| Flip jump over enemy; brief invincibility | Continue throw routes |
+|After flip jump **Attack**| Flip throw slam | Short recovery |
+|Air **Special**| Air flurry | Air **Up+Special** air dragon punch; best after short hop juggle as air finisher |
+|Parry| Forward at impact: dragon punch, fire | In air: **Special** air flurry or **Tap Energy quickly** jump attack switches |
+|Dagger **Attack**| Dagger chain; no launch; sustained hits | Drop weapon when hit; despawns after 30s on ground |
+|Kunai **Attack**| Kunai chain; same rules | 30s despawn |
+|Pipe **Attack**| Launching hits | 45s despawn |
+|Sword **Attack**| Launching hits | 60s despawn |
+|Sword **Forward+Forward+Attack**| Phantom Sword wide slash; no MP | No cancel; last hit launches |
+|Sword **Attack** then **Down+Attack**| Sword beam; costs 3 stars | Beam cannot be blocked |
+
+
+## Blaze
+
+- Similar balance to Axel; slightly lower power, slightly higher speed.
+- Technical; fast normals, weaker raw hits, but ground dash grab + air throw make combos more varied.
+- Level 3 Chidori actually costs 2 stars, not 3—exploit that for longer routes.
+- With dagger: walking/running and dagger Upper / dagger frenzy are invincible during startup/active.
+- Can spend guard gauge to throw grenades for wide damage.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2-3; 4th high-angle front kick | Hold Down on 3rd for grab |
+|**Extra**| Heavy: 4th kick; spacing with Forward/Back | **Down+Special** Level 3 Chidori, **Tap Energy quickly** short hop juggle |
+|Ground **Up+Extra**| Grenade toss; partial guard cost | On hit, strong launch; on miss, timed explosion |
+|**Forward+Forward+Attack**| 360 flip into knife hand | In air: short hop juggle, **Special** air throw slam |
+|**Forward+Forward+Energy**| Dash grab; not invincible during dash; grab breaks guard; anti-air | End combos on launched enemies to re-grab |
+|**Special**| Backflip blade kick Reversal; invincible; launches | **Forward+Forward+Attack**, **Forward+Forward+Energy**, **Extra**, **Down+Special** Chidori, short hop juggle |
+|**Forward+Special**| Hadoken-style flurry; last hit OTG bounce; small MP | Same links; with 3+ stars **Down+Special** Chidori, short hop |
+|**Down+Special in combo**| Level 3 Chidori; 2 stars; seals specials; lightning damage full route | Special cancel recommended. Mania teleport-dodge note: delay cancel until **Forward+Special** last hit launches boss |
+|**Up+Special in combo**| Level 3 Hadoken Flash; 3 stars | Rapid hadoken hits; flash finisher |
+|Hold **Forward**, grab mash **Attack**| Knees x2 then slap | Hold Forward to re-grab loop on grunts only; not invincible; bosses break early |
+|Grab **Attack**| Knockdown OTG bounce | **Forward/Back+Extra** relaunch from OTG, **Forward+Forward+Attack**, **Forward+Forward+Energy** |
+|Grab **Back+Attack**| Suplex | Short recovery |
+|Grab **Jump**| Flip jump; brief invincibility | More throws |
+|After flip **Attack**| Flip throw slam | Short recovery |
+|Air **Down+Attack**| Air down; on hit, fast grab into suplex | OTG bounce; continue juggle |
+|Air **Special**| Air throw; OTG bounce | Finisher after short hop juggle |
+|Parry| Slide; anti-air | **Forward/Back+Extra** OTG relaunch, **Forward+Forward+Attack**, **Forward+Forward+Energy** |
+|Dagger **Attack**| Dagger chain | 30s despawn |
+|Dagger **Forward+Forward+Attack**| Dagger upper; invincible during move | Before leaving ground, link **Down+Special** dagger frenzy |
+|Dagger **Forward+Special**| Dagger frenzy; invincible | **Down+Special** dagger frenzy super |
+|First two hits **Down+Special**| Dagger frenzy super; low MP | Mash **Attack**: guard then MP for extra hits |
+|Kunai **Attack**| Kunai chain | 30s |
+|Pipe **Attack**| Launch | 45s |
+|Sword **Attack**| Launch | 60s |
+|Sword **Forward+Forward+Attack**| Phantom Sword | Last hit launches |
+
+
+## Max
+
+- Grappler; slow move and attack speed; Power 5 (highest among heroes).
+- High HP + Super Armor = solid defense.
+- Rich throw kit; not long juggle focused but air throw + ground throw synergy looks great.
+- Invincible briefly after grabs and air throw.
+- Three Level 3 supers: **Down+Special** Arm Shock; during grab headbutt **Up+Special** Sit Slam; **Down+Special** Bridge Throw.
+- Combos rely on **Extra** double fist slam, **Tap Energy quickly** short hop juggle, air **Special** air throw on floated enemies.
+- Slow MP recovery. With no meter, **Hold Down + mash Attack** into throw loop to build 3 stars, then **Up+Special** Sit Slam or **Down+Special** Bridge Throw.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2-3; 4th double fist slam | Down on 3rd for grab |
+|**Extra**| Heavy slam; spacing | **Down+Special** Level 3, short hop juggle |
+|**Forward+Forward+Attack**| Slide | Short hop face kick juggle, **Special** spin punch, **Forward+Special** shoulder rush |
+|**Forward+Forward+Energy**| Dash grab | Re-grab launched enemies |
+|**Special**| Spin punch Reversal; invincible; launches | Slide, dash grab, **Extra**, **Forward+Special**, short hop |
+|**Forward+Special**| Shoulder rush multi-hit; last hit OTG; small MP | Dash grab, **Extra**, **Special** short hop air grab, short hop juggle |
+|**Down+Special in combo**| Level 3 Arm Shock; launches; wall bounce | **Down-Forward+Energy** or **Tap Energy twice**; special cancel |
+|Hold **Forward**, grab mash **Attack**| Knees x2 then headbutt | Knees can **Jump** to air grab state |
+|Grab **Attack**| Neck lock headbutt | **Hold Down + Attack** x3 into throw for infinite loop on grunts; headbutt **Up+Special** Sit Slam or **Down+Special** Bridge Throw |
+|Headbutt **Up+Special**| Level 3 Sit Slam | Strong throw; enemy floats after |
+|Headbutt **Down+Special**| Level 3 Bridge Throw | Strong throw; enemy floats after |
+|Grab **Back+Attack**| Suplex | Short recovery |
+|Grab **Jump**| Air carry | **Special** air sit slam, **Forward+Special** ground slam |
+|Air **Down+Attack**| Air down; usually fast grab on fall | Continue throws |
+|Air near floated enemy **Special**| Air sit slam | Slam with brief invincibility; finisher after short hop |
+|Parry| Spin punch; anti-air | Slide, dash grab, **Extra**, **Forward+Special**, short hop |
+|Dagger **Attack**| Dagger chain | 30s |
+|Kunai **Attack**| Kunai chain | 30s |
+|Pipe **Attack**| Launch | 45s |
+|Pipe chain **Down+Special**| Level 3 pipe smash | Hard knockdown |
+|Sword **Attack**| Launch | 60s |
+
+
+## Sammy
+
+- Shortest reach on the team but very agile. Energy 3 = rarely starved; supers often. Power 2 like Blaze.
+- Low HP but Super Armor.
+- Invincible after grabs and flip jump; invincible during mounted rapid punches on enemy's head after flip.
+- Only vanilla character who could raw air Level 3 super; still true here.
+- Most weapon routes: **Forward+Forward+Attack** cyclone slash; cyclone into **Down+Special** Super Cyclone. Pipe **Forward+Special** = pipe ground spin.
+- Empty-hand: air **Special** backflip kick wall-bounces for rich juggles.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2-3; 4th backflip kick | Down on 3rd for grab |
+|**Extra**| Heavy backflip kick | **Down+Special** Level 3 Air Drill, short hop juggle |
+|**Forward+Forward+Attack**| Front flip headbutt | Air: short hop flying kick, **Special** backflip wall bounce kick, **Extra** |
+|**Forward+Forward+Energy**| Dash grab | Re-grab |
+|**Special**| Ground sweep Reversal; invincible; launches | Short hop juggle |
+|**Forward+Special**| Rapid punches into backflip kick; Forward/Back spacing | Mash **Attack** for extra hits (MP). Short hop kick, **Special** wall bounce, **Extra**, **Down+Special** Air Drill ground or air |
+|**Down+Special in combo**| Level 3 Air Drill; ground or air | **Down-Forward+Energy** or **Tap Energy twice**; avoid raw ground (long startup). Best: special cancel in air, or **Down+Special** before backflip kick on grabbed enemy |
+|Hold **Forward**, grab mash **Attack**| Headbutt x2 then backflip kick | Headbutts into **Jump** over head; **Down+Special** Ground Drill before launch |
+|Grab **Attack**| Mounted rapid punches; brief invincibility | Mash **Attack** (guard cost) for extra hits + star recovery. Whole move invincible |
+|Grab **Back+Attack**| Backflip kick launch | Short recovery |
+|Grab **Jump**| Flip jump; invincibility | Throws |
+|During flip **Attack**| Flip throw forward | |
+|After flip **Attack**| Mount neck, rapid head punches; invincible | Whole route invincible |
+|Air **Down+Attack**| Fast grab fall | Throws |
+|Air **Forward+Special**| Backflip power kick wall bounce | Continue juggle; air tech enemies may not bounce |
+|Parry| Backflip kick into crescent wave; anti-air | **Forward+Forward+Attack**, dash grab, **Extra**, **Forward+Special**, short hop |
+|Dagger **Attack**| Dagger chain | 30s |
+|Dagger **Forward+Forward+Attack**| Dagger cyclone | **Down+Special** Super Cyclone |
+|Kunai **Attack**| Kunai chain | 30s |
+|Kunai **Forward+Forward+Attack**| Kunai dash | **Down+Special** Super Cyclone |
+|Pipe **Attack**| Launch | 45s |
+|Pipe **Forward+Forward+Attack**| Pipe cyclone | **Down+Special** Super Cyclone |
+|Pipe **Forward+Special**| Pipe ground spin | Mash **Attack** for extra hits |
+|Sword **Attack**| Launch | 60s |
+|Sword **Forward+Forward+Attack**| Katana cyclone | **Down+Special** Super Cyclone |
+|Weapon cyclone **Down+Special**| Level 3 Super Cyclone | Last hit launches |
+
+
+## Adam
+
+- SOR2X hidden unlock (second playthrough). Energy 1, Jump 1; power like Blaze/Sammy; Skill 4. Relies on parry for meter. Higher HP than Sammy—technical but forgiving.
+- Signature: **Forward+Forward+Energy** crescent wave; air **Special** Superman punch wall bounce.
+- Two Level 3s: **Down+Special** Flurry super; **Up+Special** Triple Smash.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2-3; 4th side kick | Down on 3rd for grab |
+|**Extra**| Heavy side kick | **Down+Special** Flurry super, **Up+Special** Triple Smash, short hop |
+|**Forward+Forward+Attack**| Uppercut; launches | Short hop kick, **Extra** |
+|**Forward+Forward+Energy**| **Signature** uppercut into crescent wave | Use at range to launch then close in |
+|**Special**| 360 hook Reversal; invincible; launches | Short hop |
+|**Forward+Special**| Rapid side kicks | Mash **Attack** (guard) for extra hits + star recovery |
+|**Down+Special in combo**| Level 3 Flurry; ground or air | **Down-Forward+Energy** or **Tap Energy twice**; last hit launches |
+|**Up+Special in combo**| Level 3 Triple Smash + Superman punch | Same raw input; last hit launches |
+|Hold **Forward**, grab mash **Attack**| Knees x2 then head OTG | Knees into **Jump** over head |
+|Grab **Attack**| Repeated knees; last hit launches | Hold **Down** and mash **Attack** 1-1-2-3 after launch |
+|Grab **Back+Attack**| Over-shoulder throw | Short recovery |
+|Grab **Jump**| Flip jump | Throws |
+|After flip **Attack**| Suplex back | Short recovery |
+|Air **Down+Attack**| Fast grab into suplex | Continue combo |
+|Air **Special**| **Signature** Superman punch wall bounce | Air juggle finisher; air tech may deny bounce |
+|Parry| Side kick; anti-air | **Forward+Forward+Attack**, crescent wave, **Extra**, **Forward+Special**, short hop |
+|Dagger **Attack**| Dagger chain | 30s |
+|Kunai **Attack**| Kunai chain | 30s |
+|Pipe **Attack**| Launch | 45s |
+|Sword **Attack**| Launch | 60s |
+|Sword **Forward+Forward+Attack**| Katana dash multi-hit; last hit launches | **Down+Special** katana Level 3 |
+|Sword **Down+Special in combo**| Level 3 katana dash; Forward/Back adjust | Mash **Attack**: guard then MP for extra hits |
+
+
+## Zan
+
+- SOR2X hidden unlock; robot old man; electric attacks. Energy 1, Jump 1; Power 4. Power-technical hybrid.
+- Signature weapon super: **Down-Forward+Special** homing energy orb—longest, highest damage super in the roster, also the most boring (orb locks enemy until it expires).
+- Orbs also from **Forward+Special** (star cost) or **Down+Extra** (weapon throw count). Semi-homing forward; explodes on contact.
+- Discharge specials: **Special** full body, **Forward+Special** electric claw, air **Special** air claw—all combo tools.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2; 3rd straight punch | Down on 2nd for grab |
+|**Extra**| Heavy straight punch | **Down+Special** Level 3 orb volley, short hop |
+|**Forward+Forward+Attack**| Shoulder rush; launches | Short hop, **Extra** |
+|**Forward+Forward+Energy**| Extend arm grab; breaks guard; anti-air | Re-grab floated/downed enemies |
+|**Special**| Full discharge Reversal; invincible; launches | Short hop |
+|**Forward+Special**| Electric claw; launches; mash **Attack** (guard) for extra hits | **Down+Special** orb volley, short hop |
+|**Down+Special in combo**| Level 3 orb volley | **Down-Forward+Energy** or **Tap Energy twice**; best after **Forward+Special** or **Extra** (range + pin) |
+|Hold **Forward**, grab mash **Attack**| Claw x2 then heavy punch | Re-grab loop on grunts only |
+|Grab **Attack**| Slam OTG | Short recovery |
+|Grab **Back+Attack**| Back throw | Short recovery |
+|Grab **Jump**| Flip jump | Throws |
+|After flip **Attack**| Back throw | Short recovery |
+|Air **Down+Attack**| Fast grab fall | Throws |
+|Air **Special**| **Signature** air electric claw | Air juggle finisher; electric hits deny air tech |
+|Parry| Shoulder rush; anti-air | **Forward+Forward+Attack**, dash grab, **Extra**, **Forward+Special**, short hop |
+|Weapon **Forward+Special**| Orb (star cost) | Small blast; weak aim |
+|Weapon **Down+Extra**| Orb (throw count) | Same |
+|Weapon **Down-Forward+Special**| **Tap Energy twice** homing orb | Locked hitstun until orb ends; use two if one does not kill |
+
+
+## SOR2 Shiva
+
+- SOR2XCombo hidden hero; mostly 3s, Speed 4. Needs fast inputs—strongest juggler in the roster. Hadoken loops refill meter for repeated supers in one juggle.
+- Signature: **Forward+Forward+Attack** hadoken wall bounce; big MP on hit.
+- Air **Forward+Special** dragon tail kick; **Down+Special** Level 3 dragon tail kick. With hadoken = flashy wall juggles.
+- Large startup—relies on **Forward+Forward+Energy** dash grab to close on floated enemies before specials.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2; 3rd high kick | Down on 2nd for grab |
+|**Extra**| Heavy high kick | **Forward+Forward+Attack** hadoken, **Forward+Special** dragon tail, **Down+Special** / **Up+Special** Level 3s, short hop |
+|**Down+Extra**| Flip kick; fire launch; air flip on hit | **Before flip**: hadoken, dragon tail, Level 3s, short hop, **Extra** |
+|**Forward+Forward+Attack**| **Signature** hadoken wall bounce; **big MP on hit** | Short hop, **Extra**, **Up+Special** Phantom Palm |
+|**Forward+Forward+Energy**| Dash grab | Re-grab |
+|**Special**| Reverse kick Reversal; invincible; launches | Short hop, hadoken, **Extra** |
+|**Forward+Special**| Dragon tail kick; fire on last hit | **Up+Special** air grab, **Down+Special** Level 3 dragon tail, short hop |
+|**Up+Special in combo**| Level 3 Phantom Palm; huge range; **big MP on hit** | Last hit launches |
+|**Down+Special in combo**| Level 3 dragon tail kick; wall bounce | **Down-Forward+Energy** or **Tap Energy twice**; best after **Forward+Special** or **Down+Extra** launch |
+|Hold **Forward**, grab mash **Attack**| Hook combo; brief invincibility | Re-grab loop |
+|Grab **Attack**| Normal 3rd high kick | Short recovery |
+|Grab **Back+Attack**| Back slam OTG | Best after dash grab to relaunch |
+|Grab **Jump**| Flip jump | Throws |
+|After flip **Attack**| Slam OTG | Short recovery |
+|Air **Down+Attack**| Grab slam OTG | Continue combo |
+|Air **Special**| Air grab slam | Finisher; dragon tail is stronger for juggles |
+|Parry| Reverse kick | Hadoken, dash grab, **Up+Special**, **Extra**, short hop |
+
+
+## SOR3 Shiva
+
+- Strongest playable in SOR2XCombo.
+- Signature **Forward+Forward+Attack** Phantom Palm—free, huge range, big MP on hit.
+- **Forward+Special** Dragon Claw flurry; **Down+Special** Level 3 Dragon Claw flurry (even longer).
+- All three link seamlessly—infinite loops are easy.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2; 3rd high kick | Down on 2nd for grab |
+|**Extra**| Heavy high kick | **Forward+Forward+Attack** Phantom Palm, **Forward+Special** Dragon Claw, **Down+Special** Level 3 Dragon Claw, short hop |
+|**Down+Extra**| Flip kick; fire; air flip on hit | **Before flip**: Phantom Palm, Dragon Claw, Level 3, short hop, **Extra** |
+|**Forward+Forward+Attack**| **Signature** Phantom Palm; free; huge; **big MP** | Last hit launches |
+|**Forward+Forward+Energy**| Dash grab | Re-grab |
+|**Special**| Reverse kick Reversal | Short hop, Phantom Palm, **Extra** |
+|**Forward+Special**| Dragon Claw flurry; fire launch; low MP, many hits; short range, long startup | Teleport-dodge bosses: **Forward+Forward+Energy** grab first (grabbed enemies cannot teleport). Then **Down+Special** Level 3, short hop, **Extra** |
+|**Down+Special in combo**| Level 3 Dragon Claw | Raw whiffs—use after **Forward+Special** or dash grab |
+|Hold **Forward**, grab mash **Attack**| Hook combo; brief invincibility | Re-grab loop |
+|Grab **Attack**| 3rd high kick | Short recovery |
+|Grab **Back+Attack**| Back slam OTG | After dash grab |
+|Grab **Jump**| Flip jump | Throws |
+|After flip **Attack**| Slam OTG | Short recovery |
+|Air **Down+Attack**| Grab slam OTG | Continue |
+|Air **Special**| Air grab slam | Juggle finisher |
+|Parry| Hadoken wall bounce | Phantom Palm, dash grab, **Extra**, short hop |
+
+
+## SOR2 Electra
+
+- SOR2XCombo original hero; Speed 4, Skill 4—very fast technical fighter.
+- Signature: electric whip shot pins enemies; Level 3 closes in for wide whip flurry.
+- Whip grab pull: **Up+Extra** pulls enemy in for throws.
+- Very fast dash grab; has healing grab (18+ style).
+- Taunt standing still restores full meter bar.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2; 3rd high kick | Down on 2nd for grab |
+|**Extra**| Heavy high kick | **Forward+Forward+Attack** rising whip, **Forward+Special** whip shot, **Down+Special** Level 3 whip flurry, short hop |
+|**Down+Extra**| Back kick | Pull screen-edge juggles to center |
+|**Up+Extra**| Whip grab pull | Links to throws |
+|**Forward+Forward+Attack**| Rising whip | **Forward+Special**, **Down+Special**, short hop |
+|**Forward+Forward+Energy**| Dash grab | Re-grab |
+|**Special**| Electric whip 360 Reversal | Short hop, rising whip, **Extra** |
+|Ground **Up+Special**| Anti-air rocket; 1 star | Strong launch |
+|Ground **Down+Special**| Pull air enemy down; guard cost | Throws after |
+|**Forward+Special**| Whip shot pin; last hit launches | Long range vs floats; **Down+Special** Level 3, rising whip, **Extra** |
+|**Down+Special in combo**| Level 3 whip flurry: shot pin then rush flurry | After **Forward+Special** |
+|Hold **Forward**, grab mash **Attack**| Knee flurry; not invincible | **Down+Special** |
+|Grab **Attack**| Whip flurry; not invincible | Mash **Attack** (guard); **Down+Special** |
+|Grab **Back+Attack**| Turn knee; launches | |
+|Grab **Up+Attack**| 18+ grab; heals small HP | Long recovery; no follow-up |
+|Air **Down+Attack**| Fast grab fall | Throws |
+|Air **Special**| Air rising whip | Juggle finisher |
+|Parry| Rising whip wall bounce | **Forward+Forward+Attack**, dash grab, **Extra**, short hop |
+
+
+
+## Bison (SF2)
+
+- SOR2XCombo original; Power 5, Jump 1, Energy 1—power brawler.
+- Very slow MP recovery; heavy normals; high parry damage; normal + special combo focus.
+- Taunt restores some HP.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-2-3-4; 4th uppercut | Down on 3rd for grab |
+|**Extra**| Heavy uppercut | **Forward+Forward+Attack** drop punch, **Forward+Special** combo flurry, **Down+Special** Level 3 Flurry, **Up+Extra** or **Up+Special** headbutt dive, short hop |
+|**Down+Extra**| Low sweep | Pull edge juggles to center |
+|**Up+Extra**| Dive headbutt anti-air | Air **Special** headbutt, **Extra** |
+|**Forward+Forward+Attack**| Drop punch | **Forward+Special**, **Down+Special**, dive headbutt, short hop |
+|**Forward+Forward+Energy**| Dash grab | Re-grab |
+|**Special**| Straight punch 360 Reversal | Short hop, drop punch, **Extra** |
+|**Forward+Special**| Combo flurry pin; launches | Mash **Attack** (guard); **Down+Special**, dive headbutt, drop punch, **Extra** |
+|**Up+Special**| Dive headbutt anti-air | Air **Special** headbutt, **Extra** |
+|**Down+Special in combo**| Level 3 Flurry; **wall bounce** finisher | **Down-Forward+Energy** or **Tap Energy twice** |
+|Hold **Forward**, grab mash **Attack**| Gut punch; not invincible | Re-grab loop on grunts |
+|Grab **Jump**| Jump carry | **Attack** air headbutt = air **Special** |
+|Grab **Attack**| Headbutt; invincible | Short recovery |
+|Grab **Back+Attack**| Turn headbutt; invincible | Short recovery |
+|Air **Down+Attack**| Fast grab fall | Throws |
+|Air **Special**| Air headbutt throw | Juggle finisher |
+|Parry| Drop punch | Drop punch, dash grab, **Extra**, short hop |
+
+
+## Chunli (SF2)
+
+- SOR2XCombo original; Speed 4, Jump 5—fast air juggle specialist.
+- Power 2—needs long strings for damage.
+- Signature: Hyakuretsukyaku (**Forward+Special**) ground and air; air **Down+Attack** air stomp chain.
+- Recommended super route: ground Hyakuretsukyaku or **Forward+Extra** heavy into Level 3.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-2-3-4; 4th double side kick | Down on 3rd for grab |
+|**Extra**| Heavy double kick | **Forward+Forward+Attack** triple rising kick, **Forward+Special** Hyakuretsukyaku, **Down+Special** / **Up+Special** Level 3s, short hop |
+|**Down+Extra**| Back kick | Edge juggle pull |
+|**Up+Extra**| Hadoken; 3 slow waves; ¼ guard | |
+|**Forward+Forward+Attack**| Triple rising kick | Air **Forward+Special** air Hyakuretsukyaku, air **Down+Special** air throw, **Up+Special** flip kick, short hop |
+|**Forward+Forward+Energy**| Dash grab | Re-grab |
+|**Special**| Inverted spin kick Reversal | Short hop, triple kick, **Extra** |
+|Ground **Forward+Special**| Hyakuretsukyaku pin; launches | Mash **Attack** (guard); **Down+Special**, **Up+Special** Kikoken, triple kick, **Extra**, flip kick, short hop |
+|Air **Forward+Special**| Air Hyakuretsukyaku | **Up+Special** flip kick, short hop, air **Down+Attack** stomp |
+|**Down+Special in combo**| Level 3 Flurry; Hyakuretsukyaku ender | **Down-Forward+Energy** or **Tap Energy twice** |
+|**Up+Special in combo**| Level 3 Kikoken; huge range | Last hit launches |
+|Grab **Jump**| Skull crush knee over head | **Attack** before knee = throw forward |
+|Grab **Attack**| Flip kick launch | Short hop after |
+|Grab **Forward+Attack**| Forward throw OTG | Short recovery |
+|Grab **Back+Attack**| Back throw OTG | Short recovery |
+|Air **Down+Attack**| Air stomp; stay airborne on hit | After short hop when above enemy |
+|Air **Down+Special**| Air throw slam | Juggle finisher |
+|Parry| Handstand side kick | Triple kick, **Extra**, short hop, **Down+Special**, **Up+Special** |
+
+
+## Kagetsura (Sengoku3)
+
+- SOR2XCombo original; Skill 5, Speed 5, Jump 5—speed and parry specialist.
+- Energy 1 but fast movement/attacks keep meter flowing. Power 2—needs parry or long combos.
+- Signature: Comet Slash ground (**Forward+Special**); Iga Drop (grab **Up+Attack** or air **Down+Special**); Reversal Wood Bomb—press Forward/Back during explosion to teleport.
+- Flying Thunder God ground (**Up+Extra** or **Up+Special**)—on hit, grab into throws.
+- Super route: **Extra**, Comet Slash, or **Forward+Forward+Attack** double kick into Level 3.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-1-2-3-4; 5th downward slash | Down on 4th for grab |
+|**Extra**| Heavy downward slash | **Forward+Forward+Attack** double kick, **Forward+Special** Comet Slash, **Down+Special** Level 3, short hop |
+|**Up+Extra**| Flying Thunder God kunai; guard cost; only from neutral | Line shot; on hit, grab |
+|**Down+Extra**| Spin kick | Back attack; edge juggle pull |
+|**Forward+Forward+Attack**| Double kick | **Forward+Special**, **Down+Special**, short hop |
+|**Forward+Forward+Energy**| Dash grab | Re-grab |
+|**Special**| Wood Bomb Reversal; invincible; launch | Forward/Back during blast = teleport |
+|Ground **Forward+Special**| Comet Slash pin; launches | **Down+Special**, double kick, **Extra**, short hop |
+|Ground **Up+Special**| Homing Flying Thunder God; guard; neutral only | Tracks off-axis; grab on hit |
+|Air **Forward+Special**| Air spin kick; wall bounce | Continue after bounce |
+|Air **Down+Special**| Air Iga Drop | OTG continue |
+|**Down+Special in combo**| Level 3 Flurry flash finish | **Down-Forward+Energy** or **Tap Energy twice** |
+|**Up+Special in combo**| Level 3 flash multi-slash; moderate damage (low Power) | Last hit launches |
+|Grab **Attack**| Air spin kick; launches | Short hop or air **Down+Special** Iga Drop |
+|Grab **Down+Attack**| Swallow Flash rapid draw | Mash **Attack** (guard); launches |
+|Grab **Forward+Attack**| Forward throw OTG | Short recovery |
+|Grab **Back+Attack**| Back throw OTG | Short recovery |
+|Grab **Jump**| Air carry | **Attack** Iga Drop = air **Special** |
+|Air **Down+Attack**| Fast land; land **Attack** = air spin kick | Keeps grab state on land |
+|Air **Up+Attack**| Fast land; land **Up+Attack** = Iga Drop | Keeps grab state |
+|Parry| Draw slash | Double kick, **Extra**, short hop, **Down+Special** |
+
+
+## Rikka Lee (Last Blade)
+
+- SOR2XCombo original; average stats but many fire hits deny enemy recovery—still strong.
+- Signature: **Shadowless Kick** (grab **Down+Attack**); **Dragon Hammer Spin** (**Forward+Special**, then **Down+Special** x3); **Dragon Upper** (**Up+Special** in combo or **Up+Extra**).
+- **Shadowless Kick** multi-hit = fast MP recovery.
+- **Dragon Hammer Spin** can air chase 3 times (scaling damage) + **Dragon Upper**—can outdamage Level 3 super if full route hits.
+- Taunt lion dance restores full HP and meter.
+
+| Input | Move | Follow-ups |
+|:---|:---|:---|
+|**Tap Attack**| Normal 1-2-3-4-5; 5th combo kick | Down on 4th for grab |
+|**Extra**| Heavy combo kick | **Forward+Special** Dragon Cannon, **Up+Extra** upper, **Forward+Forward+Attack** fan strike, **Forward+Special** Dragon Hammer Spin, **Down+Special** Level 3, short hop |
+|**Up+Extra**| Dragon upper launch | Air **Down+Attack** slam; land **Down+Attack** Shadowless Kick |
+|**Down+Extra**| Turn fan strike | Back hit; edge pull |
+|**Forward+Forward+Attack**| Fan strike | **Forward+Special** Dragon Cannon, **Down+Special**, **Up+Special** Flame Dragon flash, **Up+Extra**, short hop |
+|**Forward+Forward+Energy**| Dash grab | Re-grab |
+|**Special**| Fan strike Reversal | Multi-hit launch |
+|Ground **Forward+Special**| Dragon Hammer Spin; launches | Air **Down+Special** up to 3 chases (scaling); **Up+Special** Dragon Upper |
+|Air **Down+Special**| Air Dragon Hammer Spin; +2 chases | **Up+Special** Dragon Upper |
+|**Down+Special in combo**| Level 3 Flurry flash finish | **Down-Forward+Energy** or **Tap Energy twice** |
+|**Up+Special in combo**| Level 3 Flame Dragon pillar flash | Scaling hits |
+|Grab **Attack**| Fan strike | Short hop after launch |
+|Grab **Forward+Attack**| Forward inch punch | Short recovery |
+|Grab **Back+Attack**| Back inch punch | Short recovery |
+|Grab **Down+Attack**| Shadowless Kick | Before launch **Up+Special** Dragon Upper |
+|Grab **Up+Attack**| Dragon upper | **Down+Attack** air throw |
+|Grab **Jump**| Jump carry | Air **Attack** upper |
+|Air **Down+Attack**| Fast land grab | Choose throw quickly on land |
+|Air **Up+Attack**| Stomp chain | Breaks air normals |
+|Parry| Fire spark | **Forward+Forward+Attack**, **Extra**, short hop, **Down+Special** |
+
+
+# Selected Boss Guides
+
+## Abadede
+
+- Gladiator Abadede: power boss; Level 3 super and parry counter unblockable; loves dive attacks.
+- Uses dash uppercut vs dash grab mixup—wrong guess = huge damage.
+- Level 3 super is fast and unblockable—hard to dodge.
+- Do not stay point-blank: close special Berserker Roar is multi-hit; launch costs heavy HP, then dive grab or uppercut follow-ups.
+- Dive attack also unblockable—dodge or attack; blocking gets you thrown.
+
+## Ash
+
+- Captain Ash: grab-heavy power boss.
+- Super grab hitbox is strong—do not trade Reversals during super approach.
+- One grab route heals Ash (adult content in original).
+- When closing, sometimes normals—parry or launch then combo.
+- At range, during taunt, rush in and combo.
+- Strong throw escape characters (Max, SOR2 Shiva) excel—**Attack** on grab startup for counter throw.
+
+## Rocky Bear
+
+- Boxer Rocky Bear: power boss; signature rising punch loops and rising punch into Level 3 Super Rising Punch.
+- Hook + dash grab mixup; on hit, rising punch loop; at 3+ stars may cancel into Level 3.
+- Close range wall-bounce short hook—launches to screen edge and back.
+
+## Barbon
+
+- Bartender Barbon: kick specialist; very accurate parry—parry counter sweeps you airborne.
+- Spams dash grab up close—dodge or launch on approach.
+- Do not approach at high meter—Level 3 kick barrage hits hard.
+
+## Harkiri
+
+- Armored samurai Harakiri: iaijutsu + homing explosive kunai.
+- Two types: aggressive closes and attacks; defensive keeps distance, punishes with parry at mid range.
+- Long range: multi homing kunai—destroy or dodge. Holding block lets kunai hit from behind and explode for massive damage; then Harakiri closes for iai into Level 3 Phantom Slash one-touch.
+- Iai hit launches you; Harakiri teleports behind for second iai—block late and eat combo into Level 3 Phantom Slash.
+- Teleport-dodge makes normals whiff. Dodge with i-frames in, parry iai, launch, combo.
+- When launched, air tech; on land watch position and block/parry.
+- Huge anti-air vertical slash—do not jump in casually.
+- vs defensive Harakiri: do not hold block—he teleports behind for grab. Dodge in, wait for swing, parry, combo.
+
+## Yamato
+
+- Red-armor Yamato: flashiest boss kit; teleport + very fast = few weak points.
+- Two types: Musashi (sword iai + Level 3 Phantom Slash from behind); Yamato (shadow clone rush + Level 3 Phantom Slash).
+- Teleports constantly; frontal attacks whiff; you recover, he appears behind and punishes.
+- Best plan: parry for meter; when he appears behind for iai, use 360 Reversal to launch, then combo.
+- Mid range: teleport in dash grab into Iga Drop throw. Fast, multi-pass run—watch afterimages, dodge; attack/block get grabbed.
+- Very close: roll jump + 3 kunai; if you dodge kunai, he may air grab Iga Drop on descent.
+- Wood Bomb anti-air—do not approach from air.
+- vs Musashi: do not hold block—teleport behind Iga Drop. Bait iai, Reversal, combo.
+
+## Zamza
+
+- Claw ninja Zamza: very fast.
+- While you block, slide trip into grab loop; on stand, he slides again—break with instant Reversal on wake (he dodges).
+- Sometimes air dive grab; air tech window may get re-grabbed in air—limited by his meter.
+- Rising claw loops—air tech quickly.
+- Repeated grabs: mash **Attack** for throw escape on strong characters.
+
+## Bruce & Roo
+
+- Whip clown Bruce + kangaroo Roo duo. Bruce whips at range; Roo speed/grappling up close.
+- Bruce Level 3 lays bomb traps—on trap, launched (air tech). If missed, 3s later huge blast hurts everyone—lure enemies with dodge i-frames near trap.
+- Bruce healing aura every 2s heals all on-screen enemies (except Bruce).
+- Roo heals/meter under aura during Bruce super and heavy whip.
+- Roo alone still heals if Bruce on screen.
+- Roo super = dash grab—dodge fast. Parry counter = spin kick multi-hit.
+
+## Jet & Rocket
+
+- Flying Jet & Rocket. Both Level 3 dash grab; Rocket adds flame spray super and floating bomb special.
+- Do not chase—stand ground, parry dive attacks.
+- After parry launch, **Tap Energy** jump attack juggle.
+
+## Tracker
+
+- Predator Tracker: stealth lock + unblockable homing ion cannon super.
+- Level 3: stealth lock—keep dodging with i-frames; appears behind after lock and fires unblockable beam. Constant dodge = beam misses and fades.
+- Normal ion cannon blockable but can hit from behind (low damage).
+- Dash grab into shock claw—paralyzed, cannot Reversal; then rising attack—air tech.
+- Air jump attack becomes air grab + shock claw paralysis + launch; may repeat air grab until out of meter.
+- Grab loops: **Tap Attack quickly** for throw escape.
+
+## Break
+
+- Axel clone Break: all Axel moves; speed increases as HP drops.
+- Dash uppercut vs dash grab mixup on approach.
+- With meter, throws/specials may end in Phantom Lion Punch—huge, fast, hard to dodge.
+- Low HP frenzy—finish with combo or get reversed.
+
+## Shiva
+
+- SOR2 and SOR3 Shiva often appear together.
+- Boss SOR3 Shiva: any hit can start infinite combo.
+- SOR2 Shiva air juggle can one-life you.
+- Air palm press grab—do not block air down attack.
+- Mid range shadow clone from behind sends you into body combo.
+- Keep distance, parry, combo when safe.
+
+## RobotX
+
+- Mass-production robot (SOR3); homing rockets from arms.
+- Rockets: dodge until they explode.
+- Close full discharge super can one-shot.
+
+## Mr.X
+
+- Final boss Mr.X—machine gun multi-direction fire; Level 3 homing rockets.
+- Rockets: dodge until detonation.
+- On dodge he throws grenades.
+- Close dash grab into punch-kick throw + grenade.
+
+## Monalisa Sisters
+
+- Mona Lisa sisters: jump attacks and sync combos; ground wave super fast but blockable.
+- Avoid front/back sandwich—simultaneous kicks, defense fails, rapid death.
+- Jump hit leads to air throw; close red-glow dash grab (slow but hard to read).
+- Occasional tag combos—not constant.
+
+# Enemy Grunts
+
+## Galsia
+
+- Jeans + vest grunt; sometimes picks up knife.
+- Knife Galsia multi-hit quickly knocks down.
+- Jumping elbow drop—rare.
+
+## Donovan
+
+- Bald shirtless grunt; sometimes pipe.
+- Empty-hand heavy = uppercut; pipe hits hard.
+- If you stand over downed Donovan, fast wake-up uppercut—strong.
+
+## Signal
+
+- Mohawk skinny grunt; fast slide.
+- Sometimes throws bottles—fast, accurate; priority kill.
+- Over downed Signal, slide grab throw.
+
+## Garnet
+
+- Short hair delinquent girl; jump attack at range, slaps up close.
+- With meter, jump tackle grab then heals herself (adult content)—you lose HP.
+
+## Jack
+
+- Biker knife thug (SOR2 route stage 1)—author's favorite grunt.
+- Empty hand: pulls knife, long-range knife throw.
+- Close: fast stab; if you block, grab break into triple stab.
+- Always parries up close, armed or not.
+- After knocking you down, taunts.
+
+## Electra
+
+- Popular SOR3 whip woman; electric whip left arm.
+- Rarely rushes; on approach uses whip special if meter allows else lashes + grab attempts; sometimes fast whip flurry or heal grab (adult content).
+- When knocked down, sits sadly—you cannot hit her during animation.
+
+## Bigben & Bongo
+
+- Fire-breathing fat duo; fire breath or body press roll.
+- vs blockers, sometimes grab throw.
+- Over downed fat, fast body roll—parry immediately ("stop the car").
+
+## Hakuyo & Raven & Tiger
+
+- Hakuyo: braid muay thai muscle; one-hand chi blast.
+- Downed wake-up flying kick.
+- Hakuyo parries with chi blast—wall bounce launch.
+- Raven: vest shorts muay thai; knee specialist; throws + parry.
+- Raven downed wake-up knee.
+
+## Kusanagi
+
+- Fast ninja; kunai or katana sometimes.
+- Empty: shuriken harass + close grabs.
+- Armed: cyclone slash—high damage.
+- Parry armed or empty.
+- Fast movement, repeated dodge.
+- Below 25% HP: red glow suicide grab rush—on grab hit, self-destruct.
+
+## Bruce
+
+- Solo whip clown Bruce; Level 3 bomb traps.
+- Step trap = hang launch (air tech safe). Miss = 6s huge blast hits all—including **fast clear trick**: dodge i-frames lure enemies into blast radius.
+- Fast wake-up knee after knockdown.
+
+# Hall of Fame
+
+- After version 20240413, K.O counts boss KOs only
+- Difficulty hashtag number = player count used for clear
+- Arcade mode: +1 player every 100,000 score
+- Score 100,000+: each death −100,000 (no penalty if score below 100,000)
+- One-life clear records:
+
+| Rank | Route | Character | Time | K.O | Difficulty | Player |
+|---|---|---|---|---|---|---|
+| 1 | SOR2 | Kage | 01:18:24 | 71 | MANIA#1 | 翼指龙 |
+| 2 | SOR2 | Bison | 00:57:24 | 72 | MANIA#1 | 翼指龙 |
+| 3 | SOR2 | Max | 01:05:11 | 79 | MANIA#1 | 翼指龙 |
+| 5 | SOR2 | Zan | 01:04:48 | 55 | MANIA#1 | 翼指龙 |
+| 5 | SOR2 | SOR3 Shiva | 01:06:44 | 81 | MANIA#1 | 霸气 |
+| 6 | SOR1 | Max | 00:42:22 | 45 | MANIA#1 | 翼指龙 |
+
+
+# Credits
+
+- QQ group **657798865** member Menghu—OpenBOR engine optimization
+- QQ group **657798865** member Baqi—shared character assets
+- QQ group **657798865** community—testing and feedback on every build
+
+# Version
 
 - SOR2XCombo_20260620
 ---
