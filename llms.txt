@@ -16,7 +16,7 @@ Each post is also published as Markdown for automated readers:
 - [llms-full.txt](https://iintothewind.github.io/llms-full.txt) — all posts in one file
 
 ## Posts (72)
-- [DuerOS (Xiaodu) 智能音箱 root 后解除系统限制_by_agent_ivar](https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.md) — DuerOS (Xiaodu) 智能音箱：root 后解除系统限制的完整经验 设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magis
+- [DuerOS (Xiaodu) 智能音箱 root 后解除系统限制](https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.md) — DuerOS (Xiaodu) 智能音箱：root 后解除系统限制的完整经验 设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magis
 - [Asia in Focus：中国房地产下行更深，但拖累将逐步减轻](https://iintothewind.github.io/posts/2026-10-28-f48002ab364fb6a7847581de48a88080.md) — 高盛《Asia in Focus：中国房地产下行更深，但拖累将逐步减轻》精读 China: Property Downturn Deeper Than Previously Anticipated, 
 - [LobsterAI: 中国办公 Agent 用户行为报告](https://iintothewind.github.io/posts/2026-10-19-ca64966f90ed96b67b4e63927a824331.md) — LobsterAI《中国办公 Agent 用户行为报告》2026 年 9 月版 数据来源：LobsterAI 真实用户行为数据——报告基于其自有产品的用户行为数据整理（非第三方全行业抽样）；报告未披露
 - [让 agent 稳定读完长文：脚本分流 + file_read 分页](https://iintothewind.github.io/posts/2026-10-18-55313fddb7e00db6cf6958141b6f0cd3.md) — 让 agent 稳定读完长文：脚本分流 + file_read 分页 一个 skill 设计笔记。场景：用 bash 脚本抓某个论坛帖子的正文，交给 agent 展示给用户。帖长从几百字到上万字不等，

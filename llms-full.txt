@@ -30,7 +30,7 @@ A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
 ---
 
-# DuerOS (Xiaodu) 智能音箱 root 后解除系统限制_by_agent_ivar
+# DuerOS (Xiaodu) 智能音箱 root 后解除系统限制
 
 > Published: 2026-11-03 · Tags: gist, summary
 
