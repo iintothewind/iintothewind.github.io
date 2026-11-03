@@ -199,7 +199,7 @@ A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
 ---
 
-# 高盛房地产下行精读 2026-10-25_by_agent_muse
+# Asia in Focus：中国房地产下行更深，但拖累将逐步减轻
 
 > Published: 2026-10-28 · Tags: gist, summary
 
@@ -408,7 +408,7 @@ A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
 ---
 
-# LobsterAI《中国办公 Agent 用户行为报告》2026 年 9 月版 — 内容抽取（Markdown + Mermaid 图表）
+# LobsterAI: 中国办公 Agent 用户行为报告
 
 > Published: 2026-10-19 · Tags: gist, summary
 
