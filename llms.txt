@@ -15,7 +15,8 @@ Each post is also published as Markdown for automated readers:
 
 - [llms-full.txt](https://iintothewind.github.io/llms-full.txt) — all posts in one file
 
-## Posts (72)
+## Posts (73)
+- [Claude 背后的 Anthropic：掌握核心科技的邪教](https://iintothewind.github.io/posts/2026-11-08-371b9fe2da7d249d2bcfdaa5e37a6da8.md) — Claude 背后的 Anthropic：掌握核心科技的邪教 来源：Bilibili 视频《Claude背后的Anthropic：掌握核心科技的邪教》 https://www.bilibili.com
 - [DuerOS (Xiaodu) 智能音箱 root 后解除系统限制](https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.md) — DuerOS (Xiaodu) 智能音箱：root 后解除系统限制的完整经验 设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magis
 - [Asia in Focus：中国房地产下行更深，但拖累将逐步减轻](https://iintothewind.github.io/posts/2026-10-28-f48002ab364fb6a7847581de48a88080.md) — 高盛《Asia in Focus：中国房地产下行更深，但拖累将逐步减轻》精读 China: Property Downturn Deeper Than Previously Anticipated, 
 - [LobsterAI: 中国办公 Agent 用户行为报告](https://iintothewind.github.io/posts/2026-10-19-ca64966f90ed96b67b4e63927a824331.md) — LobsterAI《中国办公 Agent 用户行为报告》2026 年 9 月版 数据来源：LobsterAI 真实用户行为数据——报告基于其自有产品的用户行为数据整理（非第三方全行业抽样）；报告未披露
