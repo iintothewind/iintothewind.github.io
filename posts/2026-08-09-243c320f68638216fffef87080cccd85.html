@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-08-09-243c320f68638216fffef87080cccd85.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,30 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-zeroclaw-上下文管理现状分析与优化路线rfc-草稿-v2">ZeroClaw 上下文管理现状分析与优化路线（RFC 草稿 v2）</a></li>
+<li class="toc-l2"><a href="#sec-1-现状zerolite-ac36fd0e2-源码证据">1. 现状（zerolite ac36fd0e2 源码证据）</a></li>
+<li class="toc-l3"><a href="#sec-11-裁剪已是发送前预算-单内核动作是整轮截断到低水位">1.1 裁剪：已是发送前预算 + 单内核，动作是「整轮截断到低水位」</a></li>
+<li class="toc-l3"><a href="#sec-12-窗口per-model-解析已落地v1-的-p3-关闭">1.2 窗口：per-model 解析已落地（v1 的 P3 关闭）</a></li>
+<li class="toc-l3"><a href="#sec-13-缓存追加日志已接线头部截断的经济学已经自洽">1.3 缓存：追加日志已接线，头部截断的经济学已经自洽</a></li>
+<li class="toc-l3"><a href="#sec-14-根因更新v1-的三块里两块已经有人负责了">1.4 根因更新：v1 的三块里两块已经有人负责了</a></li>
+<li class="toc-l2"><a href="#sec-2-问题清单v2-状态">2. 问题清单（v2 状态）</a></li>
+<li class="toc-l2"><a href="#sec-3-路线项状态v2">3. 路线项状态（v2）</a></li>
+<li class="toc-l3"><a href="#sec-r1真实窗口解析-已落地">R1：真实窗口解析 — ✅ 已落地</a></li>
+<li class="toc-l3"><a href="#sec-r2稳定前缀-追加日志-半落地收尾是有条件项">R2：稳定前缀 + 追加日志 — ◐ 半落地，收尾是有条件项</a></li>
+<li class="toc-l3"><a href="#sec-r3发送前预算-多相位触发-实质落地">R3：发送前预算 + 多相位触发 — ✅ 实质落地</a></li>
+<li class="toc-l3"><a href="#sec-r4工具结果分类-降级为入口时子集sidecar-map-设计整体推迟">R4：工具结果分类 — 降级为「入口时子集」，sidecar map 设计整体推迟</a></li>
+<li class="toc-l3"><a href="#sec-r5多道闸修剪-对当前模型重分类四道闸三道空转">R5：多道闸修剪 — 对当前模型重分类：四道闸三道空转</a></li>
+<li class="toc-l3"><a href="#sec-r6统一预算管线-已实质大半">R6：统一预算管线 — ◐ 已实质大半</a></li>
+<li class="toc-l3"><a href="#sec-r7命中率报表-采集链已存在v1-高估了工作量">R7：命中率报表 — ✅ 采集链已存在（v1 高估了工作量）</a></li>
+<li class="toc-l2"><a href="#sec-4-移植风险与权衡v2-修订">4. 移植风险与权衡（v2 修订）</a></li>
+<li class="toc-l2"><a href="#sec-5-高-roi-待办按性价比排序2026-09-09">5. 高 ROI 待办（按性价比排序，2026-09-09）</a></li>
+<li class="toc-l2"><a href="#sec-6-一句话总结">6. 一句话总结</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,22 +96,22 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>ZeroClaw 上下文管理现状分析与优化路线（RFC 草稿 v2）</h1>
+<h1 id="sec-zeroclaw-上下文管理现状分析与优化路线rfc-草稿-v2">ZeroClaw 上下文管理现状分析与优化路线（RFC 草稿 v2）</h1>
 <blockquote>
 <p><strong>v2 复核</strong>：2026-09-09 @ <strong>zerolite <code>ac36fd0e2</code></strong>。v1 复核的是 2026-08-31 的 master（<code>4b73b37</code>），
 zerolite 已把 v1 的多项「现状」与「待办」变成既成事实——<strong>v1 的 1.1 / 1.2 / P1 / P3 / R1 / R7 对 zerolite 已过时</strong>，本版逐条重述并附 HEAD 上的源码证据。
 参考实现仍是 omp（<code>can1357/oh-my-pi</code>），但本版的核心修正是：<strong>omp 的条目级修剪模型与 zerolite 的头部整轮截断模型不兼容，R4/R5 的移植前提不成立</strong>，
 真正的剩余优化在别处（见第 5 节 ROI 排序）。</p>
 </blockquote>
-<h2>1. 现状（zerolite <code>ac36fd0e2</code> 源码证据）</h2>
-<h3>1.1 裁剪：已是发送前预算 + 单内核，动作是「整轮截断到低水位」</h3>
+<h2 id="sec-1-现状zerolite-ac36fd0e2-源码证据">1. 现状（zerolite <code>ac36fd0e2</code> 源码证据）</h2>
+<h3 id="sec-11-裁剪已是发送前预算-单内核动作是整轮截断到低水位">1.1 裁剪：已是发送前预算 + 单内核，动作是「整轮截断到低水位」</h3>
 <ul>
 <li>单一决策内核 <code>plan_pre_send_trim</code>（<code>turn/context_pipeline.rs</code>）：三条路径（轮界预防、reported-budget enforce、溢出恢复）共用，v1 时代「三处各自推导、语义漂移」已不存在。</li>
 <li>token 计数已用 provider 权威值锚定：<code>ContextCalibration</code>（<code>history_trim.rs</code>）以 provider 报告的 prompt 大小为锚，本地启发式只为「已 append 未计费尾部」补价——omp <code>calculateContextTokens</code> 的 Rust 等价物。</li>
 <li>溢出恢复保留唯一的更激进档：强制收缩到当前 2/3（<code>plan_pre_send_trim</code> 的 <code>forced_shrink</code>），语义正确——provider 已拒绝，next-fit 到预算线不够深。</li>
 <li><strong>裁剪动作 = <code>trim_to_recent_turns</code>：只保留最近 N 个完整 turn</strong>（默认 5，clamp 1..10），不看裁后 token 数。这是<strong>有意的低水位设计</strong>，理由见 1.3。</li>
 </ul>
-<h3>1.2 窗口：per-model 解析已落地（v1 的 P3 关闭）</h3>
+<h3 id="sec-12-窗口per-model-解析已落地v1-的-p3-关闭">1.2 窗口：per-model 解析已落地（v1 的 P3 关闭）</h3>
 <p>三级链（<code>schema.rs:4222</code> <code>effective_model_context_window</code>）：</p>
 <ol>
 <li>显式 provider <code>context_window</code>（config）永远优先；</li>
@@ -95,7 +119,7 @@ zerolite 已把 v1 的多项「现状」与「待办」变成既成事实——<
 <li><code>UNCONFIGURED_CONTEXT_WINDOW_FALLBACK = 32_000</code>（<code>schema.rs:4721</code>）仅作最后兜底。</li>
 </ol>
 <p>v1 追的 #7100 线四个 PR 不再是 zerolite 的前置依赖。</p>
-<h3>1.3 缓存：追加日志已接线，头部截断的经济学已经自洽</h3>
+<h3 id="sec-13-缓存追加日志已接线头部截断的经济学已经自洽">1.3 缓存：追加日志已接线，头部截断的经济学已经自洽</h3>
 <ul>
 <li><strong><code>AppendOnlyLog</code> 已接入主 loop</strong>（<code>turn/mod.rs</code> 的 <code>provider_log</code>）：按<strong>位置</strong>存 FNV-1a digest，<code>sync</code> 保最长字节稳定前缀；列表变短（= 任何裁剪/压缩）直接 <code>clear()</code> 重建（<code>log.rs:100-117</code>）。</li>
 <li>这条实现细节就是设计依据的物证：<strong>头部删一条，<code>messages[0]</code> 的 digest 立刻对不上，稳定前缀归零——任何头部删除都要为剩余后缀付一次完整 cacheWrite</strong>。「少删点」不「少付点」。</li>
@@ -103,13 +127,13 @@ zerolite 已把 v1 的多项「现状」与「待办」变成既成事实——<
 <li>Anthropic 标记照旧：system 块 / tools / 最后一条消息 <code>cache_control: ephemeral</code>（<code>anthropic.rs:620,632,1406</code> 等）。<strong><code>CacheControl</code> 无 <code>ttl</code> 字段 → 全程默认 5 分钟 ephemeral</strong>，1 小时扩展缓存未使用。</li>
 <li><strong><code>StablePrefix</code>（<code>prefix.rs</code>）未接线</strong>：机制完整（指纹冻结 / <code>invalidate</code> / version 计数 / 所有权断开），runtime 零调用点。见 R2。</li>
 </ul>
-<h3>1.4 根因更新：v1 的三块里两块已经有人负责了</h3>
+<h3 id="sec-14-根因更新v1-的三块里两块已经有人负责了">1.4 根因更新：v1 的三块里两块已经有人负责了</h3>
 <ul>
 <li>「裁剪只为单次正确性兜底」不再成立：现在有发送前预算、有 provider 权威计数、裁剪深度有缓存经济学理由。</li>
 <li>「窗口是配置默认值不是模型事实」不再成立。</li>
 <li><strong>仍然成立的一条：头部字节每轮被原地重建</strong>。<code>sys_msg.content = build_system_prompt_for_turn(...)</code> 在每个 iteration 里执行（<code>loop_.rs:1909</code>、<code>2466</code> 两处）。它抖不抖取决于重建输入（见 R2 的漂移源清单）。</li>
 </ul>
-<h2>2. 问题清单（v2 状态）</h2>
+<h2 id="sec-2-问题清单v2-状态">2. 问题清单（v2 状态）</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -158,10 +182,10 @@ zerolite 已把 v1 的多项「现状」与「待办」变成既成事实——<
 </tr>
 </tbody>
 </table></div>
-<h2>3. 路线项状态（v2）</h2>
-<h3>R1：真实窗口解析 — ✅ 已落地</h3>
+<h2 id="sec-3-路线项状态v2">3. 路线项状态（v2）</h2>
+<h3 id="sec-r1真实窗口解析-已落地">R1：真实窗口解析 — ✅ 已落地</h3>
 <p>见 1.2。v1 本节及其对 1.2 的批评删除。</p>
-<h3>R2：稳定前缀 + 追加日志 — ◐ 半落地，收尾是<strong>有条件项</strong></h3>
+<h3 id="sec-r2稳定前缀-追加日志-半落地收尾是有条件项">R2：稳定前缀 + 追加日志 — ◐ 半落地，收尾是<strong>有条件项</strong></h3>
 <ul>
 <li>AppendOnlyLog 已接线；StablePrefix 未接线。</li>
 <li>StablePrefix 不增加缓存覆盖面（history 增量靠 Anthropic 断点自动走），它唯一的事是<strong>保证/暴露头部字节跨轮不变</strong>。接线本身不产生收益：若头部每轮合法地变，接上去只会如实记录 <code>version++</code>。</li>
@@ -175,16 +199,16 @@ zerolite 已把 v1 的多项「现状」与「待办」变成既成事实——<
 </li>
 <li><strong>结论</strong>：接线前先答「你的部署配 <code>tool_filter_groups</code> 吗 / R7 数据显示头部每轮买断吗」，否则优先级低。</li>
 </ul>
-<h3>R3：发送前预算 + 多相位触发 — ✅ 实质落地</h3>
+<h3 id="sec-r3发送前预算-多相位触发-实质落地">R3：发送前预算 + 多相位触发 — ✅ 实质落地</h3>
 <p>单内核 + provider 权威计数 + 溢出强制深裁。omp 的 mid-turn / post-agent-end 分相在头部截断模型下增益很小：越线即裁没有「挑时机」余地，未采。<strong>结案，不再追。</strong></p>
-<h3>R4：工具结果分类 — <strong>降级为「入口时子集」，sidecar map 设计整体推迟</strong></h3>
+<h3 id="sec-r4工具结果分类-降级为入口时子集sidecar-map-设计整体推迟">R4：工具结果分类 — <strong>降级为「入口时子集」，sidecar map 设计整体推迟</strong></h3>
 <ul>
 <li>v1 设计纪要（<code>Map&lt;tool_call_id, MessageClass&gt;</code>、四条硬不变量）<strong>存档不实施</strong>。理由：map 的存在理由是<strong>事后 trim 侧消费者</strong>（按 class 豁免/挑选），而当前 trim 是整轮保留、&quot;never cut a turn in half&quot;，<strong>protectedTools 没有消费者</strong>；且 skill 内容在 system prompt（稳定前缀）里，protected 的对象本身所剩无几。</li>
 <li>有价值的子集是<strong>入口时</strong>的 supersede（同文件重复 read 留最新）与 useless 剔除（零匹配 grep→stub）：两者都在 append 边界决策，而 name/args 在 <code>results_collect.rs</code> <strong>本来就在作用域</strong>——把 name 带进 <code>append_tool_round_to_history</code> 即可，零 sidecar、零对齐不变量、零缓存代价（消息未入历史，谈不上污染前缀）。</li>
 <li>入口处已有无差别的 <code>max_tool_result_chars</code> 截断兜底单条体积；子集收益取决于「重复 read / 空结果在真实会话的 token 占比」——<strong>先测量再动手</strong>（第 5 节 #5）。</li>
 <li>复活条件：条目级修剪立项的那天，map 与其四条不变量按 v1 纪要原样启用（分类规则与载体分离的设计保留）。</li>
 </ul>
-<h3>R5：多道闸修剪 — <strong>对当前模型重分类：四道闸三道空转</strong></h3>
+<h3 id="sec-r5多道闸修剪-对当前模型重分类四道闸三道空转">R5：多道闸修剪 — <strong>对当前模型重分类：四道闸三道空转</strong></h3>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -212,23 +236,23 @@ zerolite 已把 v1 的多项「现状」与「待办」变成既成事实——<
 </tbody>
 </table></div>
 <p><strong>结论修正</strong>：v1 说「R4 不落地 ⇒ R5 依赖未满足」——更准确的是 <strong>R5 是条目级修剪（改中间某条）的配套装置</strong>（管「改太贵，挑便宜时机改」），zeroclaw 的动作是头部整体截断，不存在「便宜时机」。此前 coding agent 半程后长成原管线补丁，<strong>是架构模型不匹配的必然，不是执行质量问题</strong>。条目级修剪立项之日 R5 随其复活，届时含：wire bytes 级前缀对齐（任何中间删除改写其后全部字节，<code>log.rs</code> 只是如实反映）、TTL 感知的改写时机。</p>
-<h3>R6：统一预算管线 — ◐ 已实质大半</h3>
+<h3 id="sec-r6统一预算管线-已实质大半">R6：统一预算管线 — ◐ 已实质大半</h3>
 <p><code>context_pipeline.rs</code> 单内核 + <code>zeroclaw-context</code> 独立 crate（机制与策略分离、可单测）已是该管线的雏形。剩余（provider cache 标记收编）收益低，不排期。</p>
-<h3>R7：命中率报表 — ✅ 采集链已存在（v1 高估了工作量）</h3>
+<h3 id="sec-r7命中率报表-采集链已存在v1-高估了工作量">R7：命中率报表 — ✅ 采集链已存在（v1 高估了工作量）</h3>
 <ul>
 <li>OpenAI 兼容（含 vLLM）：<code>prompt_tokens_details.cached_tokens</code> → <code>cached_input_tokens</code>（<code>openai.rs:612,698</code>）；<strong>vLLM 侧需 <code>--enable-prompt-tokens-details</code> 启动</strong>，否则整个 details 缺席。</li>
 <li>Anthropic：<code>cache_read_input_tokens</code> → <code>cached_input_tokens</code>（<code>anthropic.rs:1846</code>）。</li>
 <li>下游：<code>cost.rs</code> 按 <code>cached_rate</code> 折扣计费；OTel 属性 <code>zeroclaw.usage.cached_input_tokens</code>（<code>otel.rs:644</code>）；Prometheus <strong><code>zeroclaw_tokens_cached_input_total{model_provider,model}</code></strong>（<code>prometheus.rs:87</code>，注释明确与 response cache 分开）。</li>
 <li><strong>命中率报表 = PromQL 面板，不是代码</strong>：<code>rate(zeroclaw_tokens_cached_input_total) / rate(tokens_input_total)</code> 按 model 分组。</li>
 </ul>
-<h2>4. 移植风险与权衡（v2 修订）</h2>
+<h2 id="sec-4-移植风险与权衡v2-修订">4. 移植风险与权衡（v2 修订）</h2>
 <ul>
 <li>语言差异一条保留（结论不变：机制可移植，Rust 下更便宜）。</li>
 <li>provider 缓存模型一条<strong>加重要限定</strong>：omp 经济学的 idle/冷窗假设按 1h 扩展缓存定价；zerolite 固定 5 分钟 TTL，同一套闸门的时间常数全部失效。移植任何「挑时机改写」机制前，先决定是否给 <code>CacheControl</code> 加 <code>ttl</code>。</li>
 <li>「语义层是 omp 空位」一条保留，但挂在条目级模型立项之后才有意义。</li>
 <li>新增回归面备忘：<code>tool_filter_groups</code> 的行为若为缓存稳定性而改（如改 per-session sticky），会改变「按轮少付 MCP token」的成本结构，须带着 P6 修复后的三档计费重估。</li>
 </ul>
-<h2>5. 高 ROI 待办（按性价比排序，2026-09-09）</h2>
+<h2 id="sec-5-高-roi-待办按性价比排序2026-09-09">5. 高 ROI 待办（按性价比排序，2026-09-09）</h2>
 <ol>
 <li><strong>P6 修复：<code>cache_creation_input_tokens</code> 透传 + 三档计费</strong>。<code>TokenUsage</code> 加字段（<code>anthropic.rs</code> 映射处已有现成变量），<code>cost.rs</code> 加 write 档（1.25x）。改动最小，且它是后面每一项的<strong>计量地基</strong>——不修，前缀重写的代价在账本上永远是零。</li>
 <li><strong>PromQL 命中率面板（零代码）</strong>。回答三个悬案：web 聊天前缀跨轮真实命中率；深裁一次重写有多贵；5 分钟 TTL 下热态实际存活率。所有后续决策的读数来源。</li>
@@ -238,7 +262,7 @@ zerolite 已把 v1 的多项「现状」与「待办」变成既成事实——<
 <li><strong>P2 残余（轮粒度）不动</strong>：唯一解是轮内压缩（需要被 #8196 砍掉的 summary 层），记录为开放问题，不排期。</li>
 </ol>
 <p><strong>明确不做</strong>：R4 全量 sidecar 设计；token 低水位线（与轮数低水位语义重叠且受同一粒度约束，退不回比 1 轮更浅）；R5 在当前模型上的任何 retrofit；为 <code>tool_filter_groups</code> 缓存问题而移除 MCP（该路径对未配置用户根本不存在）。</p>
-<h2>6. 一句话总结</h2>
+<h2 id="sec-6-一句话总结">6. 一句话总结</h2>
 <blockquote>
 <p>zerolite 现状：per-model 窗口 ✅、发送前单内核预算 ✅、追加日志 ✅、深裁低水位（模型内自洽）✅。
 v1 路线里 R3/R7 已经做掉，R1 已做掉；R4 降级为入口时子集（先测量），R5 随条目级模型立项才有意义，StablePrefix 接线取决于头部漂移是否真实存在。

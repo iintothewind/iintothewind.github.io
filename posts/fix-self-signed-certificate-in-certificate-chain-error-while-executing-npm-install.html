@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install.html">
 
 </head>
-<body>
+<body class="">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -36,6 +36,7 @@
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
 </aside>
+
 
 <div id="overlay-mask"></div>
 
@@ -72,7 +73,7 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h2>the problem</h2>
+<h2 id="sec-the-problem">the problem</h2>
 <p>The error occurred while executing &quot;npm clean-install&quot;:</p>
 <pre><code>gyp ERR! configure error
 gyp ERR! stack Error: self signed certificate in certificate chain
@@ -81,7 +82,7 @@ gyp ERR! stack     at TLSSocket.emit (events.js:219:5)
 gyp ERR! stack     at TLSSocket._finishInit (_tls_wrap.js:822:8)
 gyp ERR! stack     at TLSWrap.ssl.onhandshakedone (_tls_wrap.js:618:12)
 </code></pre>
-<h2>the solution</h2>
+<h2 id="sec-the-solution">the solution</h2>
 <pre><code class="language-bash">npm config set strict-ssl false
 export NODE_TLS_REJECT_UNAUTHORIZED=0
 </code></pre>

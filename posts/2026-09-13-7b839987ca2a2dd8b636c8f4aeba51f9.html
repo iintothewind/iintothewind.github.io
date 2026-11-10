@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-13-7b839987ca2a2dd8b636c8f4aeba51f9.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,18 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-网页读取工具对比报告">网页读取工具对比报告</a></li>
+<li class="toc-l2"><a href="#sec-工具一览">工具一览</a></li>
+<li class="toc-l2"><a href="#sec-测试表现对比">测试表现对比</a></li>
+<li class="toc-l2"><a href="#sec-结论">结论</a></li>
+<li class="toc-l2"><a href="#sec-补充命令行读页只留-obscura-够吗">补充：命令行读页只留 obscura 够吗？</a></li>
+<li class="toc-l2"><a href="#sec-复现命令">复现命令</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,13 +84,13 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>网页读取工具对比报告</h1>
+<h1 id="sec-网页读取工具对比报告">网页读取工具对比报告</h1>
 <p>测试页：<a href="https://api-docs.deepseek.com/zh-cn/quick_start/pricing/">https://api-docs.deepseek.com/zh-cn/quick_start/pricing/</a></p>
 <ul>
 <li>（Docusaurus SSR，23 KB HTML，含价格表格 + 脚注）</li>
 <li>日期：2026-07-14 · 环境：本机已装 trafilatura 2.2.0 / readabilityrs 0.1.5 / htmlq 0.5.0 / obscura 0.2.2</li>
 </ul>
-<h2>工具一览</h2>
+<h2 id="sec-工具一览">工具一览</h2>
 <ul>
 <li><strong>trafilatura</strong>
 <ul>
@@ -113,7 +125,7 @@
 </ul>
 </li>
 </ul>
-<h2>测试表现对比</h2>
+<h2 id="sec-测试表现对比">测试表现对比</h2>
 <ul>
 <li><strong>trafilatura</strong>（输出 1,357 B）
 <ul>
@@ -157,7 +169,7 @@
 </ul>
 </li>
 </ul>
-<h2>结论</h2>
+<h2 id="sec-结论">结论</h2>
 <ol>
 <li><strong>本测试页的&quot;正确性基准&quot;是价格表格</strong>：4 个数值维度中——obscura 和 htmlq 数据完整，readabilityrs 数据全但结构丢失（读起来费劲、机器解析易错），trafilatura 直接丢表，<strong>在这类&quot;表格为核心内容&quot;的文档页上表现最差</strong>。</li>
 <li><strong>trafilatura / readabilityrs / htmlq 都只吃静态 HTML</strong>：本页是 Docusaurus SSR，curl 即可拿全；若页面是纯 SPA，三者都会失败，只剩 obscura（或上游 jina/firecrawl）。</li>
@@ -170,7 +182,7 @@
 </ul>
 </li>
 </ol>
-<h2>补充：命令行读页只留 obscura 够吗？</h2>
+<h2 id="sec-补充命令行读页只留-obscura-够吗">补充：命令行读页只留 obscura 够吗？</h2>
 <p><strong>功能上 obscura 是超集</strong>（实测 v0.2.2）：</p>
 <ul>
 <li><code>--dump</code> 支持 <code>markdown / text / links / html / original / assets / cookies</code>，从整页 MD 到二进制原样抓取全覆盖</li>
@@ -188,7 +200,7 @@
 <li>日常交互式读页：<strong>只留 obscura 当默认没问题</strong>，功能够用且是唯一能跑 JS 的</li>
 <li>工具链建议：<code>obscura</code>（主力）+ <code>htmlq</code>（精确抽取 / 探结构）两个就够；trafilatura / readabilityrs 降级为可选兜底，体积小、留着不亏</li>
 </ul>
-<h2>复现命令</h2>
+<h2 id="sec-复现命令">复现命令</h2>
 <pre><code class="language-bash">URL='https://api-docs.deepseek.com/zh-cn/quick_start/pricing/'
 curl -fsSL -L -A 'Mozilla/5.0' &quot;$URL&quot; -o page.html
 

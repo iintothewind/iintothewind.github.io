@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-16-8c7c0f76bec5a47e0fe44d3a6295fe9c.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,37 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-llm-幻觉三问模型规模量化dense-vs-moe">LLM 幻觉三问：模型规模、量化、Dense vs MoE</a></li>
+<li class="toc-l2"><a href="#sec-目录">目录</a></li>
+<li class="toc-l2"><a href="#sec-1-背景幻觉为什么发生-background">1. 背景：幻觉为什么发生 {#background}</a></li>
+<li class="toc-l2"><a href="#sec-2-问题一小模型比大模型更容易幻觉吗-q1">2. 问题一：小模型比大模型更容易幻觉吗？ {#q1}</a></li>
+<li class="toc-l3"><a href="#sec-三个机制">三个机制</a></li>
+<li class="toc-l3"><a href="#sec-三个重要限定">三个重要限定</a></li>
+<li class="toc-l3"><a href="#sec-实用判断">实用判断</a></li>
+<li class="toc-l2"><a href="#sec-3-问题二4bit-以下的量化幻觉更严重是必然结果吗-q21">3. 问题二：4bit 以下的量化幻觉更严重，是必然结果吗？ {#q2.1}</a></li>
+<li class="toc-l3"><a href="#sec-文献证据">文献证据</a></li>
+<li class="toc-l3"><a href="#sec-阈值效应不是线性退化">阈值效应：不是线性退化</a></li>
+<li class="toc-l3"><a href="#sec-哪些因素能缓解所以不是纯必然">哪些因素能缓解（所以不是纯必然）</a></li>
+<li class="toc-l2"><a href="#sec-4-交叉难题9b-q8-vs-27b-q2谁更靠谱-q22">4. 交叉难题：9B-Q8 vs 27B-Q2，谁更靠谱？ {#q2.2}</a></li>
+<li class="toc-l3"><a href="#sec-a-事实性幻觉巴黎在哪个国家">A. 事实性幻觉（&quot;巴黎在哪个国家&quot;）</a></li>
+<li class="toc-l3"><a href="#sec-b-校准-置信度幻觉自信地说错">B. 校准 / 置信度幻觉（自信地说错）</a></li>
+<li class="toc-l3"><a href="#sec-c-结构化输出-tool-call-幻觉">C. 结构化输出 / tool-call 幻觉</a></li>
+<li class="toc-l3"><a href="#sec-d-长程一致性">D. 长程一致性</a></li>
+<li class="toc-l3"><a href="#sec-综合判断标注推断非实测">综合判断（标注：推断，非实测）</a></li>
+<li class="toc-l2"><a href="#sec-5-问题三同参数量dense-比-moe-幻觉率更低吗-q3">5. 问题三：同参数量，Dense 比 MoE 幻觉率更低吗？ {#q3}</a></li>
+<li class="toc-l3"><a href="#sec-先拆同参数量的三种含义">先拆&quot;同参数量&quot;的三种含义</a></li>
+<li class="toc-l3"><a href="#sec-文献怎么说">文献怎么说</a></li>
+<li class="toc-l3"><a href="#sec-文献空白诚实声明">文献空白（诚实声明）</a></li>
+<li class="toc-l3"><a href="#sec-我的判断标注推断">我的判断（标注：推断）</a></li>
+<li class="toc-l3"><a href="#sec-一个可检验的实验设计">一个可检验的实验设计</a></li>
+<li class="toc-l2"><a href="#sec-6-实践建议-practice">6. 实践建议 {#practice}</a></li>
+<li class="toc-l2"><a href="#sec-7-参考文献-refs">7. 参考文献 {#refs}</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,11 +103,11 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>LLM 幻觉三问：模型规模、量化、Dense vs MoE</h1>
+<h1 id="sec-llm-幻觉三问模型规模量化dense-vs-moe">LLM 幻觉三问：模型规模、量化、Dense vs MoE</h1>
 <blockquote>
 <p>整理自一次围绕 LLM 幻觉的技术讨论。三个问题层层递进：<strong>小模型是否比大模型更容易幻觉？低比特量化是否必然加重幻觉？同等条件下 Dense 和 MoE 谁更&quot;诚实&quot;？</strong> 本文所有关键论断均标注了论文出处（arXiv 链接可直接点开），推断与已证实的结论分开表述。</p>
 </blockquote>
-<h2>目录</h2>
+<h2 id="sec-目录">目录</h2>
 <ol>
 <li><a href="#%E8%83%8C%E6%99%AF">背景：什么是幻觉，为什么它和&quot;知识容量&quot;有关</a></li>
 <li><a href="#q1">问题一：小模型比大模型更容易幻觉吗？</a></li>
@@ -87,7 +118,7 @@
 <li><a href="#refs">参考文献</a></li>
 </ol>
 <hr>
-<h2>1. 背景：幻觉为什么发生 {#background}</h2>
+<h2 id="sec-1-背景幻觉为什么发生-background">1. 背景：幻觉为什么发生 {#background}</h2>
 <p>幻觉的直接机制：<strong>模型的生成能力和知识容量是解耦的。</strong> 知识丢了（或者根本没存过），生成机制不会因此停下来——它照样要输出 token，于是用流畅的句式把不确定的内容填满了。框架对，内容假，这是幻觉的典型形态。</p>
 <p>这里有一个被反复证实的定量结论：</p>
 <blockquote>
@@ -96,9 +127,9 @@
 </blockquote>
 <p>这个&quot;2 bit/参数&quot;上限是理解后面所有问题的关键坐标。</p>
 <hr>
-<h2>2. 问题一：小模型比大模型更容易幻觉吗？ {#q1}</h2>
+<h2 id="sec-2-问题一小模型比大模型更容易幻觉吗-q1">2. 问题一：小模型比大模型更容易幻觉吗？ {#q1}</h2>
 <p><strong>结论：是的，小模型幻觉率系统性更高。这是 LLM 评估中最稳健的结论之一，但机制比&quot;参数少记不住&quot;更细。</strong></p>
-<h3>三个机制</h3>
+<h3 id="sec-三个机制">三个机制</h3>
 <p><strong>① 知识容量硬约束。</strong> 事实知识需要参数来存。7B 模型要装下和 70B 同等广度的世界知识，每个参数承载的信息密度更高，编码更 lossy：</p>
 <ul>
 <li>大模型：常见事实有<strong>冗余编码</strong>（多个 head、多层参与），丢一点不影响整体</li>
@@ -107,13 +138,13 @@
 <p>知识容量随规模的扩展不是线性的：同一家族内 LLaMA-70B 在知识基准上 63.6%，LLaMA-7B 只有 48.9%——10 倍参数只换来约 1.3 倍正确率，但绝对差距真实存在，且随任务难度拉开（见 <a href="https://arxiv.org/abs/2404.05405">arXiv:2404.05405</a> 对这类对比的讨论）。</p>
 <p><strong>② 校准（calibration）更差。</strong> Anthropic 的经典研究 (<em>Language Models (Mostly) Know What They Know</em>, <a href="https://arxiv.org/abs/2207.05221">arXiv:2207.05221</a>) 系统验证了：<strong>大模型在选择题/判断题上校准良好——&quot;自信程度&quot;与实际答对率匹配；小模型则倾向过度自信</strong>。所以小模型的危险不只是&quot;错得多&quot;，还有<strong>错得更笃定</strong>：它分不清&quot;我真的知道&quot;和&quot;我在猜&quot;。</p>
 <p><strong>③ 冗余度低。</strong> 大模型同一概念被多个子网络部分编码，一条路径断了其他路径补偿；小模型没有这种容错。这也解释了为什么小模型对量化更敏感——同样的比特损失，在大模型里被冗余吸收，在小模型里直接打到知识本体。</p>
-<h3>三个重要限定</h3>
+<h3 id="sec-三个重要限定">三个重要限定</h3>
 <ul>
 <li><strong>训练数据质量可以翻转规模优势。</strong> 高质量事实密集语料训练的 7B，在特定领域可以超过噪声语料训练的 70B。知识容量上限 2 bit/参数只是<strong>上限</strong>，塞没塞满是另一回事（同 [2404.05405]）。</li>
 <li><strong>Fine-tuning 可能反向加剧幻觉。</strong> Gekhman et al. (<em>Does Fine-Tuning LLMs on New Knowledge Encourage Hallucinations?</em>, <a href="https://arxiv.org/abs/2405.05904">arXiv:2405.05904</a>, EMNLP 2024) 证明：<strong>SFT 语料中模型本来不知道的&quot;新知识&quot;，会教模型幻觉</strong>——模型学会了&quot;面对未知也要给出流畅答案&quot;。这正是对齐训练&quot;教模型自信&quot;的代价。</li>
 <li><strong>窄域微调 / RAG 可以局部逆转。</strong> 在医学语料上重度 SFT 的 7B，在医学事实上的准确率可以超过通用 70B——但出了域就崩。RAG 的本质是把&quot;记住事实&quot;从权重卸载到上下文，小模型只负责&quot;处理给定信息&quot;。</li>
 </ul>
-<h3>实用判断</h3>
+<h3 id="sec-实用判断">实用判断</h3>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -146,9 +177,9 @@
 </tbody>
 </table></div>
 <hr>
-<h2>3. 问题二：4bit 以下的量化幻觉更严重，是必然结果吗？ {#q2.1}</h2>
+<h2 id="sec-3-问题二4bit-以下的量化幻觉更严重是必然结果吗-q21">3. 问题二：4bit 以下的量化幻觉更严重，是必然结果吗？ {#q2.1}</h2>
 <p><strong>结论：量化确实会加重幻觉，但不是线性&quot;必然&quot;，而是存在阈值效应——低于某档位后退化从&quot;均匀的小误差&quot;突变为&quot;结构性的行为畸变&quot;。</strong></p>
-<h3>文献证据</h3>
+<h3 id="sec-文献证据">文献证据</h3>
 <p><strong>知识容量的直接测量</strong>（<a href="https://arxiv.org/abs/2404.05405">arXiv:2404.05405</a>，Result 8）：</p>
 <ul>
 <li><strong>int8 量化不损失知识容量</strong>（即使模型已处于 2 bit/参数的边界）——这就是&quot;Q8 几乎无损&quot;的理论依据</li>
@@ -160,7 +191,7 @@
 </blockquote>
 <p><strong>置信度失真的证据</strong>（Proskurina et al., <a href="https://arxiv.org/abs/2405.00632">arXiv:2405.00632</a>, NAACL 2024 Findings）：低比特 PTQ 会<strong>扭曲模型的置信度分布</strong>——量化让模型在部分任务上变得更&quot;敢答&quot;，但答对率没有相应提升。</p>
 <p><strong>结构化输出（tool-call）为什么最先崩：</strong> 2512.08213 研究 Go 依赖包幻觉时发现，量化模型会<strong>编造不存在的包名</strong>；tool-call 要求精确的函数名/schema/JSON 结构，这类模式在权重中冗余度低（不像通用语言生成有大量冗余路径兜底），几个关键权重的量化偏移就能让输出结构整体崩掉——编造工具名、参数张冠李戴、JSON 畸形。这比事实幻觉更危险，因为下游代码会直接执行错误调用。</p>
-<h3>阈值效应：不是线性退化</h3>
+<h3 id="sec-阈值效应不是线性退化">阈值效应：不是线性退化</h3>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -184,7 +215,7 @@
 </tbody>
 </table></div>
 <p>Q4→Q3 的退化远小于 Q3→Q2。原因：量化损失不是均匀分布的，它优先打碎<strong>细粒度区分性</strong>（恰好是事实记忆和结构化输出最依赖的部分），而语法/格式等&quot;粗模式&quot;更抗损。</p>
-<h3>哪些因素能缓解（所以不是纯必然）</h3>
+<h3 id="sec-哪些因素能缓解所以不是纯必然">哪些因素能缓解（所以不是纯必然）</h3>
 <ul>
 <li><strong>量化方法</strong>：Dynamic 混合精度 &gt; AWQ &gt; GPTQ &gt; 裸 uniform（[2409.11055] 实测 AWQ &gt; GPTQ）</li>
 <li><strong>imatrix 校准数据</strong>：用你实际的任务分布做校准，能保住关键路径的精度</li>
@@ -193,7 +224,7 @@
 </ul>
 <p><strong>精炼表述：低于质量阈值后，量化退化从&quot;均匀小误差&quot;变成&quot;结构性畸变&quot;，知识准确性和结构化输出是最先崩溃的两个维度。阈值本身取决于方法、校准和架构，不是固定比特数。</strong></p>
 <hr>
-<h2>4. 交叉难题：9B-Q8 vs 27B-Q2，谁更靠谱？ {#q2.2}</h2>
+<h2 id="sec-4-交叉难题9b-q8-vs-27b-q2谁更靠谱-q22">4. 交叉难题：9B-Q8 vs 27B-Q2，谁更靠谱？ {#q2.2}</h2>
 <p>这是三股力量的对撞：小模型的容量缺口 vs 大模型的量化损伤。<strong>文件体积相同 ≠ 有效知识量相同。</strong> 先看坐标数字：</p>
 <div class="table-scroll"><table>
 <thead>
@@ -222,24 +253,24 @@
 </tbody>
 </table></div>
 <p><strong>按这个粗估，两者的知识容量竟然大致打平——但&quot;打平&quot;不等于幻觉表现相同</strong>，因为量化损伤不是均匀的（细模式先崩），且校准损失独立于知识容量。分幻觉类型判断：</p>
-<h3>A. 事实性幻觉（&quot;巴黎在哪个国家&quot;）</h3>
+<h3 id="sec-a-事实性幻觉巴黎在哪个国家">A. 事实性幻觉（&quot;巴黎在哪个国家&quot;）</h3>
 <p><strong>倾向 27B-Q2 略优或持平。</strong> 事实知识在大模型里是分布式冗余编码，3x 参数意味着更多&quot;投票通道&quot;，即使每通道信噪比降低（Q2），多数投票仍能恢复正确信号。但方差更大——具体到某个事实，可能小模型恰好记得而大模型 Q2 恰好丢了那个 pattern。</p>
-<h3>B. 校准 / 置信度幻觉（自信地说错）</h3>
+<h3 id="sec-b-校准-置信度幻觉自信地说错">B. 校准 / 置信度幻觉（自信地说错）</h3>
 <p><strong>倾向 9B-Q8 明显更好。</strong> 校准依赖 logits 分布的精细结构，Q2 扭曲很大（[2405.00632] 的方向性结论外推）；Q8_0 对 logits 影响极小，9B-Q8 的校准基本等于 base 模型。这类幻觉最危险：不是答错，而是<strong>用错误的确定性答错</strong>。</p>
-<h3>C. 结构化输出 / tool-call 幻觉</h3>
+<h3 id="sec-c-结构化输出-tool-call-幻觉">C. 结构化输出 / tool-call 幻觉</h3>
 <p><strong>倾向 9B-Q8 明显更好。</strong> Tool-call 的模板在权重里是稀疏、精确的模式，冗余度低，Q2 对&quot;薄模式&quot;的破坏是灾难性的。这与 [2512.08213] 观察到的量化模型编造包名的现象一致。</p>
-<h3>D. 长程一致性</h3>
+<h3 id="sec-d-长程一致性">D. 长程一致性</h3>
 <p><strong>倾向 9B-Q8 略好</strong>，取决于 context 长度；27B-Q2 在长 context 下 KV 精度问题与权重损失叠加，一致性下降更快。</p>
-<h3>综合判断（标注：推断，非实测）</h3>
+<h3 id="sec-综合判断标注推断非实测">综合判断（标注：推断，非实测）</h3>
 <blockquote>
 <p><strong>9B-Q8 总幻觉率大概率低于 27B-Q2</strong>，主要赢在校准和结构化输出；纯事实回忆上两者可能接近甚至 27B-Q2 略优。</p>
 </blockquote>
 <p><strong>诚实声明：我没有&quot;9B-Q8 vs 27B-Q2&quot;的直接 benchmark 数据，现有量化论文都在测同模型不同比特的 PPL/MMLU 下降，跨规模交叉对比是文献空白。</strong> 上面的排序是机制推断，不是实验结论。想真正验证的话：固定事实问答集 + tool-call 任务，温度 0，各跑 5 次采样，用 LLM-as-judge 分别评事实正确率、置信度-正确率校准曲线、schema 合法率。</p>
 <p>另外注意：这个估算用的&quot;每参数有效知识&quot;是<strong>受控合成数据</strong>下的理论上限；真实模型的预训练数据质量参差，两个模型实际存的量可能都远低于上限，实际对比还叠加了数据质量变量。</p>
 <hr>
-<h2>5. 问题三：同参数量，Dense 比 MoE 幻觉率更低吗？ {#q3}</h2>
+<h2 id="sec-5-问题三同参数量dense-比-moe-幻觉率更低吗-q3">5. 问题三：同参数量，Dense 比 MoE 幻觉率更低吗？ {#q3}</h2>
 <p><strong>结论：没有稳健实证支持&quot;dense 系统性幻觉更低&quot;。现有证据是间接对比；机制上有两股方向相反的力，谁赢取决于对齐哪个轴。</strong></p>
-<h3>先拆&quot;同参数量&quot;的三种含义</h3>
+<h3 id="sec-先拆同参数量的三种含义">先拆&quot;同参数量&quot;的三种含义</h3>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -266,7 +297,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3>文献怎么说</h3>
+<h3 id="sec-文献怎么说">文献怎么说</h3>
 <p><strong>① MoE 的知识存储并不吃亏</strong>（[arXiv:2404.05405] Result 9）：即使 32 个 expert，MoE 的知识容量相对 base scaling law 只降 <strong>1.3 倍</strong>，而推理只用 8.8% 参数。<strong>&quot;MoE 同 total 参数下弱于 dense&quot;的原因很可能不是知识存少了</strong>——这直接反驳了&quot;MoE 存储效率低所以更容易幻觉&quot;的直觉。</p>
 <p><strong>② MoE 的幻觉有独特的结构性根源</strong>（Hu et al., <em>Counterfactual Routing to Mitigate MoE Hallucinations</em>, <a href="https://arxiv.org/abs/2604.14246">arXiv:2604.14246</a>）：</p>
 <blockquote>
@@ -275,16 +306,16 @@
 <p>这是 dense 架构<strong>不可能出现</strong>的幻觉模式：dense 的知识提取路径固定，&quot;存了&quot;和&quot;取到&quot;是绑定的；MoE 把两者解耦了。</p>
 <p><strong>③ dense 的稳定性优势（推断，无直接实证）：</strong> dense 每次回忆事实走同一条全量计算路径，同一 prompt 两次采样激活的权重完全相同，答案方差小。MoE 的 router logits 是软分布，边界 case 时摇摆，同一问题可能走不同 expert 组合 → 提取路径不一致 → 前后矛盾型幻觉。校准方面 MoE 训练噪声更大（load balancing、routing 抖动），<strong>理论上</strong>更容易打歪内部概率结构，但这一条我没有直接证据。</p>
 <p><strong>④ 现代缓解手段：</strong> fine-grained expert + shared expert 架构已经把 routing 不一致的风险压低了很多；2607.20426（ACL2）等后续工作还在通过 expert-aware 解码继续缓解 MoE 幻觉。<strong>架构层面的差距在被主动修补。</strong></p>
-<h3>文献空白（诚实声明）</h3>
+<h3 id="sec-文献空白诚实声明">文献空白（诚实声明）</h3>
 <p><strong>&quot;幻觉率：dense vs MoE&quot;没有受控对照研究。</strong> 幻觉评估论文（TruthfulQA/HaluEval/FActScore 系）不做这个轴的对照，量化论文也不比。现有同代对比（Qwen3-32B vs Qwen3-30B-A3B 这类同家族同管线组合）差距在几个点以内，没有出现 dense 系统性更&quot;诚实&quot;的模式——但这些对比的幻觉评估维度也不够细。</p>
-<h3>我的判断（标注：推断）</h3>
+<h3 id="sec-我的判断标注推断">我的判断（标注：推断）</h3>
 <p>按重要性排序：<strong>后训练质量 &gt; 有效知识容量 &gt; 架构（dense/MoE）</strong>。</p>
 <ul>
 <li>同 total 参数：dense 在<strong>校准、长程一致性、结构化输出稳定性</strong>上可能有小幅优势（提取路径一致）；知识广度两者几乎相同</li>
 <li>同激活/同算力：MoE 知识面更广，&quot;没存过&quot;型幻觉更少；routing 风险已被现代架构压低</li>
 <li>如果体感&quot;MoE 更爱胡说&quot;，更可能的解释是：<strong>开源 MoE 普遍&quot;大 total / 小 active&quot;，有效容量和推理深度受激活量限制——是容量问题，不是架构原罪</strong></li>
 </ul>
-<h3>一个可检验的实验设计</h3>
+<h3 id="sec-一个可检验的实验设计">一个可检验的实验设计</h3>
 <p>用 Qwen3-32B vs Qwen3-30B-A3B（同家族、同 post-training、同量化条件）做最干净的对照：</p>
 <ol>
 <li>固定事实问答集，温度 0，每题 5 次采样，测<strong>答案方差</strong>（直接测提取路径一致性）</li>
@@ -293,7 +324,7 @@
 </ol>
 <p>如果 dense 方差显著更小且正确率相当，&quot;dense 更稳&quot;成立；方差相当则 routing 担忧过虑。<strong>据我所知没人发表过这个实验——这可能是个不错的 benchmark 选题。</strong></p>
 <hr>
-<h2>6. 实践建议 {#practice}</h2>
+<h2 id="sec-6-实践建议-practice">6. 实践建议 {#practice}</h2>
 <p>把四轮讨论收敛成可执行的结论：</p>
 <ol>
 <li><strong>agentic coding / tool-calling 场景，模型规模的下限比量化档位的下限更重要。</strong> 一个可靠的 9B-Q8 通常好过一个 27B-Q2——结构化输出和校准是最先崩的两维，两者都偏好&quot;无损权重 + 足够参数&quot;。</li>
@@ -304,7 +335,7 @@
 <li><strong>用 fine-tuning 教模型新知识要警惕。</strong> SFT 语料里模型本来不知道的知识会直接教出幻觉（[2405.05904]）；新知识应该走 RAG 或继续预训练，而不是硬塞进对齐阶段。</li>
 </ol>
 <hr>
-<h2>7. 参考文献 {#refs}</h2>
+<h2 id="sec-7-参考文献-refs">7. 参考文献 {#refs}</h2>
 <ol>
 <li>Allen-Zhu &amp; Li, <em>Physics of Language Models: Part 3.3, Knowledge Capacity Scaling Laws</em>, 2024. <a href="https://arxiv.org/abs/2404.05405">arXiv:2404.05405</a> —— 2 bit/参数知识容量上限；int8 不损容量、int4 降至 0.7 bit/参数；MoE 容量仅降 1.3x</li>
 <li>Kadavath et al. (Anthropic), <em>Language Models (Mostly) Know What They Know</em>, 2022. <a href="https://arxiv.org/abs/2207.05221">arXiv:2207.05221</a> —— 大模型校准良好，模型&quot;知道&quot;自己知道什么</li>

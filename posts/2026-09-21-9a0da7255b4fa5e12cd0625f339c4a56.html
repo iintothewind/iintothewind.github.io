@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-21-9a0da7255b4fa5e12cd0625f339c4a56.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,29 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-工程师视角解读-engram-mtp-qwen-next架构-如何让本地模型提速-省显存">工程师视角解读: Engram + MTP (Qwen Next架构) 如何让本地模型提速 + 省显存</a></li>
+<li class="toc-l2"><a href="#sec-tldr">TL;DR</a></li>
+<li class="toc-l2"><a href="#sec-1-engram-是什么">1. Engram 是什么？</a></li>
+<li class="toc-l2"><a href="#sec-2-为什么要用它u-形分配律sparsity-allocation-law">2. 为什么要用它？——U 形分配律（Sparsity Allocation Law）</a></li>
+<li class="toc-l3"><a href="#sec-21-核心直觉">2.1 核心直觉</a></li>
+<li class="toc-l3"><a href="#sec-22-u-形曲线">2.2 U 形曲线</a></li>
+<li class="toc-l3"><a href="#sec-23-怎么算出-engram-槽位数">2.3 怎么算出 Engram 槽位数？</a></li>
+<li class="toc-l2"><a href="#sec-3-deepseek-engram-vs-qwen38-flash-next">3. DeepSeek Engram vs Qwen3.8-Flash-Next</a></li>
+<li class="toc-l2"><a href="#sec-4-qwen38-flash-nextengram-mtp-做提速-省显存">4. Qwen3.8-Flash-Next：Engram + MTP 做提速 + 省显存</a></li>
+<li class="toc-l3"><a href="#sec-41-两个机制各管一摊">4.1 两个机制，各管一摊</a></li>
+<li class="toc-l3"><a href="#sec-42-常见误解澄清">4.2 常见误解澄清</a></li>
+<li class="toc-l3"><a href="#sec-43-为什么-engram-不跳过生成">4.3 为什么 Engram 不&quot;跳过&quot;生成？</a></li>
+<li class="toc-l2"><a href="#sec-5-社区案例nvme-offloaddgx-spark-单机跑">5. 社区案例：NVMe offload，DGX Spark 单机跑</a></li>
+<li class="toc-l3"><a href="#sec-51-真实部署">5.1 真实部署</a></li>
+<li class="toc-l3"><a href="#sec-52-为什么能-work">5.2 为什么能 work</a></li>
+<li class="toc-l2"><a href="#sec-6-工程要点与注意事项">6. 工程要点与注意事项</a></li>
+<li class="toc-l2"><a href="#sec-参考文献">参考文献</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,13 +95,13 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>工程师视角解读: Engram + MTP (Qwen Next架构) 如何让本地模型提速 + 省显存</h1>
+<h1 id="sec-工程师视角解读-engram-mtp-qwen-next架构-如何让本地模型提速-省显存">工程师视角解读: Engram + MTP (Qwen Next架构) 如何让本地模型提速 + 省显存</h1>
 <blockquote>
 <p>从 DeepSeek Engram 论文到 Qwen3.8-Flash-Next 的落地，讲清楚 Engram 查表到底解决了什么、怎么算、怎么 offload。
 本文为技术解读，<strong>标注了「事实」与「推断」</strong>，方便你核对原始来源。</p>
 </blockquote>
 <hr>
-<h2>TL;DR</h2>
+<h2 id="sec-tldr">TL;DR</h2>
 <ul>
 <li>Transformer 没有&quot;原生知识查找&quot;，静态知识全靠注意力 + 前馈网络用<strong>计算</strong>慢慢拼出来。</li>
 <li><strong>Engram 查表</strong>是稀疏性的<strong>第二条轴</strong>：套路化、静态的局部模式（命名实体、固定短语）O(1) 查表，把算力留给真正的推理。</li>
@@ -86,7 +109,7 @@
 <li>工程落地：Engram 表是<strong>独立权重</strong>，可 offload 到 NVMe——让<strong>小显存也能跑大模型</strong>。</li>
 </ul>
 <hr>
-<h2>1. Engram 是什么？</h2>
+<h2 id="sec-1-engram-是什么">1. Engram 是什么？</h2>
 <p>经典 n-gram 嵌入（如 ELMo）是把 n 个连续词映射成一个向量，喂给模型。Engram 把它现代化成<strong>条件记忆模块</strong>，干四件事：</p>
 <div class="mermaid">flowchart TD
 accTitle: Engram 模块结构
@@ -117,10 +140,10 @@ accDescr: 展示 Engram 查表作为第二条稀疏轴，如何通过词表压�
 </ol>
 <p><strong>关键事实</strong>：Engram 查表在推理时<strong>几乎不增加 FLOPs</strong>（每 token 只花 O(d)），但<strong>访存有开销</strong>。</p>
 <hr>
-<h2>2. 为什么要用它？——U 形分配律（Sparsity Allocation Law）</h2>
-<h3>2.1 核心直觉</h3>
+<h2 id="sec-2-为什么要用它u-形分配律sparsity-allocation-law">2. 为什么要用它？——U 形分配律（Sparsity Allocation Law）</h2>
+<h3 id="sec-21-核心直觉">2.1 核心直觉</h3>
 <p>MoE 的&quot;空闲参数&quot;（没被选中的 expert）是<strong>不花钱</strong>的。问题是：这笔免费预算该分给 MoE 还是给 Engram？</p>
-<h3>2.2 U 形曲线</h3>
+<h3 id="sec-22-u-形曲线">2.2 U 形曲线</h3>
 <p>定义分配比：</p>
 <pre><code>ρ = 分给 MoE 的空闲参数 / 总空闲参数 Psparse   ∈ [0, 1]
 </code></pre>
@@ -141,7 +164,7 @@ accDescr: 展示在等参等算力下，空闲参数在 MoE（纯计算）与 En
 <p>x 轴刻度：纯 Engram (ρ=0) → 混合低 → 混合中 → Engram-27B (ρ≈74%) → 纯 MoE (ρ=100%)。</p>
 </blockquote>
 <p><strong>含义</strong>：同样的参数和算力预算下，&quot;计算 + 查表&quot;混合结构严格胜过把预算全押在 MoE 上。</p>
-<h3>2.3 怎么算出 Engram 槽位数？</h3>
+<h3 id="sec-23-怎么算出-engram-槽位数">2.3 怎么算出 Engram 槽位数？</h3>
 <p><code>Psparse</code> = MoE 里没被选中的 expert 参数。Engram 表容量 = <code>(1 − ρ) × Psparse</code>，<strong>每个槽一个可学习向量 = 参数</strong>。</p>
 <p>以 <strong>Engram-27B</strong> 为例：</p>
 <ul>
@@ -150,7 +173,7 @@ accDescr: 展示在等参等算力下，空闲参数在 MoE（纯计算）与 En
 </ul>
 <p><strong>要点</strong>：不是&quot;挑哪 26% 做表&quot;，而是&quot;表开多大&quot;。表是规则哈希结构，覆盖整个 Engram 空间，内容在预训练里学出来——<strong>热点由 Zipf 分布自然沉淀</strong>，不需要人工选。</p>
 <hr>
-<h2>3. DeepSeek Engram vs Qwen3.8-Flash-Next</h2>
+<h2 id="sec-3-deepseek-engram-vs-qwen38-flash-next">3. DeepSeek Engram vs Qwen3.8-Flash-Next</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -206,8 +229,8 @@ accDescr: 展示在等参等算力下，空闲参数在 MoE（纯计算）与 En
 <p>⚠️ 关于 Qwen Engram 的门控/哈希/PLE 机制，来自 model card 和 tensor 路径名，<strong>不是 Qwen 技术报告确认的</strong>，标注为推断。</p>
 </blockquote>
 <hr>
-<h2>4. Qwen3.8-Flash-Next：Engram + MTP 做提速 + 省显存</h2>
-<h3>4.1 两个机制，各管一摊</h3>
+<h2 id="sec-4-qwen38-flash-nextengram-mtp-做提速-省显存">4. Qwen3.8-Flash-Next：Engram + MTP 做提速 + 省显存</h2>
+<h3 id="sec-41-两个机制各管一摊">4.1 两个机制，各管一摊</h3>
 <div class="mermaid">flowchart LR
 accTitle: Engram + MTP 双机制分工
 accDescr: 展示 Qwen3.8-Flash-Next 两条腿：MTP+token skipping 负责提速（省 decode FLOPs），Engram 表 offload 到 NVMe 负责省显存。
@@ -247,7 +270,7 @@ accDescr: 展示 Qwen3.8-Flash-Next 两条腿：MTP+token skipping 负责提速�
 </tr>
 </tbody>
 </table></div>
-<h3>4.2 常见误解澄清</h3>
+<h3 id="sec-42-常见误解澄清">4.2 常见误解澄清</h3>
 <p><strong>误解 1</strong>：&quot;Engram 加快返回速度&quot;</p>
 <ul>
 <li><strong>错</strong>。Engram 省的是<strong>预训练算力</strong>（Multi-Query NIAH 只用了基线 82% 的预训练 FLOPs），不是 token/sec。自回归生成的串行瓶颈查表救不了。</li>
@@ -265,11 +288,11 @@ Engram 门控（layer 2，O(d)）≈ 5120 FLOPs/token
 差距 ≈ 3.3 万倍
 </code></pre>
 <p>&quot;less computation&quot; 是<strong>替换成本</strong>的对比——用 Engram 扛静态知识比开 MoE 便宜 3 万倍，<strong>不是省 base compute</strong>。真正省 decode 的是 <strong>MTP</strong>。</p>
-<h3>4.3 为什么 Engram 不&quot;跳过&quot;生成？</h3>
+<h3 id="sec-43-为什么-engram-不跳过生成">4.3 为什么 Engram 不&quot;跳过&quot;生成？</h3>
 <p>Engram 是<strong>注入器</strong>，不是 token 生成器。它让模型&quot;知道该来 Great&quot;，但模型还得自己吐出 &quot;Great&quot;，并继续写&quot;Great 之后&quot;（开口部分）。MTP 才负责&quot;跳过已确定 token&quot;。</p>
 <hr>
-<h2>5. 社区案例：NVMe offload，DGX Spark 单机跑</h2>
-<h3>5.1 真实部署</h3>
+<h2 id="sec-5-社区案例nvme-offloaddgx-spark-单机跑">5. 社区案例：NVMe offload，DGX Spark 单机跑</h2>
+<h3 id="sec-51-真实部署">5.1 真实部署</h3>
 <p>Qwen3.8-Flash-Next 的 Engram 表：</p>
 <ul>
 <li><strong>原始 BF16</strong>：128 shards × 2,500,012 行 × 160 列 = <strong>102.4 GB</strong></li>
@@ -285,7 +308,7 @@ Engram 门控（layer 2，O(d)）≈ 5120 FLOPs/token
 <blockquote>
 <p>⚠️ vllm#54173 针对官方 recipe 镜像；其它 vLLM-based 仓库是否各自 patch 过此 bug，未逐一验证（推断：README 没提的默认中招）。SGLang 路线不走这条 GDN 路径，不受该 crash 影响。</p>
 </blockquote>
-<h3>5.2 为什么能 work</h3>
+<h3 id="sec-52-为什么能-work">5.2 为什么能 work</h3>
 <p>Engram 访问是 <strong>Zipf 分布</strong>，热点条目被 OS <strong>页缓存</strong>吸回 DRAM（~100ns），冷条目才回 NVMe（~微秒）。所以命中路径是：</p>
 <div class="mermaid">flowchart TD
 accTitle: Engram 访问命中路径
@@ -299,7 +322,7 @@ accDescr: 展示 Engram 查询因 Zipf 分布，热点条目经 OS 页缓存命�
 <p>注意：DGX Spark 入门版（Jetson Orin）只有 32GB，装不下这张表。能跑的是 <strong>DGX Spark Pro</strong>（128GB 级统一内存）。</p>
 </blockquote>
 <hr>
-<h2>6. 工程要点与注意事项</h2>
+<h2 id="sec-6-工程要点与注意事项">6. 工程要点与注意事项</h2>
 <ol>
 <li><strong>Engram 是独立权重，天生可 offload</strong>——这是它能省显存的前提。</li>
 <li><strong>offload 到 DRAM 是甜点</strong>（论文实测 2.8% 吞吐损失）；但&quot;再往磁盘推&quot;只对&quot;表比内存还大&quot;才有意义——DGX Spark 就是这种情况。</li>
@@ -308,7 +331,7 @@ accDescr: 展示 Engram 查询因 Zipf 分布，热点条目经 OS 页缓存命�
 <li><strong>事实 vs 推断</strong>：Engram 的插入层、表大小、offload 方案来自 model card / 社区仓库（事实）；PLE 机制、门控、哈希细节来自 tensor 路径名（推断），需核对 Qwen 技术报告。</li>
 </ol>
 <hr>
-<h2>参考文献</h2>
+<h2 id="sec-参考文献">参考文献</h2>
 <ul>
 <li>DeepSeek Engram 论文：<a href="https://github.com/deepseek-ai/Engram/blob/main/Engram_paper.pdf">https://github.com/deepseek-ai/Engram/blob/main/Engram_paper.pdf</a></li>
 <li>Qwen3.8-Flash-Next model card：<a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next">https://huggingface.co/Qwen/Qwen3.8-Flash-Next</a></li>

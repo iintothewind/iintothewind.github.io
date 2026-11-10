@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/set-user-and-group-in-docker-compose.html">
 
 </head>
-<body>
+<body class="">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -36,6 +36,7 @@
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
 </aside>
+
 
 <div id="overlay-mask"></div>
 
@@ -72,14 +73,14 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h2>Step 1: Add user entry in docker-compose.yml</h2>
+<h2 id="sec-step-1-add-user-entry-in-docker-composeyml">Step 1: Add user entry in docker-compose.yml</h2>
 <pre><code class="language-yaml">version: '3'
 services:
     app:
         image: alpine
         user: &quot;${UID}:${GID}&quot;
 </code></pre>
-<h3>step 2: run docker-compose</h3>
+<h3 id="sec-step-2-run-docker-compose">step 2: run docker-compose</h3>
 <pre><code class="language-bash">env UID=${UID} GID=${GID} docker-compose run app id
 </code></pre>
 

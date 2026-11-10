@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-08-28-341258a0aad3f94ff4536280294a6fa3.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,19 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-agent-native-database-access-a-different-take">Agent-Native Database Access: A Different Take</a></li>
+<li class="toc-l2"><a href="#sec-the-core-tension">The Core Tension</a></li>
+<li class="toc-l2"><a href="#sec-what-an-agent-native-stack-looks-like">What an Agent-Native Stack Looks Like</a></li>
+<li class="toc-l2"><a href="#sec-the-self-driving-installation-loop">The Self-Driving Installation Loop</a></li>
+<li class="toc-l2"><a href="#sec-why-this-matters">Why This Matters</a></li>
+<li class="toc-l2"><a href="#sec-practical-takeaway">Practical Takeaway</a></li>
+<li class="toc-l2"><a href="#sec-reference-implementation-conceptual">Reference Implementation (Conceptual)</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,10 +85,10 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>Agent-Native Database Access: A Different Take</h1>
+<h1 id="sec-agent-native-database-access-a-different-take">Agent-Native Database Access: A Different Take</h1>
 <p><strong>Source</strong>: <a href="https://www.v2ex.com/t/1237986">V2EX #1237986</a> — &quot;公司不让装 Navicat 了，就自己写了一个数据库客户端&quot; (DataZen)</p>
 <hr>
-<h2>The Core Tension</h2>
+<h2 id="sec-the-core-tension">The Core Tension</h2>
 <p>DataZen is a solid <em>human-facing</em> DB client (Tauri + Rust + React). But the issue reveals a deeper architectural mismatch:</p>
 <div class="table-scroll"><table>
 <thead>
@@ -113,7 +126,7 @@
 </table></div>
 <p><strong>The GUI is the wrong abstraction for agents.</strong></p>
 <hr>
-<h2>What an Agent-Native Stack Looks Like</h2>
+<h2 id="sec-what-an-agent-native-stack-looks-like">What an Agent-Native Stack Looks Like</h2>
 <div class="mermaid">flowchart TD
     subgraph SkillLayer [&quot;Skill Layer (Prompts + Tool Schemas)&quot;]
         direction TB
@@ -155,7 +168,7 @@
 <li><strong>Local models for privacy, remote for power</strong> — Route by query complexity.</li>
 </ol>
 <hr>
-<h2>The Self-Driving Installation Loop</h2>
+<h2 id="sec-the-self-driving-installation-loop">The Self-Driving Installation Loop</h2>
 <p>The ultimate agent-native tool <strong>installs itself</strong>:</p>
 <div class="mermaid">sequenceDiagram
     participant Agent
@@ -179,7 +192,7 @@
 </ul>
 <p>The agent <em>reads once, installs itself, self-verifies, then owns the capability</em>.</p>
 <hr>
-<h2>Why This Matters</h2>
+<h2 id="sec-why-this-matters">Why This Matters</h2>
 <ul>
 <li><strong>GUI clients</strong> optimize for <em>human exploration</em> (browse, click, export)</li>
 <li><strong>Agent interfaces</strong> optimize for <em>composability, auditability, reproducibility</em></li>
@@ -187,7 +200,7 @@
 </ul>
 <p>The former makes a great <em>viewer</em> for the latter’s output. The latter makes a terrible <em>driver</em> for the former.</p>
 <hr>
-<h2>Practical Takeaway</h2>
+<h2 id="sec-practical-takeaway">Practical Takeaway</h2>
 <p>If you’re building for agents:</p>
 <ul>
 <li>Expose <strong>thin, typed tool APIs</strong> (not MCP servers with 50 methods)</li>
@@ -203,7 +216,7 @@
 <li>Treat the DB as a <strong>function</strong>, not a <strong>place you visit</strong></li>
 </ul>
 <hr>
-<h2>Reference Implementation (Conceptual)</h2>
+<h2 id="sec-reference-implementation-conceptual">Reference Implementation (Conceptual)</h2>
 <pre><code class="language-python"># Skill: db.query
 # Input: { intent: str, tables?: str[], max_rows?: int }
 # Output: { sql: str, rows: list, stats: {rows_scanned, latency_ms}, truncated: bool }

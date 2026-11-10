@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-08-29-cc99d77c2cc0a96e8de8382606b9ba58.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,15 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-domain-driven-agents-简述与评论">Domain-Driven Agents — 简述与评论</a></li>
+<li class="toc-l2"><a href="#sec-文章简述">文章简述</a></li>
+<li class="toc-l2"><a href="#sec-我的评论整理">我的评论（整理）</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,14 +81,14 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>Domain-Driven Agents — 简述与评论</h1>
+<h1 id="sec-domain-driven-agents-简述与评论">Domain-Driven Agents — 简述与评论</h1>
 <p>URL: <a href="https://coldtake.dev/blog/domain-driven-agents">https://coldtake.dev/blog/domain-driven-agents</a></p>
-<h2>文章简述</h2>
+<h2 id="sec-文章简述">文章简述</h2>
 <p>作者核心论点：AI agent 在绿地项目好用，在 legacy（重耦合、技术债、设计漂移）代码库里产出骤降。失败有固定形状——模型在已有多个拼写的领域概念上发明新的、该写 adapter 处直连、该直连处写 adapter，因为每个问题「系统本身从没在任何地方回答过」，模型只能猜且常猜错。</p>
 <p>归因：掉进去的不是模型，是代码库第二层——语义混乱、缺共享语言。模型不用升级，是 code is not ready，而 readiness 可增量构建。</p>
 <p>方法：借用 Ousterhout 的 tactical/strategic，但按作者身份切——strategic=决策（读系统、定改什么/为何），tactical=把决策落到文件。判断：typing it out 成本崩塌，deciding 没降价。作者自己做 strategic 产 GitHub issue，tactical 交给 AI system 基于 skills（程序化 markdown 指令）+ sub-agents（独立 session、窄任务），自己当 reviewer。</p>
 <p>DDD 作为地基：strategic 半价值取决于其语言质量。给出 context map + glossary：每个边界上下文声明自身语言，跨边界用 published-language / conformist / anticorruption-layer 标注；每条边界两边各声明一次，generator 交叉校验，不一致报 finding（带 fingerprint 去重、自动开关 issue）。真正的逐上下文迁移到真 domain 模型被推迟到「next post」。</p>
-<h2>我的评论（整理）</h2>
+<h2 id="sec-我的评论整理">我的评论（整理）</h2>
 <ol>
 <li>
 <p>根因被误名。文章把「代码库没准备好」当根因，实际根因是老系统随迭代设计不断漂移、领域概念充满矛盾、与最初设计偏离越来越大。「not ready」只是把症状命名成根因，真正的机制是设计漂移。</p>

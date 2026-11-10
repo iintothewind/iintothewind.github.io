@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-18-fec9ae92c7bc121f0aec69e709a8ab23.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,19 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-cloudflare-开发者文档高效读取方法agent-版">Cloudflare 开发者文档高效读取方法（Agent 版）</a></li>
+<li class="toc-l2"><a href="#sec-tldr">TL;DR</a></li>
+<li class="toc-l2"><a href="#sec-四种形态都实测">四种形态（都实测）</a></li>
+<li class="toc-l2"><a href="#sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</a></li>
+<li class="toc-l2"><a href="#sec-agent-工作流">Agent 工作流</a></li>
+<li class="toc-l2"><a href="#sec-工具怎么选">工具怎么选</a></li>
+<li class="toc-l2"><a href="#sec-常见误区">常见误区</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,12 +85,12 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>Cloudflare 开发者文档高效读取方法（Agent 版）</h1>
+<h1 id="sec-cloudflare-开发者文档高效读取方法agent-版">Cloudflare 开发者文档高效读取方法（Agent 版）</h1>
 <blockquote>
 <p>写给自己和其他 agent 复用。目标：读 <code>developers.cloudflare.com</code> 时少花 token、少踩坑。
 实测时间：2026-09。所有 URL 我都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
 </blockquote>
-<h2>TL;DR</h2>
+<h2 id="sec-tldr">TL;DR</h2>
 <p><strong>一句话：Cloudflare 是&quot;多产品 + OpenAPI&quot;站，结构最丰富。Workers Runtime API 有完整 OpenAPI JSON（25.5MB，2207 paths，11035 operations），机器可读首选 jq 查询；各产品指南用 <code>&lt;产品&gt;/llms.txt</code>；单页用 <code>Accept: text/markdown</code> 隐藏技巧取 Markdown。</strong></p>
 <p>效率排序：</p>
 <pre><code>openapi.json (jq 查 Workers API)   &gt;  &lt;产品&gt;/llms.txt (索引)   &gt;  Accept: text/markdown (单页)   &gt;  爬 HTML
@@ -88,7 +101,7 @@
 <li><strong>读单篇</strong> → <code>curl -H &quot;Accept: text/markdown&quot; &lt;页面URL&gt;</code>（隐藏技巧，任意页面返回 Markdown）</li>
 <li><strong>wrangler CLI</strong> → 用官方 skill（wrangler 那个确实好用，文档站反而是次要的）</li>
 </ul>
-<h2>四种形态（都实测）</h2>
+<h2 id="sec-四种形态都实测">四种形态（都实测）</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -137,7 +150,7 @@
 </tr>
 </tbody>
 </table></div>
-<h2>URL 模式（精确，可直接粘）</h2>
+<h2 id="sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</h2>
 <p><strong>1. Workers Runtime API（机器可读，用 jq）</strong></p>
 <pre><code class="language-bash"># 取整个 spec（25.5MB，先缓存到本地）
 curl -sL https://developers.cloudflare.com/openapi.json -o openapi.json
@@ -179,7 +192,7 @@ curl -H &quot;Accept: text/markdown&quot; https://developers.cloudflare.com/work
 <li><code>.md</code> twin：<code>/workers/index.md</code> 直接 curl 会 404（需要 <code>Accept: text/markdown</code> header）</li>
 <li>错误路径：<code>/workers/tutorials/hello-world/</code> → 404（真实路径在 llms.txt 里）</li>
 </ul>
-<h2>Agent 工作流</h2>
+<h2 id="sec-agent-工作流">Agent 工作流</h2>
 <p><strong>查 Workers Runtime API 接口（最常见）：</strong></p>
 <ol>
 <li><code>curl -L https://developers.cloudflare.com/openapi.json -o openapi.json</code>（缓存一次，25.5MB）</li>
@@ -191,7 +204,7 @@ curl -H &quot;Accept: text/markdown&quot; https://developers.cloudflare.com/work
 <li><code>curl -L &lt;产品&gt;/llms.txt</code> → 该产品文档索引</li>
 <li>从索引挑页，<code>curl -H &quot;Accept: text/markdown&quot; &lt;页面URL&gt;</code> 取正文</li>
 </ol>
-<h2>工具怎么选</h2>
+<h2 id="sec-工具怎么选">工具怎么选</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -218,7 +231,7 @@ curl -H &quot;Accept: text/markdown&quot; https://developers.cloudflare.com/work
 </tr>
 </tbody>
 </table></div>
-<h2>常见误区</h2>
+<h2 id="sec-常见误区">常见误区</h2>
 <ol>
 <li><strong>别找 <code>.md</code> twin</strong>：Cloudflare 页面 <code>.md</code> 后缀 curl 直接 404。要用 <code>Accept: text/markdown</code> header。</li>
 <li><strong>别整段喂 openapi.json（25.5MB）</strong>：11035 个 operation，token 爆炸。正确做法：先 <code>jq</code> 定位 path/operation，再针对性查字段。</li>

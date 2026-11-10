@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-20-53afc991274800d28df30efc994cdf1a.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,19 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-typesafe-ai-文档高效读取方法agent-版">TypeSafe AI 文档高效读取方法（Agent 版）</a></li>
+<li class="toc-l2"><a href="#sec-tldr">TL;DR</a></li>
+<li class="toc-l2"><a href="#sec-五种形态都实测">五种形态（都实测）</a></li>
+<li class="toc-l2"><a href="#sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</a></li>
+<li class="toc-l2"><a href="#sec-agent-工作流">Agent 工作流</a></li>
+<li class="toc-l2"><a href="#sec-工具怎么选">工具怎么选</a></li>
+<li class="toc-l2"><a href="#sec-常见误区">常见误区</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,12 +85,12 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>TypeSafe AI 文档高效读取方法（Agent 版）</h1>
+<h1 id="sec-typesafe-ai-文档高效读取方法agent-版">TypeSafe AI 文档高效读取方法（Agent 版）</h1>
 <blockquote>
 <p>写给自己和其他 agent 复用。目标：读 <code>docs.typesafe.ai</code> 时少花 token、少踩坑。
 实测时间：2026-09。所有 URL 都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
 </blockquote>
-<h2>TL;DR</h2>
+<h2 id="sec-tldr">TL;DR</h2>
 <p><strong>一句话：TypeSafe 是 Mintlify 站，agent 友好形态是全系列里最齐的——单页 <code>.md</code>、全站 <code>llms-full.txt</code>（874KB）、官方 MCP 检索 server、官方 agent skill 都有，纯 curl 就够，连 JS 渲染器都不需要。</strong></p>
 <p>效率排序：</p>
 <pre><code>llms.txt (找页) + &lt;page&gt;.md (单页)   &gt;   llms-full.txt (全量一次拿)   &gt;   MCP search (按需检索)   &gt;   官方 agent skill (集成场景)   &gt;   爬 HTML
@@ -89,7 +102,7 @@
 <li><strong>语义检索</strong> → 官方 MCP server（免鉴权，HTTP transport）</li>
 <li><strong>帮用户集成 TypeSafe API</strong> → 官方 agent skill（12.8KB，直接放进 Claude Code/Codex）</li>
 </ul>
-<h2>五种形态（都实测）</h2>
+<h2 id="sec-五种形态都实测">五种形态（都实测）</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -144,7 +157,7 @@
 </tr>
 </tbody>
 </table></div>
-<h2>URL 模式（精确，可直接粘）</h2>
+<h2 id="sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</h2>
 <p><strong>1. 单页 Markdown（最常用）</strong></p>
 <pre><code class="language-bash"># 任意页面加 .md 后缀
 curl -s https://docs.typesafe.ai/introduction.md
@@ -180,7 +193,7 @@ grep -n &quot;^Source:&quot; typesafe-docs.md | head    # 快速看有哪些页
 # 12.8KB：产品定位、何时用/不该用、三种问型速查、SDK 与 API key 说明
 # 官方也提供 Claude Code marketplace 安装：claude plugin marketplace add typesafe-ai/skills
 </code></pre>
-<h2>Agent 工作流</h2>
+<h2 id="sec-agent-工作流">Agent 工作流</h2>
 <p><strong>读某一篇文档（最常见）：</strong></p>
 <ol>
 <li><code>curl -s https://docs.typesafe.ai/llms.txt</code> → 从 ~40 页里挑目标页</li>
@@ -200,7 +213,7 @@ grep -n &quot;^Source:&quot; typesafe-docs.md | head    # 快速看有哪些页
 <li>先读官方 skill：<code>curl -s https://docs.typesafe.ai/.well-known/agent-skills/type-safe/skill.md</code></li>
 <li>需要细节再按 llms.txt 索引抓对应 <code>.md</code> 页</li>
 </ol>
-<h2>工具怎么选</h2>
+<h2 id="sec-工具怎么选">工具怎么选</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -231,7 +244,7 @@ grep -n &quot;^Source:&quot; typesafe-docs.md | head    # 快速看有哪些页
 </tr>
 </tbody>
 </table></div>
-<h2>常见误区</h2>
+<h2 id="sec-常见误区">常见误区</h2>
 <ol>
 <li><strong>别信响应头里的 api-catalog</strong>：<code>Link:</code> header 挂着 <code>/.well-known/api-catalog</code>，实际 curl 返回 404。Mintlify 的模板 header 和实际部署内容不完全一致，以实测为准。</li>
 <li><strong>llms-full.txt 不是&quot;摘要&quot;</strong>：它是全站正文合并（874KB），喂模型前按需切片，别整段灌。</li>

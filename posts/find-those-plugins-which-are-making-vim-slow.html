@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/find-those-plugins-which-are-making-vim-slow.html">
 
 </head>
-<body>
+<body class="">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -36,6 +36,7 @@
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
 </aside>
+
 
 <div id="overlay-mask"></div>
 
@@ -72,7 +73,7 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h2>option 1: use <strong>hyiltiz/vim-plugins-profile</strong></h2>
+<h2 id="sec-option-1-use-hyiltizvim-plugins-profile">option 1: use <strong>hyiltiz/vim-plugins-profile</strong></h2>
 <p><strong>hyiltiz/vim-plugins-profile</strong> is a plugin which can find the top 10 plugins that slows down vim startup</p>
 <pre><code class="language-shell">Generating vim startup profile...
 Parsing vim startup profile...
@@ -97,7 +98,7 @@ Top 10 Plugins That Slows Down Vim Startup
 ==========================================
 Done!
 </code></pre>
-<h2>option 2: use built-in profiling support</h2>
+<h2 id="sec-option-2-use-built-in-profiling-support">option 2: use built-in profiling support</h2>
 <p>After launching vim do:</p>
 <pre><code>:profile start profile.log
 :profile func *

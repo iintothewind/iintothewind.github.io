@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-18-0d55ae409821f57028c706274285144e.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,19 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-openai-官方文档高效读取方法agent-版">OpenAI 官方文档高效读取方法（Agent 版）</a></li>
+<li class="toc-l2"><a href="#sec-tldr">TL;DR</a></li>
+<li class="toc-l2"><a href="#sec-为什么不用-html-爬">为什么不用 html 爬</a></li>
+<li class="toc-l2"><a href="#sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</a></li>
+<li class="toc-l2"><a href="#sec-agent-工作流推荐顺序">Agent 工作流（推荐顺序）</a></li>
+<li class="toc-l2"><a href="#sec-工具怎么选">工具怎么选</a></li>
+<li class="toc-l2"><a href="#sec-常见误区">常见误区</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,12 +85,12 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>OpenAI 官方文档高效读取方法（Agent 版）</h1>
+<h1 id="sec-openai-官方文档高效读取方法agent-版">OpenAI 官方文档高效读取方法（Agent 版）</h1>
 <blockquote>
 <p>写给自己和其他 agent 复用。目标：读 <code>developers.openai.com</code> 时少花 token、少踩坑。
 实测时间：2026-09。所有 URL 我都 curl 验证过，<code>200</code> 才写进去，<code>404</code> 的坑也标了。</p>
 </blockquote>
-<h2>TL;DR</h2>
+<h2 id="sec-tldr">TL;DR</h2>
 <p><strong>一句话：OpenAI 文档站不是 JSON API，不要爬 HTML。</strong> 它是 Astro 静态站，高效路径是「取 <code>.md</code> / <code>.txt</code>」。</p>
 <p>效率排序（实测）：</p>
 <pre><code>&lt;任意文档页&gt;.md          &gt;  llms.txt（索引）      &gt;  llms-full.txt（全站导出）  &gt;  unifetch 爬 HTML
@@ -88,9 +101,9 @@
 <li><strong>读全站 / 做调研</strong> → 取 <code>llms-full.txt</code>（12 万行单文件，喂给 LLM 摘要）</li>
 <li><strong>unifetch</strong> 只留给&quot;没有 <code>.md</code>/<code>llms.txt</code> 的第三方站&quot;</li>
 </ul>
-<h2>为什么不用 html 爬</h2>
+<h2 id="sec-为什么不用-html-爬">为什么不用 html 爬</h2>
 <p>实测 <code>web_fetch</code> / <code>unifetch</code> 抓 <code>…/guides/xxx.html</code>：返回的是<strong>整页导航树 + 重复面包屑</strong>，正文被淹没，还要自己剥 nav。而 <code>.md</code> twin 是纯正文 Markdown，直接能喂。</p>
-<h2>URL 模式（精确，可直接粘）</h2>
+<h2 id="sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</h2>
 <p><strong>通用规则：任意官方文档页 URL，直接追加 <code>.md</code>。</strong></p>
 <pre><code># 指南
 https://developers.openai.com/api/docs/guides/migrate-to-responses
@@ -112,7 +125,7 @@ https://developers.openai.com/api/reference/llms.txt
 https://developers.openai.com/api/reference/llms-full.txt
 </code></pre>
 <p><strong>⚠️ 已知 404 陷阱</strong>：<code>/api/reference/&lt;name&gt;.md</code>（截断子路径）会 404。要完整子路径：<code>/api/reference/chat-completions/overview.md</code> 才行。</p>
-<h2>Agent 工作流（推荐顺序）</h2>
+<h2 id="sec-agent-工作流推荐顺序">Agent 工作流（推荐顺序）</h2>
 <ol>
 <li><strong>先问&quot;有什么&quot;</strong>：<code>curl llms.txt</code> → 263 行主题索引 → 决定读哪篇。</li>
 <li><strong>读单篇</strong>：<code>curl &lt;page&gt;.md</code>（比 html 干净一个数量级）。</li>
@@ -120,7 +133,7 @@ https://developers.openai.com/api/reference/llms-full.txt
 <li><strong>非 OpenAI 的第三方站</strong>：才用 unifetch，且让它剥 nav。</li>
 </ol>
 <p><strong>别整段塞 <code>llms-full.txt</code>（12 万行）进一个上下文。</strong> 正确做法：先读 <code>llms.txt</code> 定位主题 → 再取对应 <code>.md</code> → 逐篇喂。只有要&quot;全量&quot;时才用 full。</p>
-<h2>工具怎么选</h2>
+<h2 id="sec-工具怎么选">工具怎么选</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -143,7 +156,7 @@ https://developers.openai.com/api/reference/llms-full.txt
 </tr>
 </tbody>
 </table></div>
-<h2>常见误区</h2>
+<h2 id="sec-常见误区">常见误区</h2>
 <ol>
 <li><strong>platform API ≠ 文档站</strong>：<code>platform.openai.com/api/v1/...</code> 是真 API，只能调模型/查账号，<strong>不是文档</strong>。文档站是 <code>developers.openai.com</code>，独立存在。</li>
 <li><strong>没有&quot;文档查询接口&quot;</strong>：不要指望 <code>GET /docs?q=...</code> 这类。文档站就是静态文件，.md/.txt 是它给 AI 的友好形态。</li>

@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/ffmpeg-useful-commands.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,15 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l3"><a href="#sec-convert-mp3-to-ogg">Convert MP3 to OGG</a></li>
+<li class="toc-l2"><a href="#sec-指定分辨率">指定分辨率</a></li>
+<li class="toc-l2"><a href="#sec-提取字幕流">提取字幕流</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,7 +81,7 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h3>Convert MP3 to OGG</h3>
+<h3 id="sec-convert-mp3-to-ogg">Convert MP3 to OGG</h3>
 <pre><code class="language-bash">ffmpeg -i input.mp3 -acodec libopus -b:a 64k -compression_level 10 -application voip output.ogg
 ```function cf_convert_mp3_to_ogg()  {
   local path=$1iftype ffmpeg &gt; /dev/null 2&gt;&amp;1 &amp;&amp; type parallel &gt; /dev/null 2&gt;&amp;1; theniftest -d $path; then
@@ -90,13 +99,13 @@ ffmpeg -i concat:&quot;01.mkv|02.mkv|03.mkv&quot; -vf scale=480:272 got_s4_08.mp
 ffmpeg -i test.mp4 -acodec copy -vn audio.mp3
 ffmpeg -i &lt;input_video&gt; -acodec aac -ab 96k -vcodec libx264 -level 21 -refs 2 -b 345k -bt 345k -threads 0 -s 640x360 -ss 00:00:00 -t 00:02:00 &lt;output.mp4&gt;
 </code></pre>
-<h2>指定分辨率</h2>
+<h2 id="sec-指定分辨率">指定分辨率</h2>
 <ul>
 <li>增加字幕流</li>
 </ul>
 <pre><code>ffmpeg -i video.avi -i sub.ass -map 0:0 -map 0:1 -map 1 -c:a copy -c:v copy -c:s copy video.mkv
 </code></pre>
-<h2>提取字幕流</h2>
+<h2 id="sec-提取字幕流">提取字幕流</h2>
 <ul>
 <li>原始文本输出</li>
 </ul>

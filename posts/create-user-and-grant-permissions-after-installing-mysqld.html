@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/create-user-and-grant-permissions-after-installing-mysqld.html">
 
 </head>
-<body>
+<body class="">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -36,6 +36,7 @@
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
 </aside>
+
 
 <div id="overlay-mask"></div>
 
@@ -74,13 +75,13 @@
 
 <p>mysqld在安装完成以后会生成一个随机的root密码, 但需要在登录之后马上修改密码, 比较繁琐.
 更好的创建账号权限的步骤如下,</p>
-<h2>修改my.cnf文件</h2>
+<h2 id="sec-修改mycnf文件">修改my.cnf文件</h2>
 <pre><code>
 # 最后一行添加
 skip-grant-tables
 
 </code></pre>
-<h2>重启mysqld以后, 用root连接到server, 此时已经不需要身份验证了, 然后执行</h2>
+<h2 id="sec-重启mysqld以后-用root连接到server-此时已经不需要身份验证了-然后执行">重启mysqld以后, 用root连接到server, 此时已经不需要身份验证了, 然后执行</h2>
 <pre><code class="language-sql">-- do the follow to create user:
 
 -- 设置root密码

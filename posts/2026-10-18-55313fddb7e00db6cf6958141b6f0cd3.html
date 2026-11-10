@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-10-18-55313fddb7e00db6cf6958141b6f0cd3.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,28 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-让-agent-稳定读完长文脚本分流-file_read-分页">让 agent 稳定读完长文：脚本分流 + file_read 分页</a></li>
+<li class="toc-l2"><a href="#sec-1-问题工具输出上限按字节算">1. 问题：工具输出上限按字节算</a></li>
+<li class="toc-l2"><a href="#sec-2-三种错误做法">2. 三种错误做法</a></li>
+<li class="toc-l3"><a href="#sec-21-让脚本自己分页--offset---limit">2.1 让脚本自己分页（--offset / --limit）</a></li>
+<li class="toc-l3"><a href="#sec-22-调大全局上限">2.2 调大全局上限</a></li>
+<li class="toc-l3"><a href="#sec-23-只告诉-agent分页读">2.3 只告诉 agent「分页读」</a></li>
+<li class="toc-l2"><a href="#sec-3-做法脚本量体积后分流">3. 做法：脚本量体积后分流</a></li>
+<li class="toc-l2"><a href="#sec-4-关键细节缓存必须等于最终输出">4. 关键细节：缓存必须等于最终输出</a></li>
+<li class="toc-l2"><a href="#sec-5-skillmd面向小参数模型">5. SKILL.md：面向小参数模型</a></li>
+<li class="toc-l3"><a href="#sec-51-一步一个动作一步一个判断">5.1 一步一个动作，一步一个判断</a></li>
+<li class="toc-l3"><a href="#sec-52-给错误示范不只给正确做法">5.2 给错误示范，不只给正确做法</a></li>
+<li class="toc-l3"><a href="#sec-53-硬规则要可执行">5.3 硬规则要可执行</a></li>
+<li class="toc-l3"><a href="#sec-54-命令块里不要并列多个调用">5.4 命令块里不要并列多个调用</a></li>
+<li class="toc-l2"><a href="#sec-6-分页大小怎么定">6. 分页大小怎么定</a></li>
+<li class="toc-l2"><a href="#sec-7-验证清单">7. 验证清单</a></li>
+<li class="toc-l2"><a href="#sec-8-可迁移的结论">8. 可迁移的结论</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,11 +94,11 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>让 agent 稳定读完长文：脚本分流 + <code>file_read</code> 分页</h1>
+<h1 id="sec-让-agent-稳定读完长文脚本分流-file_read-分页">让 agent 稳定读完长文：脚本分流 + <code>file_read</code> 分页</h1>
 <p>一个 skill 设计笔记。场景：用 bash 脚本抓某个论坛帖子的正文，交给 agent 展示给用户。帖长从几百字到上万字不等，短帖要直接可读，长帖要能完整读到。</p>
 <p>以下全部数字来自实测（Windows/MSYS，Rust 运行时）。</p>
 <hr>
-<h2>1. 问题：工具输出上限按<strong>字节</strong>算</h2>
+<h2 id="sec-1-问题工具输出上限按字节算">1. 问题：工具输出上限按<strong>字节</strong>算</h2>
 <p>运行时会对<strong>每一次工具调用</strong>的返回值做截断：</p>
 <pre><code class="language-rust">// 单次工具结果的硬上限
 let original_bytes = output.len();          // Rust str::len() = 字节
@@ -92,8 +114,8 @@ let tail_len = max_chars.saturating_sub(head_len);
 <p>实测：一篇 15491 字节的帖子，在 8000 上限下被砍掉 7495 字节（正文第 13–23 段全部消失），agent 拿到的头尾拼起来无法阅读。</p>
 <p>7495 是截断标记里报告的实测值，不是用 <code>15491 − 8000 = 7491</code> 算出来的。差的 4 字节是两端按 UTF-8 字符边界对齐时的取整代价——8000 只是上限，不是实际保留量。运行时内部具体怎么取整，脚本侧不需要复算：分流阈值按字节量体积、再留 RESERVE，就是为了不依赖这种内部会计。</p>
 <hr>
-<h2>2. 三种错误做法</h2>
-<h3>2.1 让脚本自己分页（<code>--offset</code> / <code>--limit</code>）</h3>
+<h2 id="sec-2-三种错误做法">2. 三种错误做法</h2>
+<h3 id="sec-21-让脚本自己分页--offset---limit">2.1 让脚本自己分页（<code>--offset</code> / <code>--limit</code>）</h3>
 <p>第一反应是给抓取脚本加翻页参数。<strong>不要这样做</strong>：</p>
 <ul>
 <li><code>file_read</code> 本来就支持 <code>offset</code> / <code>limit</code>，并输出行号与 <code>[Lines 12-34 of 230]</code> 尾注；</li>
@@ -101,7 +123,7 @@ let tail_len = max_chars.saturating_sub(head_len);
 <li>不通用——同一个 agent 还要读 md / pdf / csv，那些文件不可能都有配套的分页脚本。</li>
 </ul>
 <p><strong>结论</strong>：分页属于通用读文件工具，不属于内容抓取脚本。</p>
-<h3>2.2 调大全局上限</h3>
+<h3 id="sec-22-调大全局上限">2.2 调大全局上限</h3>
 <p>把 <code>max_tool_result_chars</code> 从 8000 调到 80000 看起来能一劳永逸。代价：</p>
 <ul>
 <li>影响<strong>所有</strong>工具的输出，不只是长文；</li>
@@ -110,7 +132,7 @@ let tail_len = max_chars.saturating_sub(head_len);
 <li><strong>对「模型复读」这类问题毫无帮助</strong>（复读由工具调用模式检测和迭代上限控制，与输出体积无关）。</li>
 </ul>
 <p>合理做法是调到「覆盖绝大多数正常内容」即可（本例 8000 → 12000，仍远低于运行时默认的 50000）。</p>
-<h3>2.3 只告诉 agent「分页读」</h3>
+<h3 id="sec-23-只告诉-agent分页读">2.3 只告诉 agent「分页读」</h3>
 <p>给 <a href="http://SKILL.md">SKILL.md</a> 写「长文用 file_read 分页读」不够。实测观察到：</p>
 <pre><code>file_read offset=1 limit=100
 第 1 页（1-100）。读第 2 页。
@@ -121,7 +143,7 @@ file_read offset=201 limit=100
 </code></pre>
 <p>模型把三条 <code>file_read</code> 读成<strong>一个连续动作序列</strong>，攒到最后才输出。用户在前两轮里什么都看不到。</p>
 <hr>
-<h2>3. 做法：脚本量体积后分流</h2>
+<h2 id="sec-3-做法脚本量体积后分流">3. 做法：脚本量体积后分流</h2>
 <p>脚本不再决定「分不分页」，只决定「这次要不要把正文放进 stdout」：</p>
 <pre><code class="language-bash"># 缓存内容就是最终输出
 size=&quot;$(wc -c &lt; &quot;$CACHE&quot; | tr -d ' ')&quot;
@@ -186,7 +208,7 @@ fi
 </table></div>
 <p>短帖不额外付出一次读文件的开销，长帖不再出现「先被截断、再重读」的浪费。</p>
 <hr>
-<h2>4. 关键细节：缓存必须<strong>等于</strong>最终输出</h2>
+<h2 id="sec-4-关键细节缓存必须等于最终输出">4. 关键细节：缓存必须<strong>等于</strong>最终输出</h2>
 <p>最初的实现把标题存成哨兵：</p>
 <pre><code class="language-bash">printf '\037TITLE:%s\037\n' &quot;$t&quot; &gt; &quot;$TMP/lines.txt&quot;   # 后续用 awk 解析
 </code></pre>
@@ -206,9 +228,9 @@ diff /tmp/stdout.txt /tmp/cache_t&lt;id&gt;.txt &amp;&amp; echo &quot;identical&
 <li>用户与 agent 看到同一份内容，排障时不会互相矛盾。</li>
 </ul>
 <hr>
-<h2>5. <a href="http://SKILL.md">SKILL.md</a>：面向小参数模型</h2>
+<h2 id="sec-5-skillmd面向小参数模型">5. <a href="http://SKILL.md">SKILL.md</a>：面向小参数模型</h2>
 <p><code>compact</code> 注入模式下，<a href="http://SKILL.md">SKILL.md</a> 正文<strong>不进 system prompt</strong>，只在 agent 调 <code>read_skill</code> 时整份读入。所以长度不是主要矛盾，<strong>结构清晰度</strong>才是。对小模型有效的几点：</p>
-<h3>5.1 一步一个动作，一步一个判断</h3>
+<h3 id="sec-51-一步一个动作一步一个判断">5.1 一步一个动作，一步一个判断</h3>
 <pre><code>第 1 步 跑命令
 第 2 步 看输出第一行，二选一：
         - 不是 path: 开头 → 原样贴给用户，结束
@@ -217,7 +239,7 @@ diff /tmp/stdout.txt /tmp/cache_t&lt;id&gt;.txt &amp;&amp; echo &quot;identical&
 第 4 步 尾注右边界等于总行数 → 停止
 </code></pre>
 <p>分支条件用<strong>第一行的字面前缀</strong>（<code>path:</code>），不要让模型做语义判断。</p>
-<h3>5.2 给错误示范，不只给正确做法</h3>
+<h3 id="sec-52-给错误示范不只给正确做法">5.2 给错误示范，不只给正确做法</h3>
 <p>只写正确流程时，小模型会自行简化。把实际观测到的错误行为原样写进文档：</p>
 <pre><code class="language-markdown">错误示范（读完所有页才输出一次，用户中途什么都看不到）：
 
@@ -231,11 +253,11 @@ file_read offset=101 limit=100
 </code></pre>
 <p>这是本次唯一真正修掉「批量读完再输出」的手段。</p>
 <p>关于模型：Qwen9B 是我用来<strong>照顾的模型下限</strong>，不是随便挑的测试对象。再往下（更低参数量、更低量化）的模型，只能跑起来，我不期待它们能稳定遵守多步流程；Qwen9B 以上的模型（更大参数量、在线模型）只会效果更好。所以这条经验的适用范围是：<strong>Qwen9B 及以上</strong>。如果在某个模型上压不住，先检查模型是否在 Qwen9B 的能力范围之内，以及它是否遵守了 <a href="http://SKILL.md">SKILL.md</a> 的编号步骤，而不是怀疑自己的实现。</p>
-<h3>5.3 硬规则要可执行</h3>
+<h3 id="sec-53-硬规则要可执行">5.3 硬规则要可执行</h3>
 <p>不要写「注意分页效率」这类抽象要求，写：</p>
 <pre><code>5. 分页时必须读一页贴一页，不要读完所有页再一次性输出。
 </code></pre>
-<h3>5.4 命令块里不要并列多个调用</h3>
+<h3 id="sec-54-命令块里不要并列多个调用">5.4 命令块里不要并列多个调用</h3>
 <p>反面教材（就是引起批量读取的原因）：</p>
 <pre><code>file_read offset=1   limit=100
 file_read offset=101 limit=100
@@ -243,7 +265,7 @@ file_read offset=201 limit=100
 </code></pre>
 <p>模型会把它们当成一个序列。改成带箭头的循环描述，或者干脆只写第 1 步的调用 + 一句「读完再 <code>offset=101</code>」。</p>
 <hr>
-<h2>6. 分页大小怎么定</h2>
+<h2 id="sec-6-分页大小怎么定">6. 分页大小怎么定</h2>
 <p>不要拍脑袋。模拟 <code>file_read</code> 的输出格式（<code>行号: 内容</code>，行间 <code>\n</code>，末尾 <code>\n[Lines A-B of N]</code>），按页统计最坏字节数：</p>
 <pre><code class="language-python">lines = open(cache, 'rb').read().split(b'\n')
 for page in (50, 100, 120):
@@ -284,7 +306,7 @@ for page in (50, 100, 120):
 </table></div>
 <p>选 100 行。这个数字同时写进 <a href="http://SKILL.md">SKILL.md</a>，让模型不需要自己算。</p>
 <hr>
-<h2>7. 验证清单</h2>
+<h2 id="sec-7-验证清单">7. 验证清单</h2>
 <p>改动落地前逐条实跑：</p>
 <ul>
 <li>[ ] 短帖：<code>stdout</code> 与缓存 <code>diff</code> 为空</li>
@@ -296,7 +318,7 @@ for page in (50, 100, 120):
 <li>[ ] 边界：无标题、无图片、超长单行（本例最长单行 873 字节，远低于上限）</li>
 </ul>
 <hr>
-<h2>8. 可迁移的结论</h2>
+<h2 id="sec-8-可迁移的结论">8. 可迁移的结论</h2>
 <ol>
 <li><strong>截断在运行时，不在脚本。</strong> 先确认上限的单位与截断方式，再决定怎么绕。</li>
 <li><strong>分页是通用工具的能力，不是每个脚本的义务。</strong> 脚本的职责是「把完整内容放到一个稳定路径」，然后告诉 agent 路径。</li>

@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-24-d1b592067fd3a51b9df485f1165b3085.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,18 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-dgx-spark-静默死机长-prefill-与-nvidia-580-open">DGX Spark 静默死机：长 Prefill 与 nvidia-580-open</a></li>
+<li class="toc-l2"><a href="#sec-原因">原因</a></li>
+<li class="toc-l2"><a href="#sec-补丁">补丁</a></li>
+<li class="toc-l2"><a href="#sec-操作">操作</a></li>
+<li class="toc-l2"><a href="#sec-确认">确认</a></li>
+<li class="toc-l2"><a href="#sec-参考">参考</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,16 +84,16 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>DGX Spark 静默死机：长 Prefill 与 nvidia-580-open</h1>
+<h1 id="sec-dgx-spark-静默死机长-prefill-与-nvidia-580-open">DGX Spark 静默死机：长 Prefill 与 nvidia-580-open</h1>
 <p>DGX Spark（GB10，128GB 统一内存）跑大模型<strong>长上下文 prefill</strong>（社区复现约 69K+ token）时，可能整机瞬间卡死：无 panic、无清晰 OOM、看门狗不触发，往往只能拔电。这和「推理进程挂了但还能 SSH」不是一类问题。</p>
-<h2>原因</h2>
+<h2 id="sec-原因">原因</h2>
 <p>部分出厂镜像默认是开源 GPU 内核模块：</p>
 <pre><code class="language-bash">modinfo nvidia | grep filename
 cat /proc/driver/nvidia/version
 </code></pre>
 <p>若路径含 <code>nvidia-580-open</code>，或 NVRM 写着 <code>Open Kernel Module</code>，即属易感配置。社区多台对比结论：该模块在统一内存高压下的分配失败路径可能触发<strong>内核活锁</strong>；换成同版本<strong>专有模块</strong>后现象明显缓解，性能通常无明显回退。</p>
 <p>短请求不易触发；偶发超长 prefill 更容易踩中。拉长框架超时、降并发只能减少频率，<strong>不能代替换驱动</strong>。</p>
-<h2>补丁</h2>
+<h2 id="sec-补丁">补丁</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -104,7 +116,7 @@ cat /proc/driver/nvidia/version
 <pre><code class="language-bash">apt-cache policy nvidia-driver-580 nvidia-driver-580-open
 apt-cache policy linux-modules-nvidia-580-nvidia-hwe-24.04
 </code></pre>
-<h2>操作</h2>
+<h2 id="sec-操作">操作</h2>
 <pre><code class="language-bash"># 1. 留档并停掉所有大模型负载
 modinfo nvidia | grep -E '^(filename|version|license):'
 cat /proc/driver/nvidia/version
@@ -118,7 +130,7 @@ sudo apt install -y nvidia-driver-580 linux-modules-nvidia-580-nvidia-hwe-24.04
 # 3. 重启
 sudo reboot
 </code></pre>
-<h2>确认</h2>
+<h2 id="sec-确认">确认</h2>
 <pre><code class="language-bash">modinfo nvidia | grep filename
 cat /proc/driver/nvidia/version
 nvidia-smi
@@ -130,7 +142,7 @@ nvidia-smi
 sudo reboot
 </code></pre>
 <hr>
-<h2>参考</h2>
+<h2 id="sec-参考">参考</h2>
 <ol>
 <li>社区实操：长 prefill（约 69K+）静默死机，对比指向 <code>nvidia-580-open</code> 活锁；缓解为同版本专有模块并重启。</li>
 <li><a href="https://forums.developer.nvidia.com/t/dgx-spark-silent-hard-freeze-under-sustained-llama-cpp-inference-no-xid-oom-panic-10-second-telemetry-captured-warranty-ends-oct-14-requesting-cas/383624">Silent hard-freeze under sustained inference</a></li>

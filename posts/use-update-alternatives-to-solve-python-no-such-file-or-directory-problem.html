@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/use-update-alternatives-to-solve-python-no-such-file-or-directory-problem.html">
 
 </head>
-<body>
+<body class="">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -36,6 +36,7 @@
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
 </aside>
+
 
 <div id="overlay-mask"></div>
 
@@ -72,7 +73,7 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h2>the problem</h2>
+<h2 id="sec-the-problem">the problem</h2>
 <p>Recently I am trying to use the centos 8 stream.
 When I was trying to install python as a dependency for vim plugin <code>YouCompleteMe</code>.
 The <code>install.py</code> was stopped by such a problem:</p>
@@ -81,7 +82,7 @@ The <code>install.py</code> was stopped by such a problem:</p>
 </code></pre>
 <p>I guess it is probably I installed the <code>python3</code>. The executable file mapped to <code>/usr/bin/python3</code> but not <code>/usr/bin/python</code>.
 Therefore there is no executable mapped to <code>/usr/bin/python</code></p>
-<h2>the solution</h2>
+<h2 id="sec-the-solution">the solution</h2>
 <p>The easy way to fix this is pretty straightforward,
 I can just use <code>ln</code> to create a symbolic link for the real <code>python3</code> executable file and let it map to <code>/usr/bin/python</code> then everything seems to be fine.</p>
 <p>But my gut feeling tells me there could be an elegant way to fix this problem.

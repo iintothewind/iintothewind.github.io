@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-10-10-b97b4681617818406e307429d211f74f.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,18 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-ai-不是许愿机五个决定输出质量的关键">AI 不是许愿机：五个决定输出质量的关键</a></li>
+<li class="toc-l2"><a href="#sec-一问题界定能力ai-的上限是你不是模型">一、问题界定能力：AI 的上限是你，不是模型</a></li>
+<li class="toc-l2"><a href="#sec-二完整的工程指令六个要素">二、完整的工程指令：六个要素</a></li>
+<li class="toc-l2"><a href="#sec-三信息四象限最大的敌人是看不见的盲区">三、信息四象限：最大的敌人是看不见的盲区</a></li>
+<li class="toc-l2"><a href="#sec-四一条约束链盲区-理解深度-指令质量-输出质量">四、一条约束链：盲区 → 理解深度 → 指令质量 → 输出质量</a></li>
+<li class="toc-l2"><a href="#sec-五coding-agent-没有改变软件工程的本质">五、Coding agent 没有改变软件工程的本质</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,8 +84,8 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>AI 不是许愿机：五个决定输出质量的关键</h1>
-<h2>一、问题界定能力：AI 的上限是你，不是模型</h2>
+<h1 id="sec-ai-不是许愿机五个决定输出质量的关键">AI 不是许愿机：五个决定输出质量的关键</h1>
+<h2 id="sec-一问题界定能力ai-的上限是你不是模型">一、问题界定能力：AI 的上限是你，不是模型</h2>
 <p>&quot;会用 AI&quot;常被误解成&quot;会写 prompt&quot;，但 prompt 只是载体。真正的分水岭在 prompt 之前——<strong>你有没有把问题界定清楚</strong>。</p>
 <div class="mermaid">flowchart LR
     subgraph A[&quot;❌ 许愿式&quot;]
@@ -85,7 +97,7 @@
         B1[&quot;聊清边界 / 范围 / 约束&quot;] --&gt; B2[&quot;写出完整工程指令&quot;] --&gt; B3[&quot;AI 执行，一次可用&quot;]
     end
 </div><p>许愿式提问把&quot;界定问题&quot;这份工作甩给了 AI，AI 只能猜。猜对是运气，猜错是常态。</p>
-<h2>二、完整的工程指令：六个要素</h2>
+<h2 id="sec-二完整的工程指令六个要素">二、完整的工程指令：六个要素</h2>
 <div class="mermaid">mindmap
   root((完整工程指令))
     背景
@@ -101,7 +113,7 @@
     验收标准
       怎样才算做对了
 </div><p>六个要素缺一个，AI 就要在那个位置上猜一次。猜的次数越多，输出离你的预期越远。<strong>你给的是许愿还是工程指令，决定了 AI 回你的是废话还是答案。</strong></p>
-<h2>三、信息四象限：最大的敌人是看不见的盲区</h2>
+<h2 id="sec-三信息四象限最大的敌人是看不见的盲区">三、信息四象限：最大的敌人是看不见的盲区</h2>
 <div class="mermaid">quadrantChart
     title 信息四象限：AI 能不能用对，看你处在哪个象限
     x-axis &quot;没意识到&quot; --&gt; &quot;意识到了&quot;
@@ -121,7 +133,7 @@
 <li><strong>未知-未知</strong>（你不知道自己不知道的）：真正的盲区。开发者输入 &quot;freeze the code&quot;，本意是暂停变更，AI 却删了生产库——他没说冻结范围和操作边界，因为他不知道自己漏了。</li>
 </ul>
 <p>前两类你处理得了，后两类会无意识遗漏。<strong>而恰恰是后两类，决定了你是第几次返工。</strong></p>
-<h2>四、一条约束链：盲区 → 理解深度 → 指令质量 → 输出质量</h2>
+<h2 id="sec-四一条约束链盲区-理解深度-指令质量-输出质量">四、一条约束链：盲区 → 理解深度 → 指令质量 → 输出质量</h2>
 <div class="mermaid">flowchart LR
     A[&quot;🔍 看不见的盲区&lt;br/&gt;未知-未知 / 未知-已知&quot;] --&gt;|&quot;设上限&quot;| B[&quot;🧠 你对问题的理解深度&quot;]
     B --&gt;|&quot;设上限&quot;| C[&quot;📝 你能写出的指令质量&quot;]
@@ -129,7 +141,7 @@
     style A fill:#f9e2e2,stroke:#c00
     style D fill:#e2f0e2,stroke:#090
 </div><p>这条链只能从左往右突破：缩小盲区（让 AI 帮你扫盲、让 AI 反过来问你）→ 加深理解 → 写出好指令。<strong>模型再强，也只是在链条的最右端等你。</strong>左边没做功，右边的模型能力再强也传导不过来。</p>
-<h2>五、Coding agent 没有改变软件工程的本质</h2>
+<h2 id="sec-五coding-agent-没有改变软件工程的本质">五、Coding agent 没有改变软件工程的本质</h2>
 <p>以我最近做的一个项目为例：两周前接到任务，给一家货运公司做内部订单管理系统。启动时只跟业务负责人开过会，听她讲了一遍日常工作——手动用 Excel 收集报价的流程，拿到一堆邮件、PDF、Excel，然后就没了。然后是很多天、很多轮：聊需求边界、业务范围、数据约束 → 需求文档 → 设计文档 → 数据建模 → UI mockup 改了三版 → API specs → <strong>最后</strong>才让 coding agent 写代码。这条链走完，agent 才&quot;不会轻易跑偏&quot;。</p>
 <div class="mermaid">flowchart LR
     A[&quot;📋 需求&lt;br/&gt;边界 / 范围 / 约束&lt;br/&gt;跟干系人一轮轮聊&quot;] --&gt; B[&quot;📐 设计&lt;br/&gt;数据建模 / mockup / API specs&quot;]

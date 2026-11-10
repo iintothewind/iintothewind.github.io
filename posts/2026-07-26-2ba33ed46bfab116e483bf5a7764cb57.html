@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-07-26-2ba33ed46bfab116e483bf5a7764cb57.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,20 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-关于-leaked-llm-prompts-那个-repo-的一点看法">关于 &quot;leaked-llm-prompts&quot; 那个 repo 的一点看法</a></li>
+<li class="toc-l2"><a href="#sec-不是什么秘密">不是什么秘密</a></li>
+<li class="toc-l2"><a href="#sec-真正缺什么">真正缺什么</a></li>
+<li class="toc-l3"><a href="#sec-1-提取方法透明可复现">1. 提取方法（透明可复现）</a></li>
+<li class="toc-l3"><a href="#sec-2-提示词工程结构架构价值">2. 提示词工程结构（架构价值）</a></li>
+<li class="toc-l3"><a href="#sec-3-加载机制成本与性能反推">3. 加载机制（成本与性能反推）</a></li>
+<li class="toc-l3"><a href="#sec-4-设计思路反推真正的洞察">4. 设计思路反推（真正的洞察）</a></li>
+<li class="toc-l2"><a href="#sec-一点感想">一点感想</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,17 +86,17 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>关于 &quot;leaked-llm-prompts&quot; 那个 repo 的一点看法</h1>
+<h1 id="sec-关于-leaked-llm-prompts-那个-repo-的一点看法">关于 &quot;leaked-llm-prompts&quot; 那个 repo 的一点看法</h1>
 <p>看到 <a href="https://github.com/Eversmile12/leaked-llm-prompts">Eversmile12/leaked-llm-prompts</a> 拿了 160+ stars，点进去看完的感受：<strong>矿挖出来了，但矿石没洗直接堆那了。</strong></p>
-<h2>不是什么秘密</h2>
+<h2 id="sec-不是什么秘密">不是什么秘密</h2>
 <p>这个 repo 的实质是：从 <a href="http://claude.ai">claude.ai</a> 的网页端/API 响应里，把注入的 system prompt 文本 dump 出来拼成一个文件。技术上就是抓个包或者读一下 API 返回，零逆向工程、零破解。能拿到不意外，意料之中的是<strong>拿了也就拿了，没有后续</strong>。</p>
-<h2>真正缺什么</h2>
+<h2 id="sec-真正缺什么">真正缺什么</h2>
 <p>一份有价值的 prompt leak 分析，至少应该覆盖这四个维度，但这个 repo 一个都没碰：</p>
-<h3>1. 提取方法（透明可复现）</h3>
+<h3 id="sec-1-提取方法透明可复现">1. 提取方法（透明可复现）</h3>
 <p>怎么拿到的？是 DOM 解析、API 拦截、还是工程模式？写清楚别人能重复验证，甚至有心思的人能做成自动化 diff 工具追踪 prompt 变更。藏着掖着就没意思了。</p>
-<h3>2. 提示词工程结构（架构价值）</h3>
+<h3 id="sec-2-提示词工程结构架构价值">2. 提示词工程结构（架构价值）</h3>
 <p>Anthropic 怎么组织百万 token 级 prompt 系统？从文件里能清楚看到模块拆分粒度——<code># claude_behavior</code> 是核心人格，<code># memory_filesystem</code>、<code># search_instructions</code>、<code># computer_use</code> 都是独立模块，明显是<strong>按条件加载</strong>的。运行时不会全量塞 135k（~34k tokens）进上下文，那太蠢了。但真正的架构设计——模块触发条件、优先级覆盖规则、工具 schema 的注入策略——这些一句没提。</p>
-<h3>3. 加载机制（成本与性能反推）</h3>
+<h3 id="sec-3-加载机制成本与性能反推">3. 加载机制（成本与性能反推）</h3>
 <p>135k 一次性加载不现实。合理的推测是：</p>
 <ul>
 <li><strong>核心固定加载</strong>：claude_behavior（角色、安全、合规、语气）——这部分最精简，始终在 prompt 里</li>
@@ -90,7 +104,7 @@
 <li><strong>工具 schema 走 API 声明</strong>：30 个工具的完整 JSON schema（占了文件 60%+ 的体积）是通过 <code>/messages</code> API 的 <code>tools</code> 参数传入的 function calling 定义，不是硬塞在系统 prompt 正文里</li>
 </ul>
 <p>这些反推能揭示 Anthropic 的推理成本优化策略，但 repo 只给了原材料。</p>
-<h3>4. 设计思路反推（真正的洞察）</h3>
+<h3 id="sec-4-设计思路反推真正的洞察">4. 设计思路反推（真正的洞察）</h3>
 <p>文本背后藏着大量架构决策：</p>
 <ul>
 <li><code>privacy_requirements</code> 里 36 行的详尽黑名单——说明 Anthropic 对记忆系统的隐私风险做过完整的红队推演</li>
@@ -98,7 +112,7 @@
 <li><code>refusal_handling</code> 里对儿童安全的极端保守策略（&quot;if Claude finds itself mentally reframing a request to make it appropriate, that reframing is the signal to REFUSE&quot;）——这条规则本身就是一个很好的安全对齐案例</li>
 </ul>
 <p>这些才是真正有分析价值的东西，但 repo 里一个字没有。</p>
-<h2>一点感想</h2>
+<h2 id="sec-一点感想">一点感想</h2>
 <p>GitHub stars 从来不等于质量，它等于<strong>注意力杠杆</strong>。&quot;leaked&quot;+&quot;Claude Opus 5&quot;这两个词凑一起，流量已经锁定了，168 stars 里大半是点进来看一眼的路人，和内容深度无关。</p>
 <p>真正有工程价值的东西——比如一个结构清晰的 skill 框架、一组可复用的 API 封装、一个数据管线——反而因为需要用户<strong>真正去用</strong>才能体会到价值，传播门槛天然高。</p>
 <p>没什么好不平衡的，只是平台机制和文化如此。这东西放在那当个原始资料参考还行，但给它标榜成什么重大发现就过了。</p>

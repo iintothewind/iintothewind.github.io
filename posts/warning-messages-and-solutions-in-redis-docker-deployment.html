@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/warning-messages-and-solutions-in-redis-docker-deployment.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,18 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-warning">warning</a></li>
+<li class="toc-l2"><a href="#sec-solution">solution</a></li>
+<li class="toc-l1"><a href="#sec-warning-1">warning</a></li>
+<li class="toc-l2"><a href="#sec-solution-1">solution</a></li>
+<li class="toc-l1"><a href="#sec-warning-2">warning</a></li>
+<li class="toc-l2"><a href="#sec-solution-2">solution</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,23 +84,23 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>warning</h1>
+<h1 id="sec-warning">warning</h1>
 <p>The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.</p>
-<h2>solution</h2>
+<h2 id="sec-solution">solution</h2>
 <pre><code class="language-bash">vim /etc/sysctl.conf
 net.core.somaxconn = 2048
 
 sysctl -p
 </code></pre>
-<h1>warning</h1>
+<h1 id="sec-warning-1">warning</h1>
 <p>overcommit_memory is set to 0! Background save may fail under low memory condition. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.</p>
-<h2>solution</h2>
+<h2 id="sec-solution-1">solution</h2>
 <pre><code class="language-bash">vim /etc/sysctl.conf
 vm.overcommit_memory = 1
 </code></pre>
-<h1>warning</h1>
+<h1 id="sec-warning-2">warning</h1>
 <p>you have Transparent Huge Pages (THP) support enabled in your kernel. This will create latency and memory usage issues with Redis. To fix this issue run the command 'echo never &gt; /sys/kernel/mm/transparent_hugepage/enabled' as root, and add it to your /etc/rc.local in order to retain the setting after a reboot. Redis must be restarted after THP is disabled.</p>
-<h2>solution</h2>
+<h2 id="sec-solution-2">solution</h2>
 <pre><code class="language-bash">echo never &gt; /sys/kernel/mm/transparent_hugepage/enabled
 
 vim /etc/rc.local

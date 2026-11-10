@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/frp.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,19 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-frp-docker-deployment">frp docker deployment</a></li>
+<li class="toc-l2"><a href="#sec-official-docs">official docs</a></li>
+<li class="toc-l2"><a href="#sec-before-the-work">before the work</a></li>
+<li class="toc-l2"><a href="#sec-frps-setup">frps setup</a></li>
+<li class="toc-l3"><a href="#sec-frpsini">frps.ini</a></li>
+<li class="toc-l3"><a href="#sec-frpc-setup">frpc setup</a></li>
+<li class="toc-l2"><a href="#sec-usage">Usage</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,17 +85,17 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>frp docker deployment</h1>
-<h2>official docs</h2>
+<h1 id="sec-frp-docker-deployment">frp docker deployment</h1>
+<h2 id="sec-official-docs">official docs</h2>
 <p><a href="https://gofrp.org/docs">https://gofrp.org/docs</a></p>
-<h2>before the work</h2>
+<h2 id="sec-before-the-work">before the work</h2>
 <p>frp contains two parts: the server and the client.</p>
 <p>Server (frps) is meant to run on an instance with public ip address.
 Client (frpc) is meant to run on any instance that needs to expose ports for its services.</p>
 <p>Take SSH for example, if you have a VM instance that is running in your private network with ip address 192.168.0.55, you need to expose its SSH service to public.</p>
 <p>You need to deploy frpc on this VM instance. When frpc is running on this VM, it will talk with Server (frps) that is running on the instance with public ip address.</p>
 <p>Then when you need to SSH to this VM instance, you don't have to connect to its private address 192.168.0.55 directly, which will not work. Instead, you need to connect to the Server (frps) on the specified port, then frps will reverse proxy the data to that VM instance.</p>
-<h2>frps setup</h2>
+<h2 id="sec-frps-setup">frps setup</h2>
 <ul>
 <li>frps.yml</li>
 </ul>
@@ -96,7 +109,7 @@ services:
       - ./frps.ini:/etc/frp/frps.ini
 </code></pre>
 <p>here <code>network_mode = host</code> is used, which means Windows will not support this option.</p>
-<h3>frps.ini</h3>
+<h3 id="sec-frpsini">frps.ini</h3>
 <pre><code class="language-ini">[common]
 bind_port = 7000
 dashboard_port = 7500
@@ -104,7 +117,7 @@ token = &lt;token&gt; # should be same as frpc
 dashboard_user = &lt;user&gt;
 dashboard_pwd = &lt;pwd&gt;
 </code></pre>
-<h3>frpc setup</h3>
+<h3 id="sec-frpc-setup">frpc setup</h3>
 <pre><code class="language-yml">version: &quot;3.3&quot;
 services:
   frpc:
@@ -127,7 +140,7 @@ remote_port = 8222
 local_ip = localhost
 local_port = 22
 </code></pre>
-<h2>Usage</h2>
+<h2 id="sec-usage">Usage</h2>
 <ol>
 <li>Start frps first on your instance that has a public IP address</li>
 <li>Then start frpc on your instance that has a private IP address</li>

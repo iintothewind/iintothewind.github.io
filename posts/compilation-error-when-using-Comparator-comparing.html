@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/compilation-error-when-using-Comparator-comparing.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,18 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l2"><a href="#sec-the-problem">the problem</a></li>
+<li class="toc-l2"><a href="#sec-the-solutions">the solutions</a></li>
+<li class="toc-l3"><a href="#sec-use-static-lambda-expression">use static lambda expression</a></li>
+<li class="toc-l3"><a href="#sec-use-explicitly-defined-lambda-with-a-temorary-variable">use explicitly defined lambda with a temorary variable</a></li>
+<li class="toc-l3"><a href="#sec-add-explicity-type-parameter-before-the-comparatorcomparing-is-called">add explicity type parameter before the Comparator.comparing() is called</a></li>
+<li class="toc-l2"><a href="#sec-reference">reference</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,7 +84,7 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h2>the problem</h2>
+<h2 id="sec-the-problem">the problem</h2>
 <p>First, lets take a look at the following code sample:</p>
 <pre><code class="language-java">Collections.sort(playlist, Comparator.comparing(s -&gt; s.getTitle())
               .thenComparing(p1 -&gt; p1.getDuration())
@@ -90,26 +102,26 @@ The answer is: No, there would be some compilation error.</p>
 <p>The reason for this compilation error is that the type inference for Java language is weak in this case.
 It is expected that JVM knows what the type of the elements in <code>playlist</code> is when it is reading the first lambda <code>s-&gt;s.getTitle()</code>.
 But actually, JVM is not able to figure it out.</p>
-<h2>the solutions</h2>
+<h2 id="sec-the-solutions">the solutions</h2>
 <p>There are three approaches to solve this problem.</p>
-<h3>use static lambda expression</h3>
+<h3 id="sec-use-static-lambda-expression">use static lambda expression</h3>
 <pre><code class="language-java">Collections.sort(playlist, Comparator.comparing(Song::getTitle)
               .thenComparing(Song::getDuration)
               .thenComparing(Song::getArtist)
 );
 </code></pre>
-<h3>use explicitly defined lambda with a temorary variable</h3>
+<h3 id="sec-use-explicitly-defined-lambda-with-a-temorary-variable">use explicitly defined lambda with a temorary variable</h3>
 <pre><code class="language-java">Comparator&lt;Song&gt; byName = (song1, song2) -&gt; song1.getArtist().compareTo(song2.getArtist());
 Comparator&lt;Song&gt; byDuration = (song1, song2) -&gt; Integer.compare(song1.getDuration(), song2.getDuration());
 Collections.sort(playlist, byName.thenComparing(byDuration));
 </code></pre>
-<h3>add explicity type parameter before the Comparator.comparing() is called</h3>
+<h3 id="sec-add-explicity-type-parameter-before-the-comparatorcomparing-is-called">add explicity type parameter before the Comparator.comparing() is called</h3>
 <pre><code class="language-java">Collections.sort(playlist, Comparator.&lt;Song, String&gt;comparing((s) -&gt; s.getTitle())
               .thenComparing(p1 -&gt; p1.getDuration())
               .thenComparing(p1 -&gt; p1.getArtist())
 );
 </code></pre>
-<h2>reference</h2>
+<h2 id="sec-reference">reference</h2>
 <p><a href="http://stackoverflow.com/questions/24436871/very-confused-by-java-8-comparator-type-inference">Very confused by Java 8 Comparator type inference</a></p>
 
 <!--

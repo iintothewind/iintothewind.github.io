@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-07-27-77606ee5b16d4679a27f16414f30f4dc.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,22 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-深入理解-ai-agent设计原理与工程实践-阅读评估笔记">《深入理解 AI Agent：设计原理与工程实践》— 阅读评估笔记</a></li>
+<li class="toc-l2"><a href="#sec-书籍基本信息">书籍基本信息</a></li>
+<li class="toc-l2"><a href="#sec-章节目录速览">章节目录速览</a></li>
+<li class="toc-l2"><a href="#sec-核心评估">核心评估</a></li>
+<li class="toc-l3"><a href="#sec-强项">强项</a></li>
+<li class="toc-l3"><a href="#sec-弱项-缺口">弱项 / 缺口</a></li>
+<li class="toc-l2"><a href="#sec-关键话题覆盖矩阵">关键话题覆盖矩阵</a></li>
+<li class="toc-l2"><a href="#sec-关于-subagent-编排-vs-多-agent-交互">关于 SubAgent 编排 vs 多 Agent 交互</a></li>
+<li class="toc-l2"><a href="#sec-推荐阅读优先级">推荐阅读优先级</a></li>
+<li class="toc-l2"><a href="#sec-延伸思考子任务编排为什么是断层">延伸思考：子任务编排为什么是断层</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,13 +88,13 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>《深入理解 AI Agent：设计原理与工程实践》— 阅读评估笔记</h1>
+<h1 id="sec-深入理解-ai-agent设计原理与工程实践-阅读评估笔记">《深入理解 AI Agent：设计原理与工程实践》— 阅读评估笔记</h1>
 <blockquote>
 <p>评估日期：2026-07-27
 评估人：Ivar (后端开发，Agent 工程落地方向)</p>
 </blockquote>
 <hr>
-<h2>书籍基本信息</h2>
+<h2 id="sec-书籍基本信息">书籍基本信息</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -111,7 +127,7 @@
 </table></div>
 <p>核心公式：<strong>Agent = LLM + 上下文 + 工具</strong></p>
 <hr>
-<h2>章节目录速览</h2>
+<h2 id="sec-章节目录速览">章节目录速览</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -174,22 +190,22 @@
 </tbody>
 </table></div>
 <hr>
-<h2>核心评估</h2>
-<h3>强项</h3>
+<h2 id="sec-核心评估">核心评估</h2>
+<h3 id="sec-强项">强项</h3>
 <ul>
 <li><strong>第 2 章（上下文工程）</strong>：全书最佳。从 API 层的上下文窗口结构拆解，到 KV Cache 管理、上下文压缩、Agent Skills 分层设计（metadata 路由 → 按需加载 → 细则），写得很落地。</li>
 <li><strong>第 4 章（工具/MCP）</strong>：五类工具设计原则、MCP 协议、事件驱动异步 Agent、打断占位符策略。架构层面的分析到位。</li>
 <li><strong>第 6 章（评估）</strong>：被低估的一章。评估体系设计直接影响 Agent 迭代效率。</li>
 <li><strong>理论与实践平衡</strong>：不是纯概念书，每章配可跑代码。</li>
 </ul>
-<h3>弱项 / 缺口</h3>
+<h3 id="sec-弱项-缺口">弱项 / 缺口</h3>
 <ul>
 <li><strong>第 5、7、9（×2）、10 章</strong>对应用层 Agent 开发者对口度不高。</li>
 <li><strong>最大的缺口：子任务编排（Sub-task Orchestration）</strong>——书中几乎没覆盖。</li>
 <li>具体来说，<strong>任务拆解、任务状态管理、子 Agent 调度、嵌套调用</strong>这些对复杂 Agent 至关重要的工程模式，书中各章仅蜻蜓点水（Ch4 提了 spawn_subagent，Ch10 讲的是宏观多 Agent 社会而非父子编排），没有系统讨论。</li>
 </ul>
 <hr>
-<h2>关键话题覆盖矩阵</h2>
+<h2 id="sec-关键话题覆盖矩阵">关键话题覆盖矩阵</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -232,7 +248,7 @@
 </tbody>
 </table></div>
 <hr>
-<h2>关于 SubAgent 编排 vs 多 Agent 交互</h2>
+<h2 id="sec-关于-subagent-编排-vs-多-agent-交互">关于 SubAgent 编排 vs 多 Agent 交互</h2>
 <p><strong>对我们当前场景来说：</strong></p>
 <ul>
 <li><strong>有价值的</strong>：intra-agent orchestration — 一个 Agent 内部怎么拆任务、派子任务、追踪状态、聚合结果、处理失败。这是今天就能直接落地的东西。</li>
@@ -275,7 +291,7 @@
 </table></div>
 <p><strong>结论：子任务编排目前没有一个统一工程范式。</strong> 各框架各搞一套，没有像 MCP 之于工具那样的标准化成果。这本书在这一块是断层的。</p>
 <hr>
-<h2>推荐阅读优先级</h2>
+<h2 id="sec-推荐阅读优先级">推荐阅读优先级</h2>
 <p>如果只挑对自己当前工作最有用的：</p>
 <ol>
 <li><strong>第 2 章（上下文工程）</strong> — 上下文管理直接决定 Agent 能力上限</li>
@@ -287,7 +303,7 @@
 </ol>
 <p>第 5（Coding Agent）、7（后训练）、9（多模态）、10（多 Agent）章可跳过或仅作了解。</p>
 <hr>
-<h2>延伸思考：子任务编排为什么是断层</h2>
+<h2 id="sec-延伸思考子任务编排为什么是断层">延伸思考：子任务编排为什么是断层</h2>
 <p>这个问题值得关注。Agent 要处理复杂任务，<strong>必须把任务拆成可管理的子任务、追踪状态、并发调度、处理失败</strong>。这是从「演示可用」到「生产可靠」的核心跨越。</p>
 <p>但目前行业现状是：</p>
 <ul>

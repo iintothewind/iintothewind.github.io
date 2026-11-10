@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/add_timeout_support_for_CompletableFuture_in_java_8.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,19 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l2"><a href="#sec-reason">reason</a></li>
+<li class="toc-l3"><a href="#sec-completablefutureortimeout-in-java-9">CompletableFuture.orTimeout() in java 9</a></li>
+<li class="toc-l2"><a href="#sec-solution-in-java-8">solution in java 8</a></li>
+<li class="toc-l2"><a href="#sec-sample-code">sample code</a></li>
+<li class="toc-l2"><a href="#sec-implementation-for-timeoutsupportfuture">implementation for TimeoutSupportFuture</a></li>
+<li class="toc-l2"><a href="#sec-summary">summary</a></li>
+<li class="toc-l2"><a href="#sec-reference">reference</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,7 +85,7 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h2>reason</h2>
+<h2 id="sec-reason">reason</h2>
 <p><code>CompletableFuture</code> is a useful tool introduced since java 8.
 It provides many convenient methods for concurrency handling.
 Yet it did not support timeout in java 8 version.</p>
@@ -80,7 +93,7 @@ Yet it did not support timeout in java 8 version.</p>
 <pre><code class="language-java">public CompletableFuture&lt;T&gt; orTimeout(long timeout, TimeUnit unit)
 public CompletableFuture&lt;T&gt; completeOnTimeout(T value, long timeout, TimeUnit unit)
 </code></pre>
-<h3>CompletableFuture.orTimeout() in java 9</h3>
+<h3 id="sec-completablefutureortimeout-in-java-9">CompletableFuture.orTimeout() in java 9</h3>
 <p>A <code>CompletableFuture</code> would be completed exceptionally with <code>TimeoutException</code> if it did not complete with a <code>result</code> within given timeout.
 The timeout feature was implemented by using two static final classes <code>Delayer</code> and <code>Timeout</code>.</p>
 <pre><code class="language-java">public CompletableFuture&lt;T&gt; orTimeout(long timeout, TimeUnit unit) {
@@ -92,7 +105,7 @@ The timeout feature was implemented by using two static final classes <code>Dela
 }
 </code></pre>
 <p>If <code>result</code> is not given, The <code>CompletableFuture.completeExceptionally()</code> for current instance will be called in a scheduled task created by <code>Delayer.delay()</code> after the given timeout.</p>
-<h2>solution in java 8</h2>
+<h2 id="sec-solution-in-java-8">solution in java 8</h2>
 <p>First we need to create a <code>CompletableFuture</code> named <code>promise</code> which always fails with <code>TimeoutException</code> after given timeout.
 We can reuse the code implementation of <code>Delayer</code> and <code>Timeout</code> in java 9 to fail the created <code>promise</code>.</p>
 <p>The always-fail <code>CompletableFuture</code> can be implemented as:</p>
@@ -110,7 +123,7 @@ Delayer.delay(new Timeout(promise), duration.toMillis(), TimeUnit.MILLISECONDS);
 </code></pre>
 <p>For <code>within()</code> method, it takes a <code>completableFuture</code> and returns a <code>CompletableFuture</code> instance when the input <code>completableFuture</code> is completed. However if it takes too long to completed the input <code>completableFuture</code>, <code>promise</code> will be returned as output after the given <code>duration</code>,
 <code>TimeoutException</code> will be thrown in its completed result.</p>
-<h2>sample code</h2>
+<h2 id="sec-sample-code">sample code</h2>
 <pre><code class="language-java">@Test
 public void testTimeoutSupportFuture() {
   CompletableFuture&lt;String&gt; future = CompletableFuture.supplyAsync(() -&gt; {
@@ -144,7 +157,7 @@ public void testTimeoutSupportFuture() {
 <pre><code>2019-08-13 16:20:20.998 [CompletableFutureDelayScheduler] INFO  sample.concurrent.CompletableFutureSample - java.util.concurrent.TimeoutException
 2019-08-13 16:20:21.039 [ForkJoinPool.commonPool-worker-3] INFO  sample.concurrent.CompletableFutureSample - s == this is a message
 </code></pre>
-<h2>implementation for <code>TimeoutSupportFuture</code></h2>
+<h2 id="sec-implementation-for-timeoutsupportfuture">implementation for <code>TimeoutSupportFuture</code></h2>
 <pre><code class="language-java">import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -206,7 +219,7 @@ public interface TimeoutSupportFuture {
   }
 }
 </code></pre>
-<h2>summary</h2>
+<h2 id="sec-summary">summary</h2>
 <p>A <code>CompletableFuture</code> instance can have timeout support with the help of <code>CompletableFuture.applyToEither()</code>.
 But there is a significant difference between <strong>timeout</strong> and <strong>cancel</strong>.
 <strong>timeout</strong> means, A <code>CompletableFuture</code> instance will complete with <code>TimeoutException</code> if it does not complete its task within given time.
@@ -222,7 +235,7 @@ public boolean cancel(boolean mayInterruptIfRunning)
 <p>So you are on your own to make sure that any task executed in <code>CompletableFuture</code> should be quit properly.
 If you have applied a task into <code>CompletableFuture</code> and its execution never ends, this task would be executed forever till JVM exists!
 Unless this is what you want, don't use <code>CompletableFuture</code> in this way.</p>
-<h2>reference</h2>
+<h2 id="sec-reference">reference</h2>
 <p><a href="https://dzone.com/articles/asynchronous-timeouts">Asynchronous Timeouts with CompletableFuture</a></p>
 
 <!--

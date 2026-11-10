@@ -17,7 +17,7 @@
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html">
 
 </head>
-<body>
+<body class="has-toc">
 <button id="sidebar-toggle" aria-label="Open menu">☰</button>
 
 <aside id="sidebar">
@@ -35,6 +35,19 @@
 <div id="tag-cloud"></div>
 <ul id="post-list-by-tag" class="post-list"></ul>
 </div>
+</aside>
+<button id="toc-toggle" aria-label="Toggle table of contents" aria-controls="toc">§</button>
+<aside id="toc" aria-label="Table of contents">
+<div class="toc-title">Contents</div>
+<ul class="toc-list">
+<li class="toc-l1"><a href="#sec-omp-官方文档高效读取方法实测版">omp 官方文档高效读取方法（实测版）</a></li>
+<li class="toc-l2"><a href="#sec-tldr">TL;DR</a></li>
+<li class="toc-l2"><a href="#sec-关键实测为什么不能纯-curl">关键实测（为什么不能纯 curl）</a></li>
+<li class="toc-l2"><a href="#sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</a></li>
+<li class="toc-l2"><a href="#sec-agent-工作流">Agent 工作流</a></li>
+<li class="toc-l2"><a href="#sec-工具怎么选">工具怎么选</a></li>
+<li class="toc-l2"><a href="#sec-常见误区">常见误区</a></li>
+</ul>
 </aside>
 
 <div id="overlay-mask"></div>
@@ -72,13 +85,13 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1>omp 官方文档高效读取方法（实测版）</h1>
+<h1 id="sec-omp-官方文档高效读取方法实测版">omp 官方文档高效读取方法（实测版）</h1>
 <blockquote>
 <p>写给自己和其他 agent 复用。目标：读 <code>omp.sh/docs</code> 时少花 token、少踩坑。
 实测时间：2026-09；<strong>probe 复测修订 2026-09-21</strong>。所有 URL 都验证过，坑也标了。
 背景：omp = <code>oh-my-pi</code>（作者 can1357），一个把 IDE 接进来的 coding agent。</p>
 </blockquote>
-<h2>TL;DR</h2>
+<h2 id="sec-tldr">TL;DR</h2>
 <p><strong>一句话：<a href="http://omp.sh/docs">omp.sh/docs</a> 是 JS 重度渲染的 Mintlify 站——<code>.md</code> 后缀、<code>/docs/llms.txt</code> 这些&quot;友好端点&quot;直连 curl 都只返回 SPA HTML 壳（200 但 text/html），真内容必须走 jina/unifetch 渲染。唯一能纯 curl 拿的是根域名 <code>sitemap.xml</code>（真静态 XML，36 页）。</strong></p>
 <p>效率排序：</p>
 <pre><code>unifetch/jina 渲染 .md (取正文)   &gt;   curl /sitemap.xml (页面清单)   &gt;   obscura --stealth (兜底)
@@ -88,7 +101,7 @@
 <li><strong>要页面清单</strong> → <code>curl https://omp.sh/sitemap.xml</code>（真静态 XML，纯 curl 可拿）</li>
 <li><strong>兜底</strong> → <code>obscura fetch --stealth</code></li>
 </ul>
-<h2>关键实测（为什么不能纯 curl）</h2>
+<h2 id="sec-关键实测为什么不能纯-curl">关键实测（为什么不能纯 curl）</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -128,7 +141,7 @@
 <blockquote>
 <p>⚠️ <strong>和 TypeSafe 的关键区别</strong>：TypeSafe 是静态 Mintlify，<code>.md</code>/<code>llms.txt</code> 直连 curl 就是真内容；omp 是 JS 渲染，同样的端点直连 curl 全是壳。别按 TypeSafe 的经验去纯 curl omp。</p>
 </blockquote>
-<h2>URL 模式（精确，可直接粘）</h2>
+<h2 id="sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</h2>
 <p><strong>1. 页面清单（纯 curl，最省）</strong></p>
 <pre><code class="language-bash">curl -s 'https://omp.sh/sitemap.xml' | grep -o '&lt;loc&gt;[^&lt;]*' | sed 's/&lt;loc&gt;//'
 # → 36 个真实 URL：/docs /docs/quickstart /docs/using /docs/slash ...
@@ -142,13 +155,13 @@
 <p><strong>3. 兜底（无头浏览器）</strong></p>
 <pre><code class="language-bash">obscura fetch --dump markdown --stealth 'https://omp.sh/docs/quickstart'
 </code></pre>
-<h2>Agent 工作流</h2>
+<h2 id="sec-agent-工作流">Agent 工作流</h2>
 <ol>
 <li><code>curl https://omp.sh/sitemap.xml</code> → 拿全部页面 URL（纯 curl，最省）</li>
 <li>挑目标页，<code>unifetch read '&lt;page&gt;.md'</code> → jina 渲染出正文</li>
 <li>渲染失败才上 <code>obscura --stealth</code></li>
 </ol>
-<h2>工具怎么选</h2>
+<h2 id="sec-工具怎么选">工具怎么选</h2>
 <div class="table-scroll"><table>
 <thead>
 <tr>
@@ -175,7 +188,7 @@
 </tr>
 </tbody>
 </table></div>
-<h2>常见误区</h2>
+<h2 id="sec-常见误区">常见误区</h2>
 <ol>
 <li><strong>别信 <code>.md</code> 直连 curl</strong>：omp 的 <code>.md</code>/<code>llms.txt</code> 返回 200 但是 SPA HTML 壳，不是真 Markdown。要 jina/unifetch 渲染。（本次修订的核心）</li>
 <li><strong>sitemap.xml 是纯 curl 的宝</strong>：根域名 sitemap 是真静态 XML，别浪费去 curl <code>.md</code>。</li>
