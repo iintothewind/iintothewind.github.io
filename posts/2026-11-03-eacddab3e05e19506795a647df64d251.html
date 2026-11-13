@@ -10,9 +10,9 @@
 <link rel="alternate" type="text/markdown" href="https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.md">
 <link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
 <link rel="alternate" type="application/feed+json" title="JSON Feed" href="/feed.json">
-<meta name="description" content="设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magisk 26.1 目标：在已有 root 的前提下，让第三方应用（F-Droid、Termux 等）能正常安装、开机自启、启动。">
+<meta name="description" content="百度 DuerOS 不是普通 Android，它把设备当作自己的封闭内容平台来做管控。这套限制的目的不是&quot;安全防护&quot;，而是让设备只能按百度的方式使用，用户没有自主权。">
 <meta property="og:title" content="DuerOS (Xiaodu) 智能音箱 root 后解除系统限制">
-<meta property="og:description" content="设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magisk 26.1 目标：在已有 root 的前提下，让第三方应用（F-Droid、Termux 等）能正常安装、开机自启、启动。">
+<meta property="og:description" content="百度 DuerOS 不是普通 Android，它把设备当作自己的封闭内容平台来做管控。这套限制的目的不是&quot;安全防护&quot;，而是让设备只能按百度的方式使用，用户没有自主权。">
 <meta property="og:url" content="https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html">
 <link rel="canonical" href="https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.html">
 
@@ -40,25 +40,25 @@
 <aside id="toc" aria-label="Table of contents">
 <div class="toc-title">Contents</div>
 <ul class="toc-list">
-<li class="toc-l1"><a href="#sec-dueros-xiaodu-智能音箱root-后解除系统限制的完整经验">DuerOS (Xiaodu) 智能音箱：root 后解除系统限制的完整经验</a></li>
-<li class="toc-l2"><a href="#sec-百度为什么这么做">百度为什么这么做</a></li>
+<li class="toc-l1"><a href="#sec-dueros-xiaodu-nv2001-root-后解除系统限制">DuerOS (Xiaodu NV2001) root 后解除系统限制</a></li>
+<li class="toc-l2"><a href="#sec-设备">设备</a></li>
+<li class="toc-l2"><a href="#sec-百度为什么限制你安装app">百度为什么限制你安装App</a></li>
 <li class="toc-l3"><a href="#sec-黑名单的真实含义">黑名单的真实含义</a></li>
 <li class="toc-l3"><a href="#sec-对第三方-app-的影响">对第三方 app 的影响</a></li>
-<li class="toc-l3"><a href="#sec-具体限制列表">具体限制列表</a></li>
-<li class="toc-l2"><a href="#sec-解决方案magisk-模块">解决方案：Magisk 模块</a></li>
+<li class="toc-l2"><a href="#sec-百度的限制与对策">百度的限制与对策</a></li>
+<li class="toc-l2"><a href="#sec-magisk-模块-dataadbmodulesduer_unblock">Magisk 模块 /data/adb/modules/duer_unblock</a></li>
 <li class="toc-l3"><a href="#sec-moduleprop">module.prop</a></li>
-<li class="toc-l3"><a href="#sec-servicesh开机清空黑名单">service.sh（开机清空黑名单）</a></li>
-<li class="toc-l3"><a href="#sec-add-priv-appsh添加特权应用">add-priv-app.sh（添加特权应用）</a></li>
-<li class="toc-l3"><a href="#sec-安装步骤">安装步骤</a></li>
-<li class="toc-l2"><a href="#sec-ssh-自启">SSH 自启</a></li>
-<li class="toc-l2"><a href="#sec-注意事项">注意事项</a></li>
-<li class="toc-l2"><a href="#sec-国内网络与包管理器配置">国内网络与包管理器配置</a></li>
-<li class="toc-l3"><a href="#sec-f-droid-镜像">F-Droid 镜像</a></li>
-<li class="toc-l3"><a href="#sec-termux-镜像">Termux 镜像</a></li>
-<li class="toc-l3"><a href="#sec-adb-持久化">ADB 持久化</a></li>
-<li class="toc-l3"><a href="#sec-magisk-授权">Magisk 授权</a></li>
-<li class="toc-l2"><a href="#sec-设备信息">设备信息</a></li>
-<li class="toc-l2"><a href="#sec-黑名单完整列表">黑名单完整列表</a></li>
+<li class="toc-l3"><a href="#sec-servicesh">service.sh</a></li>
+<li class="toc-l3"><a href="#sec-add-priv-appsh">add-priv-app.sh</a></li>
+<li class="toc-l2"><a href="#sec-操作手册">操作手册</a></li>
+<li class="toc-l3"><a href="#sec-删除系统应用可逆">删除系统应用（可逆）</a></li>
+<li class="toc-l3"><a href="#sec-安装器补丁packageinstaller-vdex">安装器补丁（PackageInstaller vdex）</a></li>
+<li class="toc-l3"><a href="#sec-termux-插件">Termux 插件</a></li>
+<li class="toc-l3"><a href="#sec-更新预装应用">更新预装应用</a></li>
+<li class="toc-l3"><a href="#sec-恢复-救砖">恢复 / 救砖</a></li>
+<li class="toc-l2"><a href="#sec-调试要点">调试要点</a></li>
+<li class="toc-l2"><a href="#sec-网络与镜像">网络与镜像</a></li>
+<li class="toc-l2"><a href="#sec-黑名单launcher-推送的-37-个包">黑名单（launcher 推送的 37 个包）</a></li>
 </ul>
 </aside>
 
@@ -97,12 +97,39 @@
   source: https://iintothewind.github.io/
 </p>
 
-<h1 id="sec-dueros-xiaodu-智能音箱root-后解除系统限制的完整经验">DuerOS (Xiaodu) 智能音箱：root 后解除系统限制的完整经验</h1>
-<blockquote>
-<p>设备：Xiaodu NV2001，Rockchip rk3326，Android 8.1.0 (API 27)，Magisk 26.1
-目标：在已有 root 的前提下，让第三方应用（F-Droid、Termux 等）能正常安装、开机自启、启动。</p>
-</blockquote>
-<h2 id="sec-百度为什么这么做">百度为什么这么做</h2>
+<h1 id="sec-dueros-xiaodu-nv2001-root-后解除系统限制">DuerOS (Xiaodu NV2001) root 后解除系统限制</h1>
+<h2 id="sec-设备">设备</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>型号 / ROM</td>
+<td>NV2001，<code>DuerShow_RK3326_v1.67.1</code></td>
+</tr>
+<tr>
+<td>SoC</td>
+<td>Rockchip rk3326，armv8l 32-bit（APK 需带 <code>armeabi-v7a</code>）</td>
+</tr>
+<tr>
+<td>Android</td>
+<td>8.1.0 (API 27)</td>
+</tr>
+<tr>
+<td>root</td>
+<td>Magisk 26.1，SELinux permissive</td>
+</tr>
+<tr>
+<td>访问</td>
+<td><code>ssh duos</code>（Termux sshd，Termux:Boot 自启）→ <code>su -c</code>；网络 ADB 5555</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="sec-百度为什么限制你安装app">百度为什么限制你安装App</h2>
 <p>百度 DuerOS 不是普通 Android，它把设备当作自己的封闭内容平台来做管控。这套限制的目的不是&quot;安全防护&quot;，而是让设备只能按百度的方式使用，用户没有自主权。</p>
 <h3 id="sec-黑名单的真实含义">黑名单的真实含义</h3>
 <p>百度桌面（<code>com.baidu.launcher</code>）维护一份包名黑名单，开机时推入系统（<code>ActivityStackMonitor.setBlockingList</code>），之后定期刷新。黑名单里的包名启动会被拦截（返回错误码 -88），用户无法直接打开它们。</p>
@@ -119,16 +146,67 @@
 <li><code>VideoBotStackUtils</code>：会杀进程，对不在白名单里的视频 app 生效</li>
 </ul>
 <p>百度这么做的动机：设备是百度的内容分发渠道，第三方 app 会绕过百度的内容生态、广告分成和语音交互入口。root 是用户自己的权利，但百度的固件设计假设设备永远只能按它的方式使用。</p>
-<h3 id="sec-具体限制列表">具体限制列表</h3>
-<ul>
-<li><code>REQUEST_INSTALL_PACKAGES</code> 权限从 AOSP 的 <code>signature|appop</code> 改为 <code>signature|privileged</code>，只有特权系统应用能调用安装器</li>
-<li><code>BroadcastQueue</code> 不向非系统应用发送 <code>BOOT_COMPLETED</code>，导致 Termux:Boot 等开机自启失效</li>
-<li><code>ActivityRedirection</code>：非系统应用打开 <code>com.android.settings</code> 会被重定向到百度自己的设置页</li>
-<li><code>ActivityStackMonitor</code>：百度桌面开机时推送一份包名黑名单（抖音、B站、芒果、优酷、腾讯视频等），名单里的应用启动返回 -88</li>
-<li><code>VideoBotStackUtils.killAllVideoBot</code>：杀掉不在白名单里的视频应用进程</li>
-</ul>
-<h2 id="sec-解决方案magisk-模块">解决方案：Magisk 模块</h2>
-<p>创建一个 Magisk 模块，把需要的应用提升为特权系统应用，并清空黑名单。</p>
+<h2 id="sec-百度的限制与对策">百度的限制与对策</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>限制</th>
+<th>机制</th>
+<th>对策</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第三方应用不能调用安装器</td>
+<td><code>REQUEST_INSTALL_PACKAGES</code> 被改为 <code>signature|privileged</code></td>
+<td>提升为 priv-app（<code>add-priv-app.sh</code>）</td>
+</tr>
+<tr>
+<td>打开 APK 时弹 toast「该应用来源不合法…请到小度应用中心…」</td>
+<td><code>PackageInstaller</code> 的 <code>InstallStart</code> 对 targetSdk ≥ 26 的来源检查 appop 权限，权限已不是 appop，检查永远失败</td>
+<td>vdex 补丁（见下文）</td>
+</tr>
+<tr>
+<td>开机自启失效</td>
+<td><code>BroadcastQueue</code> 不向非系统应用发 <code>BOOT_COMPLETED</code></td>
+<td>提升为 priv-app</td>
+</tr>
+<tr>
+<td>打开设置被重定向</td>
+<td><code>ActivityRedirection</code> 把 <code>com.android.settings</code> 转到百度设置页</td>
+<td>预先 <code>appops set</code>，绕开设置页</td>
+</tr>
+<tr>
+<td>黑名单应用启动返回 -88</td>
+<td>百度桌面推送 <code>ActivityStackMonitor.setBlockingList</code> 并定期刷新</td>
+<td><code>service.sh</code> 每 600s 清空</td>
+</tr>
+<tr>
+<td>静默推送应用</td>
+<td><code>DuerShowOTA</code>（<code>com.baidu.duer.ota</code>）按云端 <code>UpgradeCmd</code> 安装 <code>com.baidu.edgemanager</code>（PCDN 节点）</td>
+<td><code>.replace</code> 遮掉 OTA，<code>service.sh</code> 每 30s 卸载 <code>com.baidu.edge*</code></td>
+</tr>
+<tr>
+<td>杀视频进程</td>
+<td><code>VideoBotStackUtils.killAllVideoBot</code></td>
+<td>未处理</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="sec-magisk-模块-dataadbmodulesduer_unblock">Magisk 模块 <code>/data/adb/modules/duer_unblock</code></h2>
+<pre><code>module.prop
+service.sh                     # 清黑名单 + 清 com.baidu.edge*
+add-priv-app.sh
+system/priv-app/
+  org.fdroid.fdroid/ com.termux/ com.termux.boot/       # 提升为 priv-app
+  DuerShowOTA/.replace                                  # 屏蔽 OTA
+  PackageInstaller/oat/arm/PackageInstaller.vdex        # 安装器补丁
+  com.mx.accessibilitycontroller/.replace  com.aaron.yespdf/.replace
+system/app/                                             # 均为 .replace
+  iQiYi_Video/ Tencent-AiAgent/ MangGuoTV/ TencentVideo/ CloudApp/
+  ALiPayApplet/ HtmlContainer/ wechat_applet_container_v2/
+</code></pre>
+<p><code>/data/local/tmp/duer_unblock.service.sh.bak</code> 是加入 edge 清理之前的 <code>service.sh</code>。</p>
 <h3 id="sec-moduleprop">module.prop</h3>
 <pre><code class="language-ini">id=duer_unblock
 name=DuerOS Unblock
@@ -137,9 +215,23 @@ versionCode=1
 author=local
 description=Promote selected apps to privileged system apps and clear the DuerOS activity blocking list.
 </code></pre>
-<h3 id="sec-servicesh开机清空黑名单"><a href="http://service.sh">service.sh</a>（开机清空黑名单）</h3>
+<h3 id="sec-servicesh"><a href="http://service.sh">service.sh</a></h3>
 <pre><code class="language-sh">#!/system/bin/sh
 until [ &quot;$(getprop sys.boot_completed)&quot; = 1 ]; do sleep 5; done
+
+# 兜底：DuerShowOTA 已遮掉，若仍有 com.baidu.edge* 出现则卸载
+(
+  while true; do
+    for d in /data/app/com.baidu.edge*; do
+      [ -d &quot;$d&quot; ] || continue
+      pkg=${d##*/}
+      pm uninstall &quot;${pkg%%-*}&quot; &gt;/dev/null 2&gt;&amp;1   # 目录名为 &lt;pkg&gt;-&lt;base64&gt;，base64 可能含 '-'
+    done
+    sleep 30
+  done
+) &amp;
+
+# IDuerService.setBlockingPackages (事务码 36) 只接受百度签名的调用方 → 以 launcher uid 调用，传空列表
 sleep 60
 while true; do
   uid=$(pm list packages -U com.baidu.launcher | grep -w 'com.baidu.launcher' | sed 's/.*uid://')
@@ -147,8 +239,7 @@ while true; do
   sleep 600
 done
 </code></pre>
-<p>原理：<code>IDuerService.setBlockingPackages</code>（binder 事务码 36）只接受百度签名的调用方。通过 <code>/sbin/su &lt;uid&gt;</code> 以百度桌面的 uid 执行，签名校验通过，传入空列表即可清空黑名单。</p>
-<h3 id="sec-add-priv-appsh添加特权应用"><a href="http://add-priv-app.sh">add-priv-app.sh</a>（添加特权应用）</h3>
+<h3 id="sec-add-priv-appsh"><a href="http://add-priv-app.sh">add-priv-app.sh</a></h3>
 <pre><code class="language-sh">#!/system/bin/sh
 MOD=${0%/*}
 for pkg in &quot;$@&quot;; do
@@ -162,47 +253,161 @@ for pkg in &quot;$@&quot;; do
   echo &quot;$pkg: added ($apk), reboot to apply&quot;
 done
 </code></pre>
-<p>用法：<code>sh /data/adb/modules/duer_unblock/add-priv-app.sh org.fdroid.fdroid com.termux com.termux.boot</code></p>
-<h3 id="sec-安装步骤">安装步骤</h3>
-<ol>
-<li>把模块目录放到 <code>/data/adb/modules/duer_unblock/</code></li>
-<li>执行 <code>add-priv-app.sh</code> 添加需要的应用</li>
-<li>重启</li>
-</ol>
-<p>重启后，这些应用会变成 <code>SYSTEM PRIVILEGED</code>，<code>REQUEST_INSTALL_PACKAGES</code> 自动 granted，<code>BOOT_COMPLETED</code> 也能正常接收。</p>
-<h2 id="sec-ssh-自启">SSH 自启</h2>
-<p>Termux 安装后，通过 Termux:Boot 实现开机自启 sshd：</p>
+<p>用法：<code>sh $MOD/add-priv-app.sh org.fdroid.fdroid com.termux com.termux.boot</code>，然后重启。重启后这些应用是 <code>SYSTEM PRIVILEGED</code>，能收到 <code>BOOT_COMPLETED</code>。</p>
+<h2 id="sec-操作手册">操作手册</h2>
+<p>以下命令都以 root 执行，并设 <code>M=/data/adb/modules/duer_unblock</code>。</p>
+<h3 id="sec-删除系统应用可逆">删除系统应用（可逆）</h3>
+<pre><code class="language-sh">dir=$(dirname &quot;$(pm path &lt;pkg&gt; | sed 's/^package://')&quot;)
+mkdir -p &quot;$M$dir&quot; &amp;&amp; touch &quot;$M$dir/.replace&quot;
+chcon -R u:object_r:system_file:s0 &quot;$M/system&quot;
+pm uninstall --user 0 &lt;pkg&gt;     # 立即生效；重启后 .replace 让 APK 从 /system 消失
+</code></pre>
+<p>恢复：删掉 <code>$M$dir</code> 后重启。</p>
+<p>已删除：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>包名</th>
+<th>目录</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DuerShowOTA</td>
+<td><code>com.baidu.duer.ota</code></td>
+<td><code>/system/priv-app/DuerShowOTA</code></td>
+</tr>
+<tr>
+<td>爱奇艺</td>
+<td><code>com.qiyi.video.speaker</code></td>
+<td><code>/system/app/iQiYi_Video</code></td>
+</tr>
+<tr>
+<td>极光语音</td>
+<td><code>com.ktcp.aiagent</code></td>
+<td><code>/system/app/Tencent-AiAgent</code></td>
+</tr>
+<tr>
+<td>芒果TV</td>
+<td><code>com.mgtv.tv</code></td>
+<td><code>/system/app/MangGuoTV</code></td>
+</tr>
+<tr>
+<td>腾讯视频</td>
+<td><code>com.tencent.qqlive.audiobox</code></td>
+<td><code>/system/app/TencentVideo</code></td>
+</tr>
+<tr>
+<td>无障碍-Daemon</td>
+<td><code>com.mx.accessibilitycontroller</code></td>
+<td><code>/system/priv-app/com.mx.accessibilitycontroller</code></td>
+</tr>
+<tr>
+<td>云应用</td>
+<td><code>com.baidu.duer.cloudapp</code></td>
+<td><code>/system/app/CloudApp</code></td>
+</tr>
+<tr>
+<td>alipayapplet</td>
+<td><code>com.baidu.duershow.alipayapplet</code></td>
+<td><code>/system/app/ALiPayApplet</code></td>
+</tr>
+<tr>
+<td>H5容器</td>
+<td><code>com.baidu.duershow.h5container</code></td>
+<td><code>/system/app/HtmlContainer</code></td>
+</tr>
+<tr>
+<td>weixinapplet</td>
+<td><code>com.baidu.duershow.wxapplet</code></td>
+<td><code>/system/app/wechat_applet_container_v2</code></td>
+</tr>
+<tr>
+<td>YES PDF</td>
+<td><code>com.aaron.yespdf</code></td>
+<td><code>/system/priv-app/com.aaron.yespdf</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>另外卸载了 <code>com.baidu.edgemanager</code>（用户应用，由 OTA 安装）。</p>
+<p>副作用：百度桌面里的视频、小程序、H5 入口会失效；系统 OTA 升级不可用（OTA 会覆盖 Magisk，所以这算好事）。</p>
+<h3 id="sec-安装器补丁packageinstaller-vdex">安装器补丁（PackageInstaller vdex）</h3>
+<p>被拦截的代码在 <code>InstallStart.onCreate</code>（AOSP 8.1 原样）：</p>
+<pre><code class="language-java">else if (targetSdkVersion &gt;= 26 &amp;&amp; !declaresAppOpPermission(originatingUid, &quot;android.permission.REQUEST_INSTALL_PACKAGES&quot;))
+    mAbortInstall = true;   // → toast
+</code></pre>
+<ul>
+<li>APK 里没有 dex，编译过滤器是 <code>quicken</code>，代码在 <code>oat/arm/PackageInstaller.vdex</code> 里由解释器执行。</li>
+<li>补丁：vdex 偏移 <code>0xe8798</code> 处 <code>13 0e 1a 00</code>（<code>const/16 v14, 26</code>）改为 <code>13 0e ff 7f</code>（32767），后面紧跟 <code>34 ed dd ff</code>（<code>if-lt v13, v14</code>）。代码长度不变；dex checksum 不需要修复。</li>
+<li>补丁后 sha256：<code>2b9056b430dd21fcca611127294df39ad637b4bc9310e7b1bb2c05b3069fb6c1</code>。</li>
+<li>效果：所有来源都交给 <code>PackageInstallerActivity.handleUnknownSources()</code>，按 <code>OP_REQUEST_INSTALL_PACKAGES</code> appop 判断。</li>
+</ul>
+<pre><code class="language-sh">D=$M/system/priv-app/PackageInstaller/oat/arm
+mkdir -p $D &amp;&amp; cp PI.patched.vdex $D/PackageInstaller.vdex &amp;&amp; chmod 644 $D/PackageInstaller.vdex
+chcon -R u:object_r:system_file:s0 $M/system
+rm -f /data/dalvik-cache/arm/system@priv-app@PackageInstaller@PackageInstaller.apk@classes.*   # 缓存优先于 /system，必须删
+appops set org.fdroid.fdroid REQUEST_INSTALL_PACKAGES allow   # 每个安装来源都要设置；ES/via 由 /data/adb/service.d/startup 设置
+reboot
+</code></pre>
+<ul>
+<li>验证：<code>su 2000 -c &quot;am start -a android.intent.action.VIEW -t application/vnd.android.package-archive -d file:///data/local/tmp/x.apk&quot;</code>，应出现 <code>PackageInstallerActivity</code> 确认页，而不是 <code>E InstallStart: Requesting uid ... needs to declare permission</code>。</li>
+<li>恢复：<code>rm -rf $D/../..</code>（即 <code>$M/system/priv-app/PackageInstaller</code>）后重启。</li>
+<li><code>pm install</code> / <code>adb install</code> 不经过 PackageInstaller，始终可用。</li>
+</ul>
+<h3 id="sec-termux-插件">Termux 插件</h3>
+<ul>
+<li>Termux 是 GitHub 版（0.119.0-beta.3，签名 <code>db86cf3c</code>，<code>sharedUserId=com.termux</code>），插件必须用 GitHub 版。</li>
+<li>F-Droid 版是 F-Droid 签名，会报 <code>INSTALL_FAILED_SHARED_USER_INCOMPATIBLE</code>。不要在 F-Droid 里安装或更新 Termux 系列。</li>
+</ul>
+<pre><code class="language-sh">pm install -r termux-api-app_v0.53.0+github.debug.apk   # GitHub termux/termux-api，核对 checksums-sha256.txt
+pkg install termux-api &amp;&amp; termux-wifi-connectioninfo    # 返回 JSON 即正常
+</code></pre>
+<p>开机自启 sshd：</p>
 <pre><code class="language-sh">mkdir -p ~/.termux/boot
 printf '#!/data/data/com.termux/files/usr/bin/sh\ntermux-wake-lock\nsshd\n' &gt; ~/.termux/boot/start-sshd
 chmod +x ~/.termux/boot/start-sshd
 </code></pre>
-<p>Termux:Boot 需要从 GitHub 下载（与 Termux 签名一致），装好后打开一次触发注册。</p>
-<h2 id="sec-注意事项">注意事项</h2>
+<h3 id="sec-更新预装应用">更新预装应用</h3>
+<ol>
+<li>先比对签名：<code>dumpsys package &lt;pkg&gt; | grep signatures</code>。</li>
+<li>签名一致：<code>pm install -r new.apk</code>，作为 <code>UPDATED_SYSTEM_APP</code> 安装，保留 priv 属性、uid、Magisk 授权和组件规则。<code>pm uninstall &lt;pkg&gt;</code> 回退到 <code>/system</code> 里的版本。</li>
+<li>签名不一致：先 <code>.replace</code> 遮掉系统版本，再全新安装。uid 会变，要重新授权（<code>magisk --sqlite &quot;SELECT * FROM policies&quot;</code>）。</li>
+</ol>
+<p>已执行：Blocker（<code>com.merxury.blocker</code>，uid 10025）从 0.1.42-beta 升级到 2.0.6447（GitHub <code>lihenggui/blocker</code>，foss 版，签名 <code>8d68bf0e</code>，与旧版一致）。启动类是 <code>.MainActivity</code>；首页默认不显示系统应用。</p>
+<h3 id="sec-恢复-救砖">恢复 / 救砖</h3>
 <ul>
-<li><strong>安装界面限制</strong>：百度把 <code>REQUEST_INSTALL_PACKAGES</code> 的 permission level 改成了 <code>signature|privileged</code>，安装器的检查永远过不了。特权应用也一样。如果应用的 targetSdk ≥ 26，用「打开 APK」的方式安装仍然会失败。 workaround：用 targetSdk &lt; 26 的文件管理器（如 ES 文件浏览器），或直接用 <code>adb install</code> / <code>pm install</code>。</li>
-<li><strong>Magisk 授权</strong>：Termux 需要在 Magisk 里手动授权 root。</li>
-<li><strong>恢复</strong>：出问题时在 Magisk 里关掉模块，或 <code>rm -rf /data/adb/modules/duer_unblock</code> 再重启。adbd 开机很早就以 root 运行，可以救砖。</li>
-<li><strong>黑名单会刷新</strong>：百度桌面会定期重新推送黑名单，所以 <a href="http://service.sh">service.sh</a> 每 10 分钟清一次。</li>
+<li>在 Magisk 里关掉模块，或 <code>rm -rf $M</code> 后重启。</li>
+<li>adbd 开机很早就以 root 运行，可以用来救砖。</li>
 </ul>
-<h2 id="sec-国内网络与包管理器配置">国内网络与包管理器配置</h2>
-<h3 id="sec-f-droid-镜像">F-Droid 镜像</h3>
-<p>F-Droid 默认源在国外，国内基本拉不下来。在 F-Droid 里：设置 → 存储库 → 添加清华镜像 <code>https://mirrors.tuna.tsinghua.edu.cn/fdroid/repo</code>，再把官方源关掉。</p>
-<h3 id="sec-termux-镜像">Termux 镜像</h3>
-<p>装好 Termux 后先执行 <code>termux-change-repo</code>，选清华或中科大的镜像，否则 <code>pkg install</code> 也会很慢。</p>
-<h3 id="sec-adb-持久化">ADB 持久化</h3>
-<p>开启网络 ADB 后，执行 <code>setprop persist.adb.tcp.port 5555</code>，重启后也会保留这个设置。</p>
-<h3 id="sec-magisk-授权">Magisk 授权</h3>
-<p>Termux 需要在 Magisk 里手动授权 root（超级用户页 → 找到 Termux → 开关打开）。F-Droid 也可以授权 root（如果需要）。</p>
-<h2 id="sec-设备信息">设备信息</h2>
+<h2 id="sec-调试要点">调试要点</h2>
 <ul>
-<li>SoC: Rockchip rk3326 (armv8l, 32-bit)</li>
-<li>Android: 8.1.0 (API 27)</li>
-<li>Magisk: 26.1</li>
-<li>SELinux: permissive (boot 时)</li>
-<li>ADB: 通过 <code>setprop service.adb.tcp.port 5555</code> + <code>stop adbd; start adbd</code> 开启网络 ADB</li>
+<li><strong>先复现</strong>：logcat 缓冲很小，重启就清空。按 <code>logcat -c</code> → 触发 → <code>logcat -d</code> 的顺序做。toast 在触发后约 1 秒用 <code>screencap -p</code> 截图。</li>
+<li><strong>追查安装来源</strong>：<code>pm list packages -i</code> 看 <code>installer=</code>；DuerShowOTA 的日志在 <code>/data/data/com.baidu.duer.ota/files/{installer,ota}.log</code>。</li>
+<li><strong><code>pm disable</code> 对 <code>PERSISTENT</code> 应用无效</strong>：显示 <code>enabled=2</code> 但仍在运行，被 kill 后出现 <code>Start proc ... for restart</code>。只能用 <code>.replace</code>。</li>
+<li><strong>由中文名查包名</strong>：<code>busybox unzip -p &lt;apk&gt; resources.arsc | grep -a -o '&lt;中文名&gt;'</code>。</li>
+<li><strong>失败的 F-Droid 安装</strong>：APK 留在 <code>/data/app/vmdl*.tmp/base.apk</code>，可用 <code>pm install</code> 复现错误。</li>
+<li><strong>反编译 quicken 应用</strong>：先把 vdex 里的 dex unquicken，再交给 jadx。Android 8.1 的 <code>vdex010</code> 格式：
+<ul>
+<li>头部：<code>magic, version, n_dex, dex_size, verifier_deps_size, quickening_info_size</code>（各 4 字节），然后是 <code>n_dex</code> 个 4 字节 checksum，接着是 dex 本体。</li>
+<li>quickening 段：最后 4 字节是映射表偏移；映射表是 <code>(code_item_off u32, info_off u32)[]</code>；每个 info 是 <code>u32 size</code> 加 <code>u16[]</code>。</li>
+<li>按指令顺序消费索引：quick 指令（<code>0xe3..0xf2</code>）还原为对应的 iget/iput/invoke 并写回索引；<code>0x73</code> 改回 <code>0x0e</code>；每个 NOP 消费 1 个索引（<code>0xffff</code> 表示真 NOP，否则和下一个索引一起还原为 <code>check-cast</code>）。</li>
+<li>最后重算 dex 头部的 sha1 和 adler32。</li>
 </ul>
-<h2 id="sec-黑名单完整列表">黑名单完整列表</h2>
-<p>百度桌面开机推送的 37 个包名黑名单：</p>
+</li>
+<li><strong>mount namespace</strong>：<code>su -c mount</code> 对应用不可见；要全局生效用 <code>su -mm -c mount -o bind ...</code>。</li>
+<li><strong>ssh 引号</strong>：<code>ssh duos 'su -c &quot;...$X...&quot;'</code> 里的 <code>$X</code> 会先被 Termux shell 展开。复杂操作写成脚本 → <code>su -c &quot;sh script.sh&quot;</code>，并加 <code>set -e</code>。</li>
+<li><strong>模拟安装来源</strong>：用 <code>su 2000</code>（shell，targetSdk 27）。uid 0 没有对应的包，会走 <code>Cannot get target sdk version</code> 分支，不能代表真实场景。</li>
+<li><strong><code>PackageInstaller</code> 跑在 uid 1000</strong>。</li>
+</ul>
+<h2 id="sec-网络与镜像">网络与镜像</h2>
+<ul>
+<li>F-Droid：添加 <code>https://mirrors.tuna.tsinghua.edu.cn/fdroid/repo</code>，关掉官方源。</li>
+<li>Termux：执行 <code>termux-change-repo</code>，选清华或中科大。</li>
+<li>ADB：<code>setprop service.adb.tcp.port 5555; stop adbd; start adbd</code>；持久化用 <code>setprop persist.adb.tcp.port 5555</code>。</li>
+<li>Magisk 授权：在超级用户页给 Termux 开启 root（当前已授权的 uid：10020、10025、10070、10071）。</li>
+</ul>
+<h2 id="sec-黑名单launcher-推送的-37-个包">黑名单（launcher 推送的 37 个包）</h2>
 <pre><code>com.ss.android.ugc.aweme, com.hongen.app.word.local, com.shinyv.cnr.dueros,
 com.xuexue.ai.english.android.speaker, com.migu.car.music, com.tencent.qqlive.audiobox,
 com.ihuman.imath, com.baidu.duer.duerguessing, com.netease.iotidentify, cn.cmvideo.car.play,
