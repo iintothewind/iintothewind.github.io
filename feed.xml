@@ -27,7 +27,8 @@
 <li><strong>复利（越快越快）既未被证明，也未被证伪。</strong> 支持复利的是一句公开陈述的私有证据方向（“above 2x and increasing”，背后分解被删改）；反对复利的是一组参数估计，其区间横跨临界值 1，且关键修正只对中位数成立。2027 年“比 2026 年更快”目前是<strong>中低置信</strong>，不是定论。</li>
 <li><strong>2027 年最大的变量可能不在模型里，而在组织与外部约束里。</strong> 技术上，评价器与监控跟不上能力增长；资源上，钱、卡、电、人四项同时收紧；资本上，估值与交付之间的缺口在变大；政治与舆论上，监管调查、出口管制与本地反对同时到来。任何只谈模型路线的 2027 预测都是不完整的。</li>
 </ol>
-<div class="mermaid">flowchart LR
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+flowchart LR
     H[&quot;有效算力 ≈10×/年（保守口径）&lt;br/&gt;硬件 1.5× × 资本 2.5× × 算法效率 3× = 11.25× → 取整 10×&quot;] --&gt; G[&quot;2026 能力增长&lt;br/&gt;地平线：2024 起约 3 个月翻倍&quot;]
     G --&gt; T[&quot;Test-time compute（主轴）&lt;br/&gt;瓶颈：decode 串行，per-task 成本涨&quot;]
     G --&gt; R[&quot;训练配方：RL / 数据质量 / curriculum&lt;br/&gt;瓶颈：数据供给中位数 2028 年耗尽&quot;]
@@ -43,14 +44,16 @@
 <h2 id="sec-1-2026-年发生了什么时间线">1. 2026 年发生了什么：时间线</h2>
 <h3 id="sec-11-前沿模型迭代更快代际更密">1.1 前沿模型：迭代更快，代际更密</h3>
 <p>2026 年没有一次“范式革命”，只有全线加速迭代。日期口径不一（公告日 / API 日 / 上线日可差数周），以下取公告日为主。</p>
-<div class="mermaid">timeline
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+timeline
     title OpenAI — 2026
     2026-02 : GPT-5.3-Codex（编码专用）
     2026-03 : GPT-5.4（1M 上下文）
     2026-04 : GPT-5.5
     2026-07 : GPT-5.6 Sol / Terra / Luna
     2026-09 : GPT-6 Astra
-</div><div class="mermaid">timeline
+</div><div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+timeline
     title Anthropic — 2026
     2026-02 : Opus 4.6（首个 1M 上下文 Opus）
     2026-04 : Opus 4.7
@@ -60,28 +63,32 @@
     2026-09 : Fable 5.1 / Mythos 5.1 / Opus 5.5 / Sonnet 5.5
     2026-10 : Haiku 5.5
     2026-11 : Fable 5.2 / Mythos 5.2
-</div><div class="mermaid">timeline
+</div><div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+timeline
     title Google DeepMind — 2026
     2026-02 : Gemini 3.1 Pro 预览
     2026-07 : Gemini 3.6 Flash
     2026-08 : Gemini 3.7 Flash
     2026-09 : Gemini 3.8 Flash / Gemini 4 Argon 宣布
     2026-10 : Gemini 4 Argon GA / Gemini 4 Carbon（受限）
-</div><div class="mermaid">timeline
+</div><div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+timeline
     title xAI — 2026
     2026-02 : SpaceX 全股票收购 xAI
     2026 上半年 : Grok 4.2 / 4.3
     2026-07 : Grok 4.5
     2026-08 : Grok 4.6
     2026-09 : Grok 4.7
-</div><div class="mermaid">timeline
+</div><div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+timeline
     title DeepSeek — 2026
     2026-04-24 : V4 Preview
     2026-08-13 : V4-Pro GA
     2026-09-10 : V4.1-Flash
     2026-10-17 : V4.1-Flash-1017
     2026-10-20 : DeepInfer 开源
-</div><div class="mermaid">timeline
+</div><div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+timeline
     title 中国其他头部 — 2026
     2026-02 : Qwen3.5 / GLM-5（744B）/ 豆包 Seed 2.0 / MiniMax M2.5
     2026-03 : MiniMax M2.7
@@ -127,7 +134,8 @@
 </table></div>
 <p>两点说明：第一，<strong>没有 Claude 6、没有 DeepSeek V5</strong>（截至 11 月中旬，V5 只有媒体预测）；第二，Qwen 4 在训练中、Qwen4-Max 预览 11 月 11 日上线但仅订阅制、无开源权重、无已公布基准。</p>
 <h3 id="sec-12-2026-年的关键事件不只是发布">1.2 2026 年的关键事件（不只是发布）</h3>
-<div class="mermaid">timeline
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+timeline
     title 2026 年关键事件
     2026-01-29 : METR Time Horizon 1.1 发布
     2026-03-03 : METR 修正正则化错误
@@ -299,7 +307,8 @@
 </tr>
 </tbody>
 </table></div>
-<div class="mermaid">xychart-beta
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
     title &quot;METR 任务地平线：p50（分钟）&quot;
     x-axis [&quot;3.5S 24-06&quot;, &quot;3.5S 24-10&quot;, &quot;o1&quot;, &quot;3.7S&quot;, &quot;o3&quot;, &quot;GPT-5&quot;, &quot;Gemini 3 Pro&quot;, &quot;Opus 4.5&quot;, &quot;GPT-5.2&quot;, &quot;Opus 4.6&quot;, &quot;Mythos&quot;]
     y-axis &quot;分钟&quot; 0 --&gt; 1100
@@ -335,7 +344,8 @@
 <h2 id="sec-3-中国头部deepseek-为主">3. 中国头部：DeepSeek 为主</h2>
 <p>先说方法：DeepSeek 官方材料（API 文档、模型卡、GitHub、arXiv）与二手转述分开写；梁文锋的路线是媒体转述的闭门会，不是官方发布。</p>
 <h3 id="sec-31-deepseek-2026-年时间线">3.1 DeepSeek 2026 年时间线</h3>
-<div class="mermaid">timeline
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+timeline
     title DeepSeek — 2026
     2026-04-24 : V4 Preview（V4-Pro + V4-Flash）
     2026-07-24 : 旧 deepseek-chat / deepseek-reasoner 退役
@@ -560,7 +570,8 @@
 </ul>
 <h3 id="sec-55-小结两者不矛盾但都不够">5.5 小结：两者不矛盾，但都不够</h3>
 <p>METR 查的是“有没有已知瓶颈”，Epoch 说的是“我们没有能回答复利的数据”。两者不矛盾，但<strong>都不够</strong>：前者低置信且证据被删改，后者区间横跨 1 且关键修正只对中位数成立。复利问题在 2026 年底是<strong>未决</strong>，不是“已证实”或“已证伪”。</p>
-<div class="mermaid">flowchart LR
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+flowchart LR
     Q{&quot;复利开关 r 是否大于 1？&quot;} --&gt; Y[&quot;中心估计 1.2–1.9&lt;br/&gt;→ 2027 更快&quot;]
     Q --&gt; N[&quot;算力为必要输入&lt;br/&gt;有效参数 (1−ε_K)λ/β &lt; 1&lt;br/&gt;→ 不复利（只对中位数成立）&quot;]
     Y --&gt; C{&quot;裁决问题：&lt;br/&gt;加速来自算法 / 劳动，还是算力规模&quot;}
