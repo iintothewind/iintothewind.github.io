@@ -401,11 +401,32 @@ chmod +x ~/.termux/boot/start-sshd
 <li><strong><code>PackageInstaller</code> 跑在 uid 1000</strong>。</li>
 </ul>
 <h2 id="sec-网络与镜像">网络与镜像</h2>
+<p>按所在地区选源：</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th></th>
+<th>北美 / 海外</th>
+<th>中国大陆</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F-Droid</td>
+<td>保持官方 <code>https://f-droid.org/repo</code>（自带全球镜像，设置里的镜像选择设为 Random 即可）</td>
+<td>设置 → 存储库，添加 <code>https://mirrors.tuna.tsinghua.edu.cn/fdroid/repo</code>，关掉官方源</td>
+</tr>
+<tr>
+<td>Termux</td>
+<td><code>termux-change-repo</code> → North America（或保持默认自动选择）</td>
+<td><code>termux-change-repo</code> → Chinese Mainland（清华 / 中科大等）</td>
+</tr>
+</tbody>
+</table></div>
 <ul>
-<li>F-Droid：添加 <code>https://mirrors.tuna.tsinghua.edu.cn/fdroid/repo</code>，关掉官方源。</li>
-<li>Termux：执行 <code>termux-change-repo</code>，选清华或中科大。</li>
+<li>Termux 当前使用的源：<code>cat $PREFIX/etc/apt/sources.list</code>。没有 <code>$PREFIX/etc/termux/chosen_mirrors</code> 时，<code>pkg</code> 会自动选镜像。</li>
 <li>ADB：<code>setprop service.adb.tcp.port 5555; stop adbd; start adbd</code>；持久化用 <code>setprop persist.adb.tcp.port 5555</code>。</li>
-<li>Magisk 授权：在超级用户页给 Termux 开启 root（当前已授权的 uid：10020、10025、10070、10071）。</li>
+<li>Magisk 授权：在超级用户页给 Termux、Blocker 等开启 root；查看已授权的 uid：<code>magisk --sqlite &quot;SELECT * FROM policies&quot;</code>。</li>
 </ul>
 <h2 id="sec-黑名单launcher-推送的-37-个包">黑名单（launcher 推送的 37 个包）</h2>
 <pre><code>com.ss.android.ugc.aweme, com.hongen.app.word.local, com.shinyv.cnr.dueros,

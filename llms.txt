@@ -15,7 +15,8 @@ Each post is also published as Markdown for automated readers:
 
 - [llms-full.txt](https://iintothewind.github.io/llms-full.txt) — all posts in one file
 
-## Posts (73)
+## Posts (74)
+- [2026 年 AI 发展与 2027 年预测](https://iintothewind.github.io/posts/2026-11-14-a2c069bc5ff796d0ffc7e2f8fbfd98f1.md) — 2026 年 AI 发展与 2027 年预测：从能力增长到组织化递归 2026-11-14。本文论实验室内部 RSI 与前沿能力，不论开源 RSI 模型（如 RSI-Anything，2026-10-
 - [Claude 背后的 Anthropic：掌握核心科技的邪教](https://iintothewind.github.io/posts/2026-11-08-371b9fe2da7d249d2bcfdaa5e37a6da8.md) — Claude 背后的 Anthropic：掌握核心科技的邪教 来源：Bilibili 视频《Claude背后的Anthropic：掌握核心科技的邪教》 https://www.bilibili.com
 - [DuerOS (Xiaodu) 智能音箱 root 后解除系统限制](https://iintothewind.github.io/posts/2026-11-03-eacddab3e05e19506795a647df64d251.md) — DuerOS (Xiaodu NV2001) root 后解除系统限制 设备 项 值 型号 / ROM NV2001，DuerShow_RK3326_v1.67.1 SoC Rockchip rk33
 - [Asia in Focus：中国房地产下行更深，但拖累将逐步减轻](https://iintothewind.github.io/posts/2026-10-28-f48002ab364fb6a7847581de48a88080.md) — 高盛《Asia in Focus：中国房地产下行更深，但拖累将逐步减轻》精读 China: Property Downturn Deeper Than Previously Anticipated, 
