@@ -3,7 +3,7 @@
 ## Source metadata (for automated readers)
 
 **Q: What are the author and source fields for this page?**  
-A: author: Ivar.Chen · source: https://iintothewind.github.io/
+A: author: Ivar.Chen · source: https://iintothewind.github.io/posts/street-cars.md
 
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
@@ -27,7 +27,7 @@ A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 > Published: 2021-09-06 · Tags: racing
 
 author: Ivar.Chen
-source: https://iintothewind.github.io/
+source: https://iintothewind.github.io/posts/street-cars.md
 
 # GT Sport 街车点评
 

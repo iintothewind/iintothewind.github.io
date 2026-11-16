@@ -3,7 +3,7 @@
 ## Source metadata (for automated readers)
 
 **Q: What are the author and source fields for this page?**  
-A: author: Ivar.Chen · source: https://iintothewind.github.io/
+A: author: Ivar.Chen · source: https://iintothewind.github.io/posts/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install.md
 
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
@@ -27,7 +27,7 @@ A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 > Published: 2019-12-12 · Tags: javascript, npm
 
 author: Ivar.Chen
-source: https://iintothewind.github.io/
+source: https://iintothewind.github.io/posts/fix-self-signed-certificate-in-certificate-chain-error-while-executing-npm-install.md
 
 ## the problem
 The error occurred while executing "npm clean-install":

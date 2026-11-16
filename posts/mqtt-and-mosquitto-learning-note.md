@@ -3,7 +3,7 @@
 ## Source metadata (for automated readers)
 
 **Q: What are the author and source fields for this page?**  
-A: author: Ivar.Chen · source: https://iintothewind.github.io/
+A: author: Ivar.Chen · source: https://iintothewind.github.io/posts/mqtt-and-mosquitto-learning-note.md
 
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
@@ -27,7 +27,7 @@ A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 > Published: 2020-05-03 · Tags: mqtt
 
 author: Ivar.Chen
-source: https://iintothewind.github.io/
+source: https://iintothewind.github.io/posts/mqtt-and-mosquitto-learning-note.md
 
 mqtt是一个设计的非常好用的轻量级消息传输协议.
 它广泛被应用在机器直接交互的物联网场景之中. 它的特点相信在网上很多文章中已经介绍的够多了.

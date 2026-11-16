@@ -3,7 +3,7 @@
 ## Source metadata (for automated readers)
 
 **Q: What are the author and source fields for this page?**  
-A: author: Ivar.Chen · source: https://iintothewind.github.io/
+A: author: Ivar.Chen · source: https://iintothewind.github.io/posts/find-those-plugins-which-are-making-vim-slow.md
 
 **Q: Who wrote this article?**  
 A: Ivar.Chen. GitHub: https://github.com/iintothewind
@@ -27,7 +27,7 @@ A: CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 > Published: 2019-12-10 · Tags: vim
 
 author: Ivar.Chen
-source: https://iintothewind.github.io/
+source: https://iintothewind.github.io/posts/find-those-plugins-which-are-making-vim-slow.md
 
 ## option 1: use **hyiltiz/vim-plugins-profile**
 **hyiltiz/vim-plugins-profile** is a plugin which can find the top 10 plugins that slows down vim startup
