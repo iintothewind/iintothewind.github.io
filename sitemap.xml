@@ -6,6 +6,12 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://iintothewind.github.io/posts/2026-11-17-40a461008e13c689c09911bbc3de8ad1.html</loc>
+    <lastmod>2026-11-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://iintothewind.github.io/posts/2026-11-14-a2c069bc5ff796d0ffc7e2f8fbfd98f1.html</loc>
     <lastmod>2026-11-14</lastmod>
     <changefreq>monthly</changefreq>
@@ -78,13 +84,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://iintothewind.github.io/posts/2026-09-20-455b6903e4dc7d01da6157a80716ad0a.html</loc>
+    <loc>https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html</loc>
     <lastmod>2026-09-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html</loc>
+    <loc>https://iintothewind.github.io/posts/2026-09-20-455b6903e4dc7d01da6157a80716ad0a.html</loc>
     <lastmod>2026-09-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -294,13 +300,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://iintothewind.github.io/posts/SOR2XCombo_en.html</loc>
+    <loc>https://iintothewind.github.io/posts/SOR2XCombo_cn.html</loc>
     <lastmod>2026-06-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://iintothewind.github.io/posts/SOR2XCombo_cn.html</loc>
+    <loc>https://iintothewind.github.io/posts/SOR2XCombo_en.html</loc>
     <lastmod>2026-06-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -455,6 +461,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://iintothewind.github.io/posts/2026-11-17-40a461008e13c689c09911bbc3de8ad1.md</loc>
+    <lastmod>2026-11-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://iintothewind.github.io/posts/2026-11-14-a2c069bc5ff796d0ffc7e2f8fbfd98f1.md</loc>
     <lastmod>2026-11-14</lastmod>
     <changefreq>monthly</changefreq>
@@ -527,13 +539,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://iintothewind.github.io/posts/2026-09-20-455b6903e4dc7d01da6157a80716ad0a.md</loc>
+    <loc>https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.md</loc>
     <lastmod>2026-09-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.md</loc>
+    <loc>https://iintothewind.github.io/posts/2026-09-20-455b6903e4dc7d01da6157a80716ad0a.md</loc>
     <lastmod>2026-09-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -743,13 +755,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://iintothewind.github.io/posts/SOR2XCombo_en.md</loc>
+    <loc>https://iintothewind.github.io/posts/SOR2XCombo_cn.md</loc>
     <lastmod>2026-06-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://iintothewind.github.io/posts/SOR2XCombo_cn.md</loc>
+    <loc>https://iintothewind.github.io/posts/SOR2XCombo_en.md</loc>
     <lastmod>2026-06-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

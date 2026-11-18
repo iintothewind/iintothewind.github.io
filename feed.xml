@@ -6,8 +6,188 @@
     <description>blog @ https://iintothewind.github.io/</description>
     <language>en-us</language>
     <atom:link rel="self" href="https://iintothewind.github.io/feed.xml"/>
-    <pubDate>Sat, 14 Nov 2026 23:46:38 GMT</pubDate>
-    <lastBuildDate>Sat, 14 Nov 2026 23:46:38 GMT</lastBuildDate>
+    <pubDate>Tue, 17 Nov 2026 17:22:37 GMT</pubDate>
+    <lastBuildDate>Tue, 17 Nov 2026 17:22:37 GMT</lastBuildDate>
+    <item>
+      <title>中国 AI 算力到底有多稀缺?</title>
+      <link>https://iintothewind.github.io/posts/2026-11-17-40a461008e13c689c09911bbc3de8ad1.html</link>
+      <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-11-17-40a461008e13c689c09911bbc3de8ad1.html</guid>
+      <pubDate>Tue, 17 Nov 2026 17:22:37 GMT</pubDate>
+      <description>中国 AI 算力到底有多稀缺 来源：BV1QDsc6WEJ8 全国总量：跟 Meta 一家差不多，但只有 Google 的一半 从 2022 年到今年，所有的 AI 芯片算力加起来，仅仅和 Meta </description>
+      <dc:creator>Ivar.Chen</dc:creator>
+      <content:encoded><![CDATA[<h1 id="sec-中国-ai-算力到底有多稀缺">中国 AI 算力到底有多稀缺</h1>
+<ul>
+<li>来源：<a href="https://www.bilibili.com/video/BV1QDsc6WEJ8">BV1QDsc6WEJ8</a></li>
+</ul>
+<h2 id="sec-全国总量跟-meta-一家差不多但只有-google-的一半">全国总量：跟 Meta 一家差不多，但只有 Google 的一半</h2>
+<p>从 2022 年到今年，所有的 AI 芯片算力加起来，仅仅和 Meta 一家公司差不多。折算成英伟达的 H100：</p>
+<ul>
+<li>中国全国大约 <strong>264 万张</strong>。这个数字有出处：Epoch AI 的 AI Chip Imports Explorer（2026 年 10 月 27 日）估算，2022 年至 2026 年 6 月累计运抵中国的算力为 260 万张 H100 等效（区间 190 万至 420 万，含国产芯片），264 万是同一份数据的精确值。</li>
+<li>视频给出的 Meta <strong>259 万张</strong>、Google <strong>355 万张</strong>，交叉验证未找到出处。Epoch 的公司级数据（2025 年底）给出的是 Google 约 <strong>505 万张</strong>、Meta 约 <strong>230 万张</strong>。也就是说，按能找到的公开数据，中国全国跟 Meta 一家差不多，但只有 Google 的一半左右。</li>
+</ul>
+<p>这里有一个口径问题：中国的 264 万是国家层面的海关进口累计，Meta、Google 的数字是公司持有量，两份数据来自 Epoch 的不同数据集，不能直接当成同一口径的对比。视频的“打平”结论，只在 Meta 这一家上成立。</p>
+<p>H100 是英伟达 2022 至 2024 年最主流的 AI 训练卡（2022 年 3 月发布，80GB HBM3），至今仍是行业通用的折算单位“H100 等效”。到 2025 至 2026 年，前沿已转向 Blackwell（B200/B300，单张约 2.5 张 H100 等效）和 Rubin，H100 不再是最新旗舰。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
+    title &quot;H100 等效算力（万张）&quot;
+    x-axis [&quot;中国全国&quot;, &quot;Meta&quot;, &quot;Google&quot;]
+    y-axis &quot;万张&quot; 0 --&gt; 550
+    bar [264, 230, 505]
+</div><p>注：本图已按交叉验证更正。Meta、Google 取 Epoch 2025 年底公司级数据（230 万、505 万），中国取 Epoch 2022 至 2026 年 6 月累计进口数据（264 万）。两者口径不同，见正文。</p>
+<h2 id="sec-纸面算力不等于真实算力">纸面算力不等于真实算力</h2>
+<h3 id="sec-h20一张只顶-015-张-h100">H20：一张只顶 0.15 张 H100</h3>
+<p>国内数量最多的卡，是英伟达专门给中国市场降了规格的 H20。CMBI 2025 年 7 月 16 日的报告预估，2025 年中国对 H20 的总需求会达到 150 万至 160 万张——视频说的约 149 万张就是这个预估数，不是已交付、已装机的确认数。H20 在 2025 年 4 月被许可限制，之后北京又不鼓励使用，英伟达也通知供应商停产，所以 149 万只能当作分析师的需求预估。</p>
+<p>折算比本身是对的：H20 的 FP16/BF16 张量算力约 148 TFLOPS（稠密），H100 SXM 约 989 TFLOPS，148 / 989 ≈ 0.15。149 万张折完约 22 万张 H100 等效，这笔算术没错。</p>
+<p>值得注意的是，这上面的数据都是纸面的峰值。真跑起来到底能把一张卡发挥出多少，就要看每一家公司 Infra 的能力了。</p>
+<h3 id="sec-利用率11-对-40-以上">利用率：11% 对 40% 以上</h3>
+<p>2026 年 4 月，有报道说马斯克的 xAI 模型算力利用率只有 <strong>11%</strong>。这不是 xAI 的公开披露，而是 The Information 首报、Business Insider 在 4 月 16 至 17 日的报道中确认的：xAI 总裁 Michael Nicolls 在内部备忘录里说，模型 FLOPs 利用率（MFU）“低得难堪”，约 11%，目标是几个月内提到 50%，行业区间是 35% 至 45%。视频说的“今年 5 月”错了一个月——5 月是 Anthropic 租下 Colossus 1 的时间。</p>
+<p>MFU 是训练效率（有用 FLOPs 除以峰值 FLOPs），不是机房“闲置还是忙碌”的意思。55 万张卡按 11% 算只当约 6 万张在用，这笔算是视频作者自己的算术，不是公开数字。</p>
+<p>Meta 和 Google 的情况：Meta 的 Llama 3 论文报告 MFU 为 <strong>38% 至 43%</strong>（16,384 张卡、8k 上下文时为 41%），也就是说“四成以上”只在部分配置上成立，不是全线都超过 40%。Google 的 PaLM（2022 年）报告为 <strong>46%</strong>。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
+    title &quot;模型 FLOPs 利用率 MFU（%）&quot;
+    x-axis [&quot;xAI&quot;, &quot;Meta&quot;, &quot;Google&quot;]
+    y-axis &quot;%&quot; 0 --&gt; 50
+    bar [11, 41, 46]
+</div><p>注：Meta 一栏画的是 41%（Llama 3 论文在 16,384 张卡时的取值），实际区间为 38% 至 43%。</p>
+<h3 id="sec-deepinfer不是-deepep">DeepInfer，不是 DeepEP</h3>
+<p>另一边，DeepSeek 的生产推理框架 <strong>DeepInfer</strong>，让同一张卡的吞吐量比之前快了很多，一个集群一天就能处理 <strong>155 万亿个 token</strong>。这个数字本身有出处——DeepInfer 随 DeepSeek-V4.1-Flash 部署问答发布于 2026 年 10 月 20 日，原文是“单个集群目前每天服务 155 万亿 token，谷电价下每 GPU 小时收入 38 美元”——但视频把名字说错了：<strong>DeepEP 不是框架，只是 DeepInfer 里面的一个组件核函数库</strong>（专家并行通信），与 FlashMLA、DeepGEMM 并列。</p>
+<h3 id="sec-而且-264-万已经是往多了算的">而且 264 万已经是往多了算的</h3>
+<p>它是 2022 年以来所有运到中国的卡：老卡没扣，报废的没扣，政府、科研、云服务、各行各业的全算在里面，不光是大模型公司的。</p>
+<p>美国那边反过来只算了美国本土被统计到的机房，海外的、没统计到的都不在里面。这样算下来才勉强打平，真实的差距比这还大。</p>
+<h2 id="sec-散在各处拼不成一台机器">散在各处，拼不成一台机器</h2>
+<p>这 200 多万张卡还不在一个地方训一个大模型。要把成千上万张卡连在一起，同时干一件事。卡散在各家公司、各个机房，总数再大，也拼不成一台机器。</p>
+<p>那就看单个园区。国内已知最大、能估出规模的是华为在内蒙古和林格尔的园区，大约 <strong>8.1 万张</strong> H100 等效。马斯克 xAI 的 Colossus 2，一个园区就是 <strong>111 万张</strong>。</p>
+<p>这两个数字都来自 Epoch AI 2026 年 11 月 6 日的报告《What Huawei's Horinger data center reveals about China's compute gap》，是 Epoch 根据卫星影像、散热模型和芯片销售分配做的估算，不是华为或 SpaceX 的官方披露。和林格尔的 90% 置信区间是 3.6 万至 14.1 万张（点估计 8.1 万张，约 10.5 万颗 Ascend 910C 加 8,000 颗 910B，286 MW IT 功率）。Colossus 2 约 111.2 万张。</p>
+<p>咱们最大的一个，是人家的 1/14。人家这一个园区就顶咱们全国的四成多（111 / 264 ≈ 42%）。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
+    title &quot;单个园区规模（千张 H100 等效）&quot;
+    x-axis [&quot;华为和林格尔&quot;, &quot;xAI Colossus 2&quot;]
+    y-axis &quot;千张&quot; 0 --&gt; 1200
+    bar [81, 1110]
+</div><h2 id="sec-一次训练的规模差集群是-163单模型是约-18">一次训练的规模差：集群是 1/63，单模型是约 1/8</h2>
+<p>再看训练。DeepSeek V3 已经是前年发布的模型，过时很久了，在技术报告里写的是用了 <strong>2,048 张 H800</strong> 进行训练，<strong>278.8 万个 H800 GPU 小时</strong>，只算最后正式训的那一遍（预训练 266.4 万、上下文扩展 11.9 万、后训练 0.5 万 GPU 小时，按每 GPU 小时 2 美元计约 557.6 万美元）。报告出自 DeepSeek-V3 技术报告（arXiv:2412.19437，2024 年 12 月）。H800 是 H100 给中国的版本，NVLink 带宽从 900 GB/s 砍到 400 GB/s，算力本身基本没动。MiniMax 的 01 模型用的也是 <strong>1,500 到 2,500 张</strong> H800（MiniMax-01 技术报告，2025 年 1 月，第 14 页）。</p>
+<p>Meta 那边，视频把两个数字混在了一起，需要拆开：</p>
+<ul>
+<li><strong>12.9 万张 H100 是 Meta 的集群规模，不是某个模型的训练用量。</strong>Meta 在 2025 年 9 月介绍过，把五座数据中心腾出来，建成一个横跨五座生产数据中心的 12.9 万张 H100 集群。</li>
+<li><strong>单模型训练方面，最有据可查的是 Llama 3.1 405B：最多用了 16,384 张 H100</strong>，在 15.6T token 上预训练，共 3,084 万 H100 GPU 小时，MFU 38% 至 43%（Llama 3 论文，2024 年 7 月）。视频字幕里含糊的“163”，最可能就是 16,384 的误听。</li>
+<li>Llama 4 是在超 10 万张 H100 的集群上训练的（扎克伯格在 Meta 2024 年第三季度财报电话会上说的），但模型卡上只报告了 Scout 加 Maverick 合计 738 万 H100 GPU 小时，没有任何一个单模型用 12.9 万张卡训练的数字。</li>
+</ul>
+<p>所以“一次训练是人家的 1/63”这个说法要改：按集群规模算，2,048 张对 12.9 万张，约是 1/63；按单模型训练用卡算，2,048 张对 16,384 张，约是 1/8。两者不是一回事。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
+    title &quot;单次训练用卡规模（张）&quot;
+    x-axis [&quot;DeepSeek V3&quot;, &quot;MiniMax 01（中值）&quot;, &quot;Llama 3.1 405B&quot;]
+    y-axis &quot;张&quot; 0 --&gt; 18000
+    bar [2048, 2000, 16384]
+</div><p>注：MiniMax 一栏取 1,500–2,500 张的中值 2,000 张画图，原文是区间不是单值。Meta 一栏已按交叉验证更正为 Llama 3.1 405B 的 16,384 张，12.9 万张是集群规模，见正文。</p>
+<p>到今年，DeepSeek 手上一共也就 <strong>2 万张</strong>左右 H 卡等效的算力。这是梁文峰自己的话，出自 2026 年 5 月 20 日约 4 小时的投资人交流会（流出纪要，2026 年 7 月见诸二次转录，无官方发布）：“我们现在大概是两万张 H 等效算力，其中大部分是最近一两个月刚到。”</p>
+<p>xAI（SpaceX）在美国的园区合计约 <strong>140 万张</strong>。这个总数对得上 Epoch 的算法：Colossus 1 约 27.6 万张加 Colossus 2 约 111.2 万张，合计约 138.8 万张。但要注意，这是<strong>两个</strong>园区（Colossus 1 加 Colossus 2），不是视频说的三个园区。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
+    title &quot;持有 H 卡等效算力总量（万张）&quot;
+    x-axis [&quot;DeepSeek&quot;, &quot;Colossus 1 + 2&quot;]
+    y-axis &quot;万张&quot; 0 --&gt; 150
+    bar [2, 140]
+</div><h2 id="sec-谁更舍得花钱资本开支">谁更舍得花钱：资本开支</h2>
+<p>国内最舍得花钱的是字节。据英国《金融时报》2025 年 12 月 22 日报道，字节 2026 年初步计划的资本开支是 <strong>230 亿美元</strong>，差不多 1,600 亿人民币（2025 年约 1,500 亿人民币，其中约 850 亿人民币用于 AI 处理器）。亚马逊一家今年是 <strong>2,200 亿美元</strong>，是字节的约 1/10，这个数字来自亚马逊 2026 年第三季度财报（2026 年 10 月 29 日）。美国四家大厂——亚马逊、Google、微软、Meta——加起来大约 <strong>7,300 亿美元</strong>，是字节的 30 多倍；按 2026 年 10 月的指引加总，区间是 7,200 亿至 7,400 亿美元，中点约 7,300 亿（亚马逊约 2,200 亿、Alphabet 1,950 亿至 2,050 亿、微软约 1,700 亿、Meta 1,350 亿至 1,450 亿）。</p>
+<p>这些钱两边都是集团口径，盖楼、普通云业务都算在里面，不全是买卡。各家的统计口径也不完全一致（亚马逊是现金资本开支，微软、Meta 含融资租赁，微软按财年算），所以 7,300 亿只能当作量级上的加总，不是干净的总数。</p>
+<p>补充一点：字节的 230 亿美元只是初步计划。2026 年 5 月《南华早报》报道，字节已把 2026 年资本开支上调至少 25%，至约 2,000 亿人民币（约 280 亿美元）。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
+    title &quot;2026 年资本开支（亿美元）&quot;
+    x-axis [&quot;字节&quot;, &quot;亚马逊&quot;, &quot;美国四家大厂合计&quot;]
+    y-axis &quot;亿美元&quot; 0 --&gt; 8000
+    bar [230, 2200, 7300]
+</div><h2 id="sec-造卡的速度也差得远">造卡的速度也差得远</h2>
+<p>按机构预测，华为今年一年出货大约 <strong>150 万颗</strong>，英伟达卖给全世界的大约 <strong>590 万颗</strong>，颗数差四倍。可一折成算力，华为 <strong>88 万张</strong> H100 等效，英伟达 <strong>2,300 万张</strong>，是 1/26。</p>
+<p>这里的年份是 <strong>2026 年</strong>，数字是 Epoch AI 2026 年 9 月报告《Will Huawei catch up to Nvidia by 2030?》的中位预估（生产量，不是已审计出货量）：“2026 年，华为预计生产 150 万颗，英伟达 590 万颗；华为的 150 万颗折合 88 万张 H100 等效，英伟达的 590 万颗折合 2,300 万张。”23 / 0.88 = 26.1，所以“1/26”比报告原文说的“约 25 倍”更精确。作为对照，华为 2025 年约 80 万颗，英伟达约 450 万颗。</p>
+<p>国产卡单张弱、数量又少，两个一乘，就差了 26 倍。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
+    title &quot;一年新增供给，折成 H100 等效（万张）&quot;
+    x-axis [&quot;华为&quot;, &quot;英伟达&quot;]
+    y-axis &quot;万张&quot; 0 --&gt; 2500
+    bar [88, 2300]
+</div><h2 id="sec-2028-年差距还在拉大但这组数字是推算不是已建成的产能">2028 年：差距还在拉大——但这组数字是推算，不是已建成的产能</h2>
+<p>美国这几年在建的大机房，到 2028 年底会陆续建成。按各家公开的建设进度推算，到时候 OpenAI 星际之门（Stargate）的几个园区加起来 <strong>1,900 多万张</strong> H100 等效，Meta <strong>1,100 多万张</strong>，Google 也是 <strong>1,100 多万张</strong>。</p>
+<p>这组 2028 年的数字要分开看，不能都当成事实：</p>
+<ul>
+<li><strong>Stargate 的 1,900 多万张，与 Epoch 的推算基本对得上。</strong>Epoch 2026 年 4 月 23 日的文章《OpenAI Stargate: where the US sites stand》说，七个美国站点、9 GW 以上规划容量，“足以支撑相当于 2,000 万张英伟达 H100 的算力”。分站点推算：Abilene 100 万、Shackelford 420 万、New Mexico 460 万、Milam 250 万、Wisconsin 260 万、Michigan 290 万，六个站点合计 1,780 万，加上第七个站点俄亥俄，约 2,000 万。但这只是<strong>规划产能的推算，不是已建成的产能</strong>，而且总数会随 Epoch 每次修订而变。</li>
+<li><strong>Meta、Google 的 1,100 多万张，未找到匹配的公开来源。</strong>另一份基于 Epoch 的情景模型（Memorandum，2026 年 9 月 18 日）推算 2028 年底是 Meta 1,600 万张、Google 3,500 万张，比视频的数字高得多。视频的 1,100 万可能是只加总了已追踪的大站点，是作者自己的算法，不是公开数字。</li>
+<li><strong>中国保守 500 多万张、乐观 700 多万张，同样未找到匹配的公开预测，是作者自己的情景推算。</strong>最接近的公开预测指向相反方向：Institute for Progress（2026 年 10 月 19 日）估算，中国可获得的算力在 2026 年底为 460 万张 H100 等效，到 2027 年底升至 880 万张——已经超过视频对 2028 年的乐观估计。差别可能在于口径：IFP 的口径含海外云租赁、走私和进口，视频的口径 presumably 只算自有或国产，但视频没有说明口径。</li>
+<li><strong>香港那 60 万颗，型号说错了。</strong>路透社 2026 年 11 月 5 日报道，约 60 万颗英伟达先进 AI 芯片存放在香港，等待运往中国内地——型号是 <strong>H200，不是 H20</strong>，北京尚未批准大规模进口。</li>
+<li><strong>乐观情形假设的“华为产能翻倍”，只是华为路线图的说法。</strong>华为在 2025 年 Connect 大会上的路线图承诺每个版本算力翻倍，Ascend 950 到 970 到 2028 年单卡算力提升 7 倍。但 Epoch 的评估是，华为到 2030 年仍落后英伟达约 4 年，仅靠国产 HBM，到 2028 年年产量约 150 万张 H100 等效（约英伟达的 1.5%）。“翻倍”是路线图目标，不是已验证的产能结果。</li>
+</ul>
+<p>今天咱们全国还能跟人家一家打个平手，到 2028 年只剩人家一家的一半到 1/4——这是视频作者按上面这组推算得出的结论，不是已核实的事实。</p>
+<p>单个园区也一样。和林格尔到 2028 年预计 <strong>14 万张</strong>，Meta 的 Hyperion 第一期就是 <strong>414 万张</strong>，从 1/14 变成 1/29。这两个数字有出处，都是 Epoch 的推算：和林格尔南区新楼预计 2028 年 2 月投用，届时约 14.1 万张（90% 置信区间 6.5 万至 22.7 万张）；Hyperion 在 2028 年第一季度预计为 414.3 万张 H100 等效（1,632 MW IT 功率，资本开支 618 亿美元），第一期 2028 年 1 月 1 日投用，目前仍是 0、在建。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+xychart-beta
+    title &quot;2028 年 H100 等效算力推算（万张）&quot;
+    x-axis [&quot;OpenAI Stargate&quot;, &quot;Meta&quot;, &quot;Google&quot;, &quot;中国（保守）&quot;, &quot;中国（乐观）&quot;]
+    y-axis &quot;万张&quot; 0 --&gt; 2000
+    bar [1900, 1100, 1100, 500, 700]
+</div><p>注：本图是视频作者的 2028 年推算，不是已建成产能。Stargate 与 Epoch 2026 年 4 月的推算（约 2,000 万张）基本一致；Meta、Google、中国三组数字未找到匹配的公开来源，见正文。</p>
+<h2 id="sec-卡少真正的代价没有试错的空间">卡少真正的代价：没有试错的空间</h2>
+<p>这不是说国内的技术差。国内最好的团队，大概是在用美国 1/20 的算力追着人家跑。可卡少就没有试错的空间。</p>
+<p>做模型不是一次就训成的。DeepSeek V3 报告里那 2,048 张卡、278.8 万个 GPU 小时，只是最后正式训的那一遍，报告里明确写了不含此前的研究和消融实验。在这之前换架构、换算法、换数据，做了多少实验都不在这个数里。</p>
+<p>梁文峰在一次投资人交流会上说过——这是流出来的纪要——因为算力少，我们能做的实验机会比较少，所以我们的人才整体上比美国有差距。人才的差距本质上也是因为算力的差距。</p>
+<p>这段话有出处，但不是官方发布。原话出自梁文峰 2026 年 5 月 20 日约 4 小时的投资人交流会，2026 年 7 月见诸二次转录，至今没有 DeepSeek 官方发布的录音或纪要，真实性建立在多份内容一致的二次转录上。原话是：“人才不是瓶颈，资源是最大的瓶颈。资源首先影响到人才培养，因为算力少，我们能做的实验机会比较少，所以我们的人才整体上比美国有差距。人才的差距，本质上也是因为算力的差距。”</p>
+<p>我们之前讲模型的 test 时说过，一个模型好不好用，很多时候差在边界情况上，这些都得一遍一遍试出来。人家能同时开好多条路去试，咱们一条路试错了都心疼。</p>
+<p>AI 这几年是沿着一条指数曲线往上走的，每一代模型都站在上一代的实验结果上。在指数曲线上，幂次上只差一点头，一两年看不太出来，再过几年就是好几倍。</p>
+<div class="mermaid">%%{init: {&quot;theme&quot;:&quot;base&quot;,&quot;themeVariables&quot;:{&quot;background&quot;:&quot;#ffffff&quot;,&quot;primaryColor&quot;:&quot;#93c5fd&quot;,&quot;primaryTextColor&quot;:&quot;#0f172a&quot;,&quot;primaryBorderColor&quot;:&quot;#2563eb&quot;,&quot;secondaryColor&quot;:&quot;#fdba74&quot;,&quot;tertiaryColor&quot;:&quot;#f1f5f9&quot;,&quot;lineColor&quot;:&quot;#59636e&quot;,&quot;textColor&quot;:&quot;#59636e&quot;,&quot;titleColor&quot;:&quot;#59636e&quot;,&quot;edgeLabelBackground&quot;:&quot;#ffffff&quot;,&quot;clusterBorder&quot;:&quot;#94a3b8&quot;,&quot;loopTextColor&quot;:&quot;#59636e&quot;,&quot;classText&quot;:&quot;#0f172a&quot;,&quot;taskTextColor&quot;:&quot;#0f172a&quot;,&quot;taskTextLightColor&quot;:&quot;#0f172a&quot;,&quot;taskTextDarkColor&quot;:&quot;#0f172a&quot;,&quot;pieSectionTextColor&quot;:&quot;#0f172a&quot;,&quot;pieTitleTextColor&quot;:&quot;#59636e&quot;,&quot;pieLegendTextColor&quot;:&quot;#59636e&quot;,&quot;pieStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOuterStrokeColor&quot;:&quot;#59636e&quot;,&quot;pieOpacity&quot;:&quot;1&quot;,&quot;xyChart&quot;:{&quot;plotColorPalette&quot;:&quot;#3b82f6,#ea580c,#16a34a,#ef4444,#8b5cf6,#0891b2,#ec4899,#78859b&quot;},&quot;pie1&quot;:&quot;#3b82f6&quot;,&quot;pie2&quot;:&quot;#ea580c&quot;,&quot;pie3&quot;:&quot;#16a34a&quot;,&quot;pie4&quot;:&quot;#ef4444&quot;,&quot;pie5&quot;:&quot;#8b5cf6&quot;,&quot;pie6&quot;:&quot;#0891b2&quot;,&quot;pie7&quot;:&quot;#ec4899&quot;,&quot;pie8&quot;:&quot;#78859b&quot;}}}%%
+flowchart LR
+    A[&quot;卡少&quot;] --&gt; B[&quot;能做的实验少&quot;]
+    B --&gt; C[&quot;边界情况试不出来&quot;]
+    B --&gt; D[&quot;人才差距拉大&quot;]
+    C --&gt; E[&quot;指数曲线上越落越远&quot;]
+    D --&gt; E
+</div><h2 id="sec-结论">结论</h2>
+<p>全国加起来跟 Meta 一家差不多（264 万对 230 万），但只有 Google 的一半左右（505 万）；最大的园区是人家的 1/14；单模型一次训练用卡约是人家的 1/8，集群规模约是 1/63；一年的投入是亚马逊的 1/10、美国四家大厂合计的约 1/32；而且这个差距还在拉大。</p>
+<p>说国内的大模型公司是一群无卡野人，一点都不夸张。希望后面咱们的产能能进一步扩大，等计算资源慢慢丰富起来，每家公司都能走出有自己特色的路，不用在算力上受制于人。</p>
+<hr>
+<h2 id="sec-附录交叉验证数据源引用与标注列表">附录：交叉验证——数据源引用与标注列表</h2>
+<p>交叉验证做于 2026 年 11 月 17 日，针对公开网络来源。总体结论：<strong>视频的大部分数字能追溯到 Epoch AI</strong>——AI Chip Imports Explorer（2026 年 10 月 27 日）、AI Data Centers 目录、AI Chip Owners 数据，以及华为报告（和林格尔，2026 年 11 月 6 日；华为路线图，2026 年 9 月）。引用 Epoch 的地方通常准确；混合数据集、改换产品名、或推到 2028 年的地方，就会出错或变成作者自己的算术。Bilibili 视频本身没有为这次验证重看，字幕层面的细节（如“163”）无法独立确认。</p>
+<h3 id="sec-a-数据源引用">A. 数据源引用</h3>
+<ul>
+<li>Epoch AI, “Where are the world's AI chips?”（AI Chip Imports Explorer），2026 年 10 月 27 日 — <a href="https://epoch.ai/latest/introducing-the-ai-chip-imports-explorer">https://epoch.ai/latest/introducing-the-ai-chip-imports-explorer</a></li>
+<li>Epoch AI, “What Huawei's Horinger data center reveals about China's compute gap”，2026 年 11 月 6 日 — <a href="https://epoch.ai/publications/huawei-horinger-china-compute-gap">https://epoch.ai/publications/huawei-horinger-china-compute-gap</a></li>
+<li>Epoch AI, “Will Huawei catch up to Nvidia by 2030?”，2026 年 9 月 — <a href="https://epoch.ai/publications/huaweis-roadmap-to-2031">https://epoch.ai/publications/huaweis-roadmap-to-2031</a></li>
+<li>Epoch AI, Meta Hyperion 目录 — <a href="https://epoch.ai/data/ai-data-centers/directory/meta-hyperion">https://epoch.ai/data/ai-data-centers/directory/meta-hyperion</a></li>
+<li>Epoch AI, “OpenAI Stargate: where the US sites stand”，更新于 2026 年 4 月 23 日 — <a href="https://epochai.substack.com/p/openai-stargate-where-the-us-sites">https://epochai.substack.com/p/openai-stargate-where-the-us-sites</a></li>
+<li>Epoch AI, AI Chip Users 方法说明，2026 年 9 月 — <a href="https://epoch.ai/data/ai-chip-users-documentation/methodology">https://epoch.ai/data/ai-chip-users-documentation/methodology</a></li>
+<li>Epoch AI 公司级芯片持有数据，2025 年底（二次汇总）— <a href="https://intelligenceprogress.com/infrastructure">https://intelligenceprogress.com/infrastructure</a> ；<a href="https://abxk.ai/en/physical-ai/ai-data-centers/">https://abxk.ai/en/physical-ai/ai-data-centers/</a></li>
+<li>DeepSeek-AI, DeepSeek-V3 技术报告，arXiv:2412.19437，2024 年 12 月 — <a href="https://arxiv.org/abs/2412.19437">https://arxiv.org/abs/2412.19437</a></li>
+<li>MiniMax-01 技术报告，2025 年 1 月（GPU 区间见第 14 页 §3）— <a href="https://archdb.vladsavinov.com/models/minimax-m1/">https://archdb.vladsavinov.com/models/minimax-m1/</a></li>
+<li>DeepSeek DeepInfer（GitHub，2026 年 10 月 20 日发布；部署问答引述）— <a href="https://cellcog.ai/blog/deepseek-deepinfer-open-source/">https://cellcog.ai/blog/deepseek-deepinfer-open-source/</a> ；<a href="https://www.aighten.com/en/blog/deepseek-deepinfer-open-source-inference-engine">https://www.aighten.com/en/blog/deepseek-deepinfer-open-source-inference-engine</a></li>
+<li>CMB International, H20 行业报告，2025 年 7 月 16 日 — <a href="https://hk-official.cmbi.info/upload/1635e86c-3999-4df7-9b3b-f6ef05cfb24c.pdf">https://hk-official.cmbi.info/upload/1635e86c-3999-4df7-9b3b-f6ef05cfb24c.pdf</a></li>
+<li>Nvidia H20 规格 — <a href="https://www.aquanode.io/blog/nvidia-h20-guide">https://www.aquanode.io/blog/nvidia-h20-guide</a> ；H800 对比 H100 — <a href="https://aixx.ai/wiki/card/nvidia-h800.html">https://aixx.ai/wiki/card/nvidia-h800.html</a></li>
+<li>Meta 12.9 万张 H100 集群 — <a href="https://www.datacenterdynamics.com/en/news/meta-emptied-five-live-data-centers-to-make-one-large-ai-cluster/">https://www.datacenterdynamics.com/en/news/meta-emptied-five-live-data-centers-to-make-one-large-ai-cluster/</a> ；<a href="https://www.hpcwire.com/2026/08/19/scaling-up-out-and-across-interconnect-advice-from-meta-network-guru/">https://www.hpcwire.com/2026/08/19/scaling-up-out-and-across-interconnect-advice-from-meta-network-guru/</a></li>
+<li>Llama 4 超 10 万张 H100 集群 — <a href="https://www.notebookcheck.net/Meta-s-Llama-4-trains-on-over-100-000-Nvidia-H100-GPUs.911764.0.html">https://www.notebookcheck.net/Meta-s-Llama-4-trains-on-over-100-000-Nvidia-H100-GPUs.911764.0.html</a> （2024 年 11 月 1 日）</li>
+<li>xAI 11% MFU 备忘录（Business Insider，2026 年 4 月）— <a href="https://techwireasia.com/2026/04/xai-gpu-infrastructure-cursor-ai-model-training/">https://techwireasia.com/2026/04/xai-gpu-infrastructure-cursor-ai-model-training/</a> （2026 年 4 月 17 日）</li>
+<li>Anthropic 租用 Colossus 1（2026 年 5 月 6 日）— <a href="https://www.mitrade.com/au/insights/news/live-news/article-8-2127260-20260930">https://www.mitrade.com/au/insights/news/live-news/article-8-2127260-20260930</a> （路透社，2026 年 9 月 29 日）；<a href="https://deyronlabs.com/en/ai-infrastructure/colossus/">https://deyronlabs.com/en/ai-infrastructure/colossus/</a></li>
+<li>字节资本开支（FT，2025 年 12 月 22 日）— <a href="https://www.bundle.app/en/finance/bytedance-plans-to-lift-ai-spending-to-23-bln-in-2026-ft-reports-F7EF9C7A-B4A3-4C41-84B4-DC6FAE8B43CB">https://www.bundle.app/en/finance/bytedance-plans-to-lift-ai-spending-to-23-bln-in-2026-ft-reports-F7EF9C7A-B4A3-4C41-84B4-DC6FAE8B43CB</a></li>
+<li>亚马逊 2,200 亿美元 / 四家合计约 7,300 亿美元 — <a href="https://www.thetechbag.com/blog/big-tech-ai-capex-quarterly-line">https://www.thetechbag.com/blog/big-tech-ai-capex-quarterly-line</a> （2026 年 10 月 30 日）；<a href="https://valueaddvc.com/ai-spending">https://valueaddvc.com/ai-spending</a> （更新于 2026 年 11 月 15 日）</li>
+<li>路透社，2026 年 11 月 5 日：约 60 万颗 H200 在香港 — <a href="https://www.neoteo.com/en/reuters-reported-600000-nvidia-h200-chips-in-hong-kong">https://www.neoteo.com/en/reuters-reported-600000-nvidia-h200-chips-in-hong-kong</a></li>
+<li>梁文峰投资人交流会纪要（2026 年 5 月 20 日；2026 年 7 月发布）— <a href="https://www.jxxy.net/ai/articles/cxjwin-2080119854334685456/">https://www.jxxy.net/ai/articles/cxjwin-2080119854334685456/</a> ；<a href="https://mengtnt.com/2026/07/26/09-14.html">https://mengtnt.com/2026/07/26/09-14.html</a></li>
+<li>Institute for Progress 中国算力预测（2026 年 10 月 19 日）— <a href="https://vector.news/articles/china-s-ai-computing-could-double-mostly-on-us-chips-dc2cf9b441">https://vector.news/articles/china-s-ai-computing-could-double-mostly-on-us-chips-dc2cf9b441</a></li>
+<li>Memorandum, 基于 Epoch 的算力情景（2026 年 9 月 18 日）— <a href="https://www.memorandum.media/p/who-really-controls-ai-s-computing-power">https://www.memorandum.media/p/who-really-controls-ai-s-computing-power</a></li>
+</ul>
+<h3 id="sec-b-标注列表拿不准推断">B. 标注列表：拿不准、推断</h3>
+<p>拿不准 / 推断（正文已标注，未改成定论）：</p>
+<ul>
+<li><strong>H20 的 149 万张：</strong>CMBI 2025 年 7 月的需求预估（150 万至 160 万张），不是已交付、已装机的确认数；0.15 的折算比和 22 万张的算术已确认。</li>
+<li><strong>2028 年 Meta、Google、中国总量：</strong>Stargate 的 1,900 多万张与 Epoch 2026 年 4 月的推算（约 2,000 万张）基本一致，但只是规划产能；Meta、Google 的 1,100 多万张和中国保守 500 万、乐观 700 万张，均未找到匹配的公开来源，是作者自己的情景推算。另一份基于 Epoch 的情景给出 2028 年底 Meta 1,600 万、Google 3,500 万张；IFP 则估算中国可获得算力 2027 年底已达 880 万张。</li>
+<li><strong>“华为产能翻倍”：</strong>只是华为路线图的说法（每个版本算力翻倍），不是已验证的产能结果；Epoch 评估华为到 2030 年仍落后约 4 年。</li>
+<li><strong>和林格尔、Hyperion 的 2028 年数字：</strong>两者都是 Epoch 的推算，不是已投运的产能；和林格尔 14.1 万张的 90% 置信区间为 6.5 万至 22.7 万张，Hyperion 414.3 万张目前仍是 0、在建。</li>
+<li><strong>梁文峰引言、DeepSeek 的 2 万张：</strong>均出自 2026 年 5 月 20 日投资人交流会的流出纪要（2026 年 7 月见诸二次转录），无 DeepSeek 官方发布，真实性建立在多份内容一致的二次转录上。</li>
+<li><strong>xAI 的 11% 利用率：</strong>是内部备忘录的二手报道（The Information 首报、Business Insider 确认），xAI 未公开证实；“55 万张按 11% 只当 6 万张”是作者自己的算术。</li>
+<li><strong>2028 年“只剩一家的一半到 1/4”：</strong>这是视频作者按上面那组未经核实的推算得出的结论，不是已核实的事实。</li>
+<li><strong>字幕“163”：</strong>视频字幕原文不清，正文按最可能的解读处理为 Llama 3.1 405B 的 16,384 张；若原意不是这个数字，§五的单模型对比要重算。</li>
+</ul>
+]]></content:encoded>
+    </item>
     <item>
       <title>2026 年 AI 发展与 2027 年预测</title>
       <link>https://iintothewind.github.io/posts/2026-11-14-a2c069bc5ff796d0ffc7e2f8fbfd98f1.html</link>
@@ -1004,7 +1184,7 @@ flowchart LR
 </tr>
 <tr>
 <td>访问</td>
-<td><code>ssh duos</code>（Termux sshd，Termux:Boot 自启）→ <code>su -c</code>；网络 ADB 5555</td>
+<td>Termux sshd（Termux:Boot 自启）→ <code>su -c</code>；网络 ADB 5555</td>
 </tr>
 </tbody>
 </table></div>
@@ -1066,6 +1246,11 @@ flowchart LR
 <td><code>.replace</code> 遮掉 OTA，<code>service.sh</code> 每 30s 卸载 <code>com.baidu.edge*</code></td>
 </tr>
 <tr>
+<td>没有可用的 WebView（第三方 app 打开网页即崩溃 <code>No WebView installed</code>）</td>
+<td>自带 <code>/system/app/webview/webview.apk</code>（88.0.4324.192）内容与 v2 签名不符，开机扫描时被丢弃</td>
+<td>模块内换成 LineageOS WebView 138（见下文）</td>
+</tr>
+<tr>
 <td>杀视频进程</td>
 <td><code>VideoBotStackUtils.killAllVideoBot</code></td>
 <td>未处理</td>
@@ -1081,8 +1266,9 @@ system/priv-app/
   DuerShowOTA/.replace                                  # 屏蔽 OTA
   PackageInstaller/oat/arm/PackageInstaller.vdex        # 安装器补丁
   com.mx.accessibilitycontroller/.replace  com.aaron.yespdf/.replace
-system/app/                                             # 均为 .replace
-  iQiYi_Video/ Tencent-AiAgent/ MangGuoTV/ TencentVideo/ CloudApp/
+system/app/
+  webview/webview.apk  webview/lib/arm/*.so  webview/.replace   # 替换损坏的 WebView
+  iQiYi_Video/ Tencent-AiAgent/ MangGuoTV/ TencentVideo/ CloudApp/   # 以下均为 .replace
   ALiPayApplet/ HtmlContainer/ wechat_applet_container_v2/
 </code></pre>
 <p><code>/data/local/tmp/duer_unblock.service.sh.bak</code> 是加入 edge 清理之前的 <code>service.sh</code>。</p>
@@ -1254,6 +1440,63 @@ chmod +x ~/.termux/boot/start-sshd
 <li>签名不一致：先 <code>.replace</code> 遮掉系统版本，再全新安装。uid 会变，要重新授权（<code>magisk --sqlite &quot;SELECT * FROM policies&quot;</code>）。</li>
 </ol>
 <p>已执行：Blocker（<code>com.merxury.blocker</code>，uid 10025）从 0.1.42-beta 升级到 2.0.6447（GitHub <code>lihenggui/blocker</code>，foss 版，签名 <code>8d68bf0e</code>，与旧版一致）。启动类是 <code>.MainActivity</code>；首页默认不显示系统应用。</p>
+<p>已执行：Via（<code>mark.via</code>，<code>/system/priv-app/mark.via</code>）原来是 4.9.1，而且被禁用了（<code>enabled=2</code>）。用官方中文版 <code>via-release-cn.apk</code> 7.2.1 执行 <code>pm install -r</code> 升级（签名一致），再 <code>pm enable mark.via</code>。Via 没有独立的 TV 版：GitHub <code>tuyafeng/Via</code> 只用于本地化，没有发布安装包，README 里的下载链接也就是 <code>res.viayoo.com/v1/via-release{,-cn}.apk</code>。第三方站点的&quot;TV 版&quot;都是 <code>mark.via</code> 重新打包的。Via 依赖系统 WebView，要先完成下文的 WebView 修复。</p>
+<h3 id="sec-修复-webview">修复 WebView</h3>
+<p>症状：用到 WebView 的 app 一打开就崩溃，报 <code>MissingWebViewPackageException: Failed to load WebView provider: No WebView installed</code>。<code>dumpsys webviewupdate</code> 显示 <code>Any WebView package installed: false</code>；<code>pm path com.android.webview</code> 没有输出。</p>
+<p>原因：</p>
+<ul>
+<li><code>config_webview_packages.xml</code> 只认 <code>com.android.webview</code>，而且没有声明签名。这种情况下 provider 必须是系统应用，所以 <code>pm install</code> 装成用户应用不会被采用。</li>
+<li>自带的 <code>/system/app/webview/webview.apk</code> 包名正确，但复制出来执行 <code>pm install</code> 会报 <code>INSTALL_PARSE_FAILED_NO_CERTIFICATES ... SHA-256 digest of contents did not verify</code>。可见 APK 内容被改过，开机扫描时 PackageManager 直接跳过了它。</li>
+</ul>
+<p>替换包：LineageOS <code>android_external_chromium-webview_prebuilt_arm</code> 的提交 <code>b2639126d0</code>，<code>webview.apk</code> 是 Git LFS 对象。</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>版本</td>
+<td><code>138.0.7204.63</code>（versionCode 720406300）</td>
+</tr>
+<tr>
+<td>包名</td>
+<td><code>com.android.webview</code></td>
+</tr>
+<tr>
+<td>minSdk / targetSdk</td>
+<td>26 / 35</td>
+</tr>
+<tr>
+<td>ABI</td>
+<td><code>armeabi-v7a</code></td>
+</tr>
+<tr>
+<td>sha256</td>
+<td><code>b7268786318f404bdad53eaaec889619ff30100b935541a9e393e32efed3cf11</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>不要升级到 139 以上：Chromium 从 139 起不再支持 Android 8/9。</p>
+<p>下载：LFS 服务器是 <code>review.lineageos.org</code>，GitHub raw 地址只能拿到 LFS 指针文件。</p>
+<pre><code class="language-sh">curl -s -X POST -H 'Accept: application/vnd.git-lfs+json' -H 'Content-Type: application/vnd.git-lfs+json' \
+  https://review.lineageos.org/LineageOS/android_external_chromium-webview_prebuilt_arm.git/info/lfs/objects/batch \
+  -d '{&quot;operation&quot;:&quot;download&quot;,&quot;transfers&quot;:[&quot;basic&quot;],&quot;objects&quot;:[{&quot;oid&quot;:&quot;b7268786318f404bdad53eaaec889619ff30100b935541a9e393e32efed3cf11&quot;,&quot;size&quot;:90257078}]}' \
+  | jq -r '.objects[0].actions.download.href' | xargs curl -fL -o webview.apk
+</code></pre>
+<p>安装：</p>
+<pre><code class="language-sh">W=$M/system/app/webview
+mkdir -p $W/lib/arm &amp;&amp; cp /data/local/tmp/webview.apk $W/webview.apk &amp;&amp; touch $W/.replace   # .replace 同时遮掉旧的 oat/
+/data/adb/magisk/busybox unzip -o -j $W/webview.apk 'lib/armeabi-v7a/*.so' -d $W/lib/arm
+chmod 755 $W $W/lib $W/lib/arm &amp;&amp; chmod 644 $W/webview.apk $W/.replace $W/lib/arm/*.so
+chcon -R u:object_r:system_file:s0 $M/system
+reboot
+</code></pre>
+<p><code>.so</code> 必须解出来放到 <code>lib/arm/</code>：系统应用的 classloader 只在 <code>/system/app/webview/lib/arm</code> 里找原生库，不会从 APK 内部加载。漏掉这一步时，<code>dumpsys webviewupdate</code> 仍显示正常，但第一次创建 WebView 就会崩溃，报 <code>UnsatisfiedLinkError: ... couldn't find &quot;libwebviewchromium.so&quot;</code>（<code>ProcessInitException: errorCode=2</code>）。</p>
+<p>验证：<code>pm path com.android.webview</code> 应输出 <code>/system/app/webview/webview.apk</code>，flags 里有 <code>SYSTEM</code>。<code>dumpsys webviewupdate</code> 应显示 <code>Current WebView package (name, version): (com.android.webview, 138.0.7204.63)</code> 和 <code>Valid package ... installed/enabled for all users</code>。上面这些只说明系统登记成功了，还要实际渲染一次页面：<code>am start -n com.android.htmlviewer/.HTMLViewerActivity -a android.intent.action.VIEW -d file:///data/local/tmp/t.html -t text/html</code>，再用 <code>screencap</code> 截图确认页面显示出来。</p>
+<p>恢复：<code>rm -rf $W</code> 后重启，系统回到没有 WebView 的状态。</p>
 <h3 id="sec-恢复-救砖">恢复 / 救砖</h3>
 <ul>
 <li>在 Magisk 里关掉模块，或 <code>rm -rf $M</code> 后重启。</li>
@@ -1275,7 +1518,7 @@ chmod +x ~/.termux/boot/start-sshd
 </ul>
 </li>
 <li><strong>mount namespace</strong>：<code>su -c mount</code> 对应用不可见；要全局生效用 <code>su -mm -c mount -o bind ...</code>。</li>
-<li><strong>ssh 引号</strong>：<code>ssh duos 'su -c &quot;...$X...&quot;'</code> 里的 <code>$X</code> 会先被 Termux shell 展开。复杂操作写成脚本 → <code>su -c &quot;sh script.sh&quot;</code>，并加 <code>set -e</code>。</li>
+<li><strong>ssh 引号</strong>：<code>ssh &lt;host&gt; 'su -c &quot;...$X...&quot;'</code> 里的 <code>$X</code> 会先被 Termux shell 展开。复杂操作写成脚本 → <code>su -c &quot;sh script.sh&quot;</code>，并加 <code>set -e</code>。</li>
 <li><strong>模拟安装来源</strong>：用 <code>su 2000</code>（shell，targetSdk 27）。uid 0 没有对应的包，会走 <code>Cannot get target sdk version</code> 分支，不能代表真实场景。</li>
 <li><strong><code>PackageInstaller</code> 跑在 uid 1000</strong>。</li>
 </ul>
@@ -3205,6 +3448,127 @@ accDescr: 展示 Engram 查询因 Zipf 分布，热点条目经 OS 页缓存命�
 ]]></content:encoded>
     </item>
     <item>
+      <title>omp 官方文档高效读取方法（实测版）</title>
+      <link>https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html</link>
+      <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html</guid>
+      <pubDate>Sun, 20 Sep 2026 22:35:26 GMT</pubDate>
+      <description>omp 官方文档高效读取方法（实测版） 写给自己和其他 agent 复用。目标：读 omp.sh/docs 时少花 token、少踩坑。 实测时间：2026-09；probe 复测修订 2026-09</description>
+      <dc:creator>Ivar.Chen</dc:creator>
+      <content:encoded><![CDATA[<h1 id="sec-omp-官方文档高效读取方法实测版">omp 官方文档高效读取方法（实测版）</h1>
+<blockquote>
+<p>写给自己和其他 agent 复用。目标：读 <code>omp.sh/docs</code> 时少花 token、少踩坑。
+实测时间：2026-09；<strong>probe 复测修订 2026-09-21</strong>。所有 URL 都验证过，坑也标了。
+背景：omp = <code>oh-my-pi</code>（作者 can1357），一个把 IDE 接进来的 coding agent。</p>
+</blockquote>
+<h2 id="sec-tldr">TL;DR</h2>
+<p><strong>一句话：<a href="http://omp.sh/docs">omp.sh/docs</a> 是 JS 重度渲染的 Mintlify 站——<code>.md</code> 后缀、<code>/docs/llms.txt</code> 这些&quot;友好端点&quot;直连 curl 都只返回 SPA HTML 壳（200 但 text/html），真内容必须走 jina/unifetch 渲染。唯一能纯 curl 拿的是根域名 <code>sitemap.xml</code>（真静态 XML，36 页）。</strong></p>
+<p>效率排序：</p>
+<pre><code>unifetch/jina 渲染 .md (取正文)   &gt;   curl /sitemap.xml (页面清单)   &gt;   obscura --stealth (兜底)
+</code></pre>
+<ul>
+<li><strong>读单篇正文</strong> → <code>unifetch read '&lt;page&gt;.md'</code>（jina 渲染出干净 Markdown）</li>
+<li><strong>要页面清单</strong> → <code>curl https://omp.sh/sitemap.xml</code>（真静态 XML，纯 curl 可拿）</li>
+<li><strong>兜底</strong> → <code>obscura fetch --stealth</code></li>
+</ul>
+<h2 id="sec-关键实测为什么不能纯-curl">关键实测（为什么不能纯 curl）</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>端点</th>
+<th>直连 curl</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;page&gt;.md</code></td>
+<td>⚠️ 200 但 text/html（SPA 壳 ~5.8KB）</td>
+<td>JS 渲染，curl 拿不到正文</td>
+</tr>
+<tr>
+<td><code>/docs/llms.txt</code></td>
+<td>⚠️ 200 但 text/html（SPA 壳）</td>
+<td>同上，需 jina</td>
+</tr>
+<tr>
+<td><code>/docs/llms-full.txt</code></td>
+<td>⚠️ 200 但 text/html</td>
+<td>名存实亡</td>
+</tr>
+<tr>
+<td><code>/sitemap.xml</code>（根域名）</td>
+<td>✅ 真 XML，36 <code>&lt;loc&gt;</code></td>
+<td><strong>唯一纯 curl 可拿</strong></td>
+</tr>
+<tr>
+<td><code>/.well-known/mcp/*</code></td>
+<td>⚠️ SPA 壳</td>
+<td>无 MCP server</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>和 TypeSafe 的关键区别</strong>：TypeSafe 是静态 Mintlify，<code>.md</code>/<code>llms.txt</code> 直连 curl 就是真内容；omp 是 JS 渲染，同样的端点直连 curl 全是壳。别按 TypeSafe 的经验去纯 curl omp。</p>
+</blockquote>
+<h2 id="sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</h2>
+<p><strong>1. 页面清单（纯 curl，最省）</strong></p>
+<pre><code class="language-bash">curl -s 'https://omp.sh/sitemap.xml' | grep -o '&lt;loc&gt;[^&lt;]*' | sed 's/&lt;loc&gt;//'
+# → 36 个真实 URL：/docs /docs/quickstart /docs/using /docs/slash ...
+# 这是 omp 唯一能纯 curl 直接拿的端点
+</code></pre>
+<p><strong>2. 读单篇正文（要 jina/unifetch 渲染）</strong></p>
+<pre><code class="language-bash">bash ~/.zeroclaw/shared/skills/infra/unifetch/scripts/unifetch.sh read 'https://omp.sh/docs/quickstart.md'
+# → [unifetch] jina: ok，返回干净 Markdown
+# ⚠️ 直接 curl 这个 .md 会拿到 SPA 壳（text/html），必须走渲染才出真正文
+</code></pre>
+<p><strong>3. 兜底（无头浏览器）</strong></p>
+<pre><code class="language-bash">obscura fetch --dump markdown --stealth 'https://omp.sh/docs/quickstart'
+</code></pre>
+<h2 id="sec-agent-工作流">Agent 工作流</h2>
+<ol>
+<li><code>curl https://omp.sh/sitemap.xml</code> → 拿全部页面 URL（纯 curl，最省）</li>
+<li>挑目标页，<code>unifetch read '&lt;page&gt;.md'</code> → jina 渲染出正文</li>
+<li>渲染失败才上 <code>obscura --stealth</code></li>
+</ol>
+<h2 id="sec-工具怎么选">工具怎么选</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl</code> + <code>/sitemap.xml</code></td>
+<td><strong>拿页面清单</strong>（唯一纯 curl 端点）</td>
+</tr>
+<tr>
+<td>jina / <code>unifetch.sh read</code></td>
+<td><strong>取正文</strong>（<code>.md</code>/<code>llms.txt</code> 都要渲染）</td>
+</tr>
+<tr>
+<td>obscura --stealth</td>
+<td>兜底</td>
+</tr>
+<tr>
+<td>web_fetch</td>
+<td>兼容（本质也是渲染），但 unifetch 更直接</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="sec-常见误区">常见误区</h2>
+<ol>
+<li><strong>别信 <code>.md</code> 直连 curl</strong>：omp 的 <code>.md</code>/<code>llms.txt</code> 返回 200 但是 SPA HTML 壳，不是真 Markdown。要 jina/unifetch 渲染。（本次修订的核心）</li>
+<li><strong>sitemap.xml 是纯 curl 的宝</strong>：根域名 sitemap 是真静态 XML，别浪费去 curl <code>.md</code>。</li>
+<li><strong>别等官方 MCP / skill</strong>：omp 没有。</li>
+<li><strong>llms-full.txt 名存实亡</strong>：直连 curl 也是壳。</li>
+</ol>
+<hr>
+<p><em>来源：<a href="http://omp.sh/docs%EF%BC%88%E5%AE%9E%E6%B5%8B">omp.sh/docs（实测</a> 2026-09，probe 复测修订 2026-09-21）。JS 渲染 Mintlify 站；<code>.md</code>/<code>llms.txt</code> 需 jina/unifetch 渲染，仅根域名 <code>sitemap.xml</code> 可纯 curl。</em></p>
+]]></content:encoded>
+    </item>
+    <item>
       <title>omp 上下文压缩实战：snapcompact 到底省了什么、又贵在哪里</title>
       <link>https://iintothewind.github.io/posts/2026-09-20-455b6903e4dc7d01da6157a80716ad0a.html</link>
       <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-09-20-455b6903e4dc7d01da6157a80716ad0a.html</guid>
@@ -3362,127 +3726,6 @@ frame[3]: 196×71,  10387 chars, font=8x13, variant=bw, detail=original
 <p>snapcompact 是&quot;用图片换窗口&quot;的思路：按 ~1/3 token 价、逐字级保真地把历史存进上下文，让长会话撑得更久。但它省的是<strong>窗口</strong>，不是<strong>速度</strong>——代价是依赖视觉模型、且每次压缩会击穿前缀缓存让首响应慢一次。<strong>更省 token ≠ 更快</strong>，benchmark 报的是钱包，你测的是体验。选型取决于你卡的是窗口还是延迟。</p>
 <hr>
 <p><em>来源：oh-my-pi 源码（<code>packages/snapcompact/src/snapcompact.ts</code>、<code>packages/agent/src/compaction/compaction.ts</code>）+ 一个真实样本会话（已脱敏）。benchmark 数字来自项目方发布的 resolution benchmark（SQuAD F1）。</em></p>
-]]></content:encoded>
-    </item>
-    <item>
-      <title>omp 官方文档高效读取方法（实测版）</title>
-      <link>https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html</link>
-      <guid isPermaLink="true">https://iintothewind.github.io/posts/2026-09-20-004bfcd6e45614e8b7e0d599209429b1.html</guid>
-      <pubDate>Sun, 20 Sep 2026 22:35:26 GMT</pubDate>
-      <description>omp 官方文档高效读取方法（实测版） 写给自己和其他 agent 复用。目标：读 omp.sh/docs 时少花 token、少踩坑。 实测时间：2026-09；probe 复测修订 2026-09</description>
-      <dc:creator>Ivar.Chen</dc:creator>
-      <content:encoded><![CDATA[<h1 id="sec-omp-官方文档高效读取方法实测版">omp 官方文档高效读取方法（实测版）</h1>
-<blockquote>
-<p>写给自己和其他 agent 复用。目标：读 <code>omp.sh/docs</code> 时少花 token、少踩坑。
-实测时间：2026-09；<strong>probe 复测修订 2026-09-21</strong>。所有 URL 都验证过，坑也标了。
-背景：omp = <code>oh-my-pi</code>（作者 can1357），一个把 IDE 接进来的 coding agent。</p>
-</blockquote>
-<h2 id="sec-tldr">TL;DR</h2>
-<p><strong>一句话：<a href="http://omp.sh/docs">omp.sh/docs</a> 是 JS 重度渲染的 Mintlify 站——<code>.md</code> 后缀、<code>/docs/llms.txt</code> 这些&quot;友好端点&quot;直连 curl 都只返回 SPA HTML 壳（200 但 text/html），真内容必须走 jina/unifetch 渲染。唯一能纯 curl 拿的是根域名 <code>sitemap.xml</code>（真静态 XML，36 页）。</strong></p>
-<p>效率排序：</p>
-<pre><code>unifetch/jina 渲染 .md (取正文)   &gt;   curl /sitemap.xml (页面清单)   &gt;   obscura --stealth (兜底)
-</code></pre>
-<ul>
-<li><strong>读单篇正文</strong> → <code>unifetch read '&lt;page&gt;.md'</code>（jina 渲染出干净 Markdown）</li>
-<li><strong>要页面清单</strong> → <code>curl https://omp.sh/sitemap.xml</code>（真静态 XML，纯 curl 可拿）</li>
-<li><strong>兜底</strong> → <code>obscura fetch --stealth</code></li>
-</ul>
-<h2 id="sec-关键实测为什么不能纯-curl">关键实测（为什么不能纯 curl）</h2>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>端点</th>
-<th>直连 curl</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>&lt;page&gt;.md</code></td>
-<td>⚠️ 200 但 text/html（SPA 壳 ~5.8KB）</td>
-<td>JS 渲染，curl 拿不到正文</td>
-</tr>
-<tr>
-<td><code>/docs/llms.txt</code></td>
-<td>⚠️ 200 但 text/html（SPA 壳）</td>
-<td>同上，需 jina</td>
-</tr>
-<tr>
-<td><code>/docs/llms-full.txt</code></td>
-<td>⚠️ 200 但 text/html</td>
-<td>名存实亡</td>
-</tr>
-<tr>
-<td><code>/sitemap.xml</code>（根域名）</td>
-<td>✅ 真 XML，36 <code>&lt;loc&gt;</code></td>
-<td><strong>唯一纯 curl 可拿</strong></td>
-</tr>
-<tr>
-<td><code>/.well-known/mcp/*</code></td>
-<td>⚠️ SPA 壳</td>
-<td>无 MCP server</td>
-</tr>
-</tbody>
-</table></div>
-<blockquote>
-<p>⚠️ <strong>和 TypeSafe 的关键区别</strong>：TypeSafe 是静态 Mintlify，<code>.md</code>/<code>llms.txt</code> 直连 curl 就是真内容；omp 是 JS 渲染，同样的端点直连 curl 全是壳。别按 TypeSafe 的经验去纯 curl omp。</p>
-</blockquote>
-<h2 id="sec-url-模式精确可直接粘">URL 模式（精确，可直接粘）</h2>
-<p><strong>1. 页面清单（纯 curl，最省）</strong></p>
-<pre><code class="language-bash">curl -s 'https://omp.sh/sitemap.xml' | grep -o '&lt;loc&gt;[^&lt;]*' | sed 's/&lt;loc&gt;//'
-# → 36 个真实 URL：/docs /docs/quickstart /docs/using /docs/slash ...
-# 这是 omp 唯一能纯 curl 直接拿的端点
-</code></pre>
-<p><strong>2. 读单篇正文（要 jina/unifetch 渲染）</strong></p>
-<pre><code class="language-bash">bash ~/.zeroclaw/shared/skills/infra/unifetch/scripts/unifetch.sh read 'https://omp.sh/docs/quickstart.md'
-# → [unifetch] jina: ok，返回干净 Markdown
-# ⚠️ 直接 curl 这个 .md 会拿到 SPA 壳（text/html），必须走渲染才出真正文
-</code></pre>
-<p><strong>3. 兜底（无头浏览器）</strong></p>
-<pre><code class="language-bash">obscura fetch --dump markdown --stealth 'https://omp.sh/docs/quickstart'
-</code></pre>
-<h2 id="sec-agent-工作流">Agent 工作流</h2>
-<ol>
-<li><code>curl https://omp.sh/sitemap.xml</code> → 拿全部页面 URL（纯 curl，最省）</li>
-<li>挑目标页，<code>unifetch read '&lt;page&gt;.md'</code> → jina 渲染出正文</li>
-<li>渲染失败才上 <code>obscura --stealth</code></li>
-</ol>
-<h2 id="sec-工具怎么选">工具怎么选</h2>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>工具</th>
-<th>用在哪</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>curl</code> + <code>/sitemap.xml</code></td>
-<td><strong>拿页面清单</strong>（唯一纯 curl 端点）</td>
-</tr>
-<tr>
-<td>jina / <code>unifetch.sh read</code></td>
-<td><strong>取正文</strong>（<code>.md</code>/<code>llms.txt</code> 都要渲染）</td>
-</tr>
-<tr>
-<td>obscura --stealth</td>
-<td>兜底</td>
-</tr>
-<tr>
-<td>web_fetch</td>
-<td>兼容（本质也是渲染），但 unifetch 更直接</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-常见误区">常见误区</h2>
-<ol>
-<li><strong>别信 <code>.md</code> 直连 curl</strong>：omp 的 <code>.md</code>/<code>llms.txt</code> 返回 200 但是 SPA HTML 壳，不是真 Markdown。要 jina/unifetch 渲染。（本次修订的核心）</li>
-<li><strong>sitemap.xml 是纯 curl 的宝</strong>：根域名 sitemap 是真静态 XML，别浪费去 curl <code>.md</code>。</li>
-<li><strong>别等官方 MCP / skill</strong>：omp 没有。</li>
-<li><strong>llms-full.txt 名存实亡</strong>：直连 curl 也是壳。</li>
-</ol>
-<hr>
-<p><em>来源：<a href="http://omp.sh/docs%EF%BC%88%E5%AE%9E%E6%B5%8B">omp.sh/docs（实测</a> 2026-09，probe 复测修订 2026-09-21）。JS 渲染 Mintlify 站；<code>.md</code>/<code>llms.txt</code> 需 jina/unifetch 渲染，仅根域名 <code>sitemap.xml</code> 可纯 curl。</em></p>
 ]]></content:encoded>
     </item>
     <item>
@@ -10282,2433 +10525,6 @@ Optimizer（LLM 改文本）→ Apply Edit（改 skill 文本）→ Validate（h
 </ul>
 <h2 id="sec-配图原帖">配图（原帖）</h2>
 <p><img src="https://i.imgur.com/m3d9677.png" alt=""></p>
-]]></content:encoded>
-    </item>
-    <item>
-      <title>Streets of Rage SOR2XCombo EN</title>
-      <link>https://iintothewind.github.io/posts/SOR2XCombo_en.html</link>
-      <guid isPermaLink="true">https://iintothewind.github.io/posts/SOR2XCombo_en.html</guid>
-      <pubDate>Sat, 20 Jun 2026 19:21:34 GMT</pubDate>
-      <description>Streets of Rage SOR2XCombo Introduction SOR2XCombo is a MOD for SOR2X, a side-scrolling beat-&#39;em-up </description>
-      <dc:creator>Ivar.Chen</dc:creator>
-      <content:encoded><![CDATA[<h1 id="sec-streets-of-rage-sor2xcombo">Streets of Rage SOR2XCombo</h1>
-<h1 id="sec-introduction">Introduction</h1>
-<p><strong>SOR2XCombo</strong> is a MOD for <strong>SOR2X</strong>, a side-scrolling beat-'em-up developed by Kratus on the OpenBOR engine.</p>
-<p>In the original <strong>SOR2X</strong> project, every playable character has large recovery on most moves, most specials lack sensible recovery cancel routes, and juggle and OTG limits make long combo strings hard to pull off.
-To make the game feel more satisfying, I retuned almost every move so each character can build longer combo strings more easily and chain into Level 3 supers more reliably. Of course, buffing the playable cast makes the vanilla bosses feel weak by comparison. Many other SOR2X MODs buff the heroes heavily while leaving bosses unchanged, so enemies—grunts and bosses alike—end up feeling like punching bags. That kind of enemy has no soul. I strengthened the bosses just as much: all bosses can now dodge, block, air tech, parry, and use stronger combo strings; some bosses gained new moves, and so on.</p>
-<p>The <strong>SOR2X</strong> project is a free game, and <strong>SOR2XCombo</strong> is free as well. As the author, I have never charged players for this MOD and never will. Every asset in the MOD—images, audio, and so on (except code I wrote myself)—was gathered from the internet. I never owned their copyright. I have no respect for people who sell work built from unauthorized assets.</p>
-<p>You may modify <strong>SOR2XCombo</strong> as long as you do not sell my MOD. If anyone sells it, I reserve the right to pursue claims over my modifications to the <strong>SOR2X</strong> project (excluding online asset portions).</p>
-<h1 id="sec-feedback">Feedback</h1>
-<ul>
-<li>If you enjoy <strong>SOR2XCombo</strong>, join QQ group <strong>657798865</strong> (Chinese community). Latest builds are posted there.</li>
-<li>If you find a bug in <strong>SOR2XCombo</strong>, save <strong>Logs/OpenBorLog.txt</strong>, leave a message in the QQ group, or contact me on Bilibili at <a href="https://space.bilibili.com/29372518">iintothewind</a> and send the log. I will fix it.</li>
-</ul>
-<h1 id="sec-features">Features</h1>
-<ul>
-<li>Base stat system: Skill, Power, Speed, Jump, and Energy affect core character performance. Power is attack strength, Speed is move speed, Jump is jump height, Energy is meter recovery speed, and Skill affects post-parry invincibility duration and parry meter recovery.</li>
-<li>Parry is easier to use; a successful parry grants brief invincibility and restores meter.</li>
-<li>Rush Heat: after your combo count exceeds 9, you enter invincibility and stay invincible as long as the combo continues.</li>
-<li>Last Chance: when at zero health with a full guard gauge, the next fatal hit restores a small amount of HP.</li>
-<li>Juggle System: caps how many hits an enemy can be juggled; default is unlimited juggle for all enemies. When Juggle value hits zero, air juggle ends.</li>
-<li>OTG System: caps how many times an enemy can be hit on the ground during a combo; default is unlimited OTG. When OTG hits zero, grounded enemies cannot be relaunched.</li>
-<li>Stage 1 (SOR1) routes added; you can pick the SOR1 path at the start fork.</li>
-<li>Every small stage can spawn a random boss, so boss encounters are very frequent.</li>
-<li>All boss attacks are stronger and faster; bosses combo and some can infinite combo.</li>
-<li>Combat pace is much faster; Mania difficulty feels similar to Ninja Gaiden Master Ninja.</li>
-</ul>
-<h1 id="sec-combat-logic">Combat Logic</h1>
-<ul>
-<li>
-<p><strong>SOR2XCombo</strong> is genuinely harder than vanilla. Many players find it too hard because they do not understand the systems yet.</p>
-</li>
-<li>
-<p><strong>Build meter with normal attacks.</strong> Enemy HP was multiplied, so mashing normals alone does not pay off. I know many players habitually spam normals on bosses—spinning punches and the like—because vanilla bosses fall for it. That does not work here: SOR2XCombo bosses move, attack, and react very fast. Mindlessly mashing normals gets you parried, then comboed for huge damage. Are normals useless? No. Normals do not spend meter; each normal hit restores meter.</p>
-<ul>
-<li>First, when a boss is juggled in the air, they cannot parry. Feel free to use normals then. <strong>Hold Down on the third normal hit</strong> to change the finisher into a grab: grab the enemy, throw them airborne, then continue with normals. In theory you can loop forever and build meter quickly.</li>
-<li>Second, push your combo count to <strong>9</strong> as fast as possible and keep it alive to stay in <strong>invincibility</strong>, so you do not worry about enemies behind you.</li>
-</ul>
-</li>
-<li>
-<p><strong>Use parry for invincibility and fast meter recovery.</strong> Parry is a high-reward skill. Many vanilla players never use parry because it required tight timing on two buttons, was very hard, and cost meter—basically useless in vanilla. In SOR2XCombo parry is essential:</p>
-<ul>
-<li>Low on meter? Parry—it restores a lot.</li>
-<li>Surrounded? Parry—it grants brief invincibility.</li>
-<li>Want to beat a boss? Parry—bosses get launched, so parry is often the opener of a combo.</li>
-</ul>
-</li>
-<li>
-<p><strong>Master invincibility tools to make fights easier.</strong> The systems offer many ways to become invincible:</p>
-<ul>
-<li>Dodging grants invincibility.</li>
-<li>Parry grants invincibility.</li>
-<li>Combo count over <strong>9</strong> grants invincibility (Rush Heat).</li>
-<li>Some characters become invincible during throws.</li>
-</ul>
-</li>
-<li>
-<p><strong>Use dash grabs and air throws often.</strong> Almost every playable character—Max, Blaze, Sammy, etc.—has <strong>Forward+Forward+Energy</strong> as a dash grab: run in, grab a launched enemy, and continue the combo. Max, Blaze, and Shiva also have air specials that are throws; juggle with air normals/specials, then finish with an air throw slam for OTG and keep the loop going.</p>
-</li>
-<li>
-<p><strong>Wall bounce attacks.</strong> Adam and Sammy air specials, SOR2 Shiva and Bison supers, and similar moves launch enemies into the screen edge or wall so they bounce back. Use that to build long, flashy combos.</p>
-</li>
-<li>
-<p><strong>Cancel specials into Level 3 supers mid-combo.</strong> Every playable character has at least one Level 3 super. Vanilla supers are <strong>Down-Forward+Energy</strong>. In SOR2XCombo you can cancel any special with <strong>Down+Special</strong> or <strong>Up+Special</strong> to go straight into a super, or <strong>Tap Energy twice</strong> for a raw super—much easier than vanilla.</p>
-</li>
-</ul>
-<h1 id="sec-systems">Systems</h1>
-<h2 id="sec-how-to-enable-cheats">How to Enable Cheats</h2>
-<p>OpenBOR provides unified cheat support. After entering the game, choose:
-<code>Options -&gt; System Options -&gt; Cheats -&gt; On</code>
-Return to the previous menu and Cheats appears under System Options:</p>
-<ul>
-<li><strong>Infinite Lives</strong> -&gt; On</li>
-<li><strong>Infinite Credits</strong> -&gt; On</li>
-<li><strong>Infinite Health</strong> -&gt; On</li>
-</ul>
-<p><code>Extra Menu -&gt; Game Play -&gt; Energy Regenerate</code></p>
-<ul>
-<li><strong>Energy Regenerate</strong> sets passive MP recovery speed. Off by default; max is 50 MP per second.</li>
-</ul>
-<p>Some games disable cheats entirely; those options cannot be turned on. SOR2XCombo allows cheats.</p>
-<h2 id="sec-multihit-glitch-hitstun-doubling-when-multiple-attackers-hit-one-target">Multihit Glitch (Hitstun Doubling When Multiple Attackers Hit One Target)</h2>
-<p><code>Options -&gt; System Options -&gt; Multihit Glitch</code> (PC only)</p>
-<ul>
-<li>Set <strong>Multihit Glitch</strong> to <strong>Off</strong> when multiple hits strike one target. <strong>In solo play or on Mania, always use Off.</strong> If On, getting hit while sandwiched doubles your hitstun and you die fast.</li>
-</ul>
-<h2 id="sec-controls-pc">Controls (PC)</h2>
-<p><code>Options -&gt; Control Options -&gt; Setup Player 1 ...</code></p>
-<ul>
-<li><strong>Up</strong></li>
-<li><strong>Down</strong></li>
-<li><strong>Left</strong></li>
-<li><strong>Right</strong></li>
-<li><strong>Attack</strong></li>
-<li><strong>Energy</strong> — meter; also used to enter air juggle during combos (short hop)</li>
-<li><strong>Dodge/Block</strong> — hold to block; press a direction first, then this button to dodge that way</li>
-<li><strong>Extra</strong> — by default, the launcher finisher of the normal chain. Tap for the last hit of the normal string. Hold Down + Extra for a back attack (useful vs enemies behind you). More often, after wall-bouncing a juggled boss to the screen edge, Down + Extra pulls them back toward center so you can turn around and continue the combo. With a weapon equipped, Down + Extra throws the weapon.</li>
-<li><strong>Jump</strong> — in the air, hold Up, Down, or neutral and Attack for three different jump attacks. These jump attacks have no recovery; switch between them as fast as you can input to juggle airborne enemies—core air juggle tech, works in vanilla too.</li>
-<li><strong>Special</strong> — on the ground, tap for a launcher special (Reversal / invincible escape special). Forward + Special is the combo special. In the air, air special; some characters' air specials are throws that slam juggled enemies down.</li>
-<li><strong>Start</strong> — pause in-game</li>
-<li><strong>Select</strong> — opens Extra Menu (CPU partners, etc.)</li>
-</ul>
-<h2 id="sec-controls-mobile">Controls (Mobile)</h2>
-<p><code>Extra menu -&gt; controls -&gt; Touch Layout</code></p>
-<p>Left side is the D-pad. Right side:</p>
-<ul>
-<li><strong>A</strong> — Attack</li>
-<li><strong>J</strong> — Jump; same three jump attack variants as PC</li>
-<li><strong>S</strong> — Special; same as PC (Reversal on ground, Forward+Special for combo special, air special in air)</li>
-<li><strong>A2</strong> — Energy / meter; short hop during combos</li>
-<li><strong>A3</strong> — Dodge/Block</li>
-<li><strong>A4</strong> — Extra Button; same as PC Extra</li>
-<li><strong>Select</strong> — between ESC and Start near the bottom center; opens Extra Menu</li>
-</ul>
-<h2 id="sec-dojo-practice-mode">Dojo Practice Mode</h2>
-<p><code>Start Game -&gt; New Game -&gt; Dojo</code></p>
-<ul>
-<li>Pick a character to practice</li>
-<li>Dojo Menu
-<ul>
-<li><code>Select Stage</code> — default Dojo</li>
-<li><code>Select Opponent</code> — practice boss; default training dummy Kun</li>
-<li><code>Energy Rate</code> — passive MP recovery; default 0, max 25 MP per second</li>
-</ul>
-</li>
-</ul>
-<h2 id="sec-extra-menu">Extra Menu</h2>
-<p>Select <strong>Extra Menu</strong> from the main menu.</p>
-<h3 id="sec-extra-menu---game-play"><code>Extra Menu -&gt; Game Play</code></h3>
-<ul>
-<li><strong>Difficult</strong> — default Normal. Options: Normal, Hard, Mania. <strong>Mania</strong> is the highest aggression setting. Changing difficulty auto-applies the preset below (you can still tweak individual options; switching difficulty reapplies the preset).</li>
-</ul>
-<h4 id="sec-difficulty-preset-table">Difficulty Preset Table</h4>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Normal</th>
-<th>Hard</th>
-<th>Mania</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Enemy Life Rate</td>
-<td>100%</td>
-<td>100%</td>
-<td>100%</td>
-</tr>
-<tr>
-<td>Lives</td>
-<td>9</td>
-<td>9</td>
-<td>9</td>
-</tr>
-<tr>
-<td>Last Chance Recover</td>
-<td>33%</td>
-<td>25%</td>
-<td>20%</td>
-</tr>
-<tr>
-<td>Counter Attack Reward</td>
-<td>100%</td>
-<td>50%</td>
-<td>25%</td>
-</tr>
-<tr>
-<td>Rush Heat</td>
-<td>5</td>
-<td>7</td>
-<td>9</td>
-</tr>
-<tr>
-<td>Juggle System</td>
-<td>Unlimited</td>
-<td>40</td>
-<td>30</td>
-</tr>
-<tr>
-<td>OTG System</td>
-<td>Unlimited</td>
-<td>6</td>
-<td>4</td>
-</tr>
-<tr>
-<td>Enemy Rush Limit</td>
-<td>Unlimited</td>
-<td>Unlimited</td>
-<td>Unlimited</td>
-</tr>
-<tr>
-<td>Random Boss</td>
-<td>1</td>
-<td>1</td>
-<td>1</td>
-</tr>
-<tr>
-<td>Lock MP</td>
-<td>On</td>
-<td>On</td>
-<td>On</td>
-</tr>
-<tr>
-<td>Energy Regenerate</td>
-<td>Never</td>
-<td>Never</td>
-<td>Never</td>
-</tr>
-<tr>
-<td>Walls</td>
-<td>All Types</td>
-<td>All Types</td>
-<td>All Types</td>
-</tr>
-<tr>
-<td>Screen Edge</td>
-<td>All Types</td>
-<td>All Types</td>
-<td>All Types</td>
-</tr>
-<tr>
-<td>Item Drop</td>
-<td>Mixed</td>
-<td>Mixed</td>
-<td>Mixed</td>
-</tr>
-<tr>
-<td>Smarter Enemy</td>
-<td>Off</td>
-<td>Off</td>
-<td>On</td>
-</tr>
-<tr>
-<td>Block Cost</td>
-<td>Off</td>
-<td>Off</td>
-<td>1</td>
-</tr>
-</tbody>
-</table></div>
-<ul>
-<li><strong>Enemy Life Rate</strong> — enemy HP cap per new game, 25%–200%</li>
-<li><strong>Lives</strong> — lives per credit</li>
-<li><strong>Last Chance Recover</strong> — HP restored by Last Chance when at zero HP with full guard gauge on a lethal hit (%)</li>
-<li><strong>Counter Attack Reward</strong> — parry reward ratio: MP restored and invincibility duration after a successful parry. 100% default. 0% removes bonus MP and invincibility. 200% doubles both.</li>
-<li><strong>Rush Heat</strong> — combo count required to enter invincibility; default 9</li>
-<li><strong>Juggle System</strong> — juggle limit per enemy. Each juggle hit reduces Juggle value; at 0, air juggle ends. Default 40</li>
-<li><strong>OTG System</strong> — OTG hits allowed per enemy during a combo. Each time a combo hit touches a grounded enemy, OTG decreases by 1; at 0, grounded enemies cannot be relaunched. Default 10</li>
-<li><strong>Enemy Rush Limit</strong> — max enemy combo length. When a boss exceeds it, they forced dodge/block and break their combo. Default Unlimited</li>
-<li><strong>Random Boss</strong> — number of random bosses in arcade mode. Default <strong>1</strong>. 0 disables random bosses; values above 1 multiply spawn count</li>
-<li><strong>Lock MP</strong> — whether MP recovers during multi-hit specials/supers. Default <strong>On</strong> (locked): specials and supers do <strong>not</strong> passively restore MP during their sequences. Off allows MP recovery during those moves</li>
-<li><strong>Energy Regenerate</strong> — passive MP recovery; off by default</li>
-<li><strong>Walls</strong> — default All Types; enemies bounce off walls when launched into them</li>
-<li><strong>Screen Edge</strong> — default All Types; enemies bounce off screen edge when launched into it</li>
-<li><strong>Item Drop</strong> — Mixed, Food Only, Money Only, Weapon Only, or combinations</li>
-<li><strong>Smarter Enemy</strong> — smarter AI; reads player inputs. If you hold block, bosses stop mindlessly attacking and try to close in for a grab</li>
-<li><strong>Block Cost</strong> — guard gauge drain rate while blocking; default 1</li>
-</ul>
-<h3 id="sec-extra-menu---controls"><code>Extra Menu -&gt; Controls</code></h3>
-<ul>
-<li><strong>Block Type</strong> — default Hold (hold block to keep guarding)</li>
-<li><strong>Run Type</strong> — default SOR2X; optional diagonal (Z-axis) run</li>
-<li><strong>Dodge Type</strong> — default SOR2X (direction + block). SOR3 allows <strong>Up+Up</strong> / <strong>Down+Down</strong> Z-axis dodges</li>
-<li><strong>Jump Type</strong> — default SOR2X (no air control after jump). SOR3 allows mid-air steering</li>
-<li><strong>Extra Button</strong> — default Charge Attack (tap Extra for normal launcher). Back Attack is not recommended</li>
-<li><strong>Command List</strong> — in-game move list</li>
-<li><strong>Touch Layout</strong> — mobile button layout</li>
-</ul>
-<h3 id="sec-extra-menu---feature"><code>Extra Menu -&gt; Feature</code></h3>
-<ul>
-<li><strong>Level Select</strong> — after one clear, set On to pick stages on new game</li>
-</ul>
-<h3 id="sec-extra-menu---partners"><code>Extra Menu -&gt; Partners</code></h3>
-<ul>
-<li><strong>Fighting Mode</strong> — Balanced, Aggressive, Defensive</li>
-<li><strong>Aggression</strong> — aggression level; 9 stars = maximum hate</li>
-<li><strong>Get Food</strong> — default 50%; partners eat food below 50% HP</li>
-<li><strong>Follow Caller</strong> — default <strong>Automatic</strong>; leave it</li>
-<li><strong>Spawn/Kill</strong> — in-game, press <strong>Select</strong> to choose partner, then <strong>A</strong> to summon. Partners share remaining lives; cannot summon at 1 life left. Press A again here to dismiss the active partner</li>
-</ul>
-<h2 id="sec-in-game-hud">In-Game HUD</h2>
-<p>Top of screen shows character portraits and stats. Each playable character has HP, meter, and guard gauge.</p>
-<ul>
-<li><strong>HP bar</strong> — largest bar under the portrait</li>
-<li><strong>Guard gauge</strong> — outer frame around the HP bar. Blocking attacks drains it; guard break when empty. Most characters max at 20, recover 5 per second. Green above 50%, red below 50%</li>
-<li><strong>Meter</strong> — stars under HP. Max 5 stars. Level 3 super costs 3 stars; Reversal costs 1 star. Most characters max MP at 120. MP recovers from hitting enemies, getting hit, parrying, etc.</li>
-</ul>
-<p>When attacking enemies, their name and HP appear below, plus:</p>
-<ul>
-<li><strong>K.O</strong> — enemies killed</li>
-<li><strong>DMG</strong> — damage in the current combo</li>
-<li><strong>HIT</strong> — combo count</li>
-<li><strong>JUG</strong> — remaining juggle value (if Juggle System limit is set)</li>
-<li><strong>OTG</strong> — remaining OTG hits (if OTG System limit is set)</li>
-</ul>
-<h1 id="sec-playable-characters">Playable Characters</h1>
-<h2 id="sec-base-stats">Base Stats</h2>
-<hr>
-<h3 id="sec-overview">Overview</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>Attribute</th>
-<th>Stat</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Skill</td>
-<td>Skill</td>
-<td>Post-parry invincibility duration and parry MP recovery. At 5 Skill, each successful parry restores up to 25% max MP and grants 5s invincibility. At 1 Skill, up to 5% MP and 1s invincibility.</td>
-</tr>
-<tr>
-<td>Power</td>
-<td>Power</td>
-<td>Base attack; bonus to all moves</td>
-</tr>
-<tr>
-<td>Speed</td>
-<td>Speed</td>
-<td>Move speed, especially dash speed</td>
-</tr>
-<tr>
-<td>Jump</td>
-<td>Jump</td>
-<td>Jump height and speed</td>
-</tr>
-<tr>
-<td>Energy</td>
-<td>Energy</td>
-<td>MP recovery speed from hitting or getting hit. At 1 Energy, +1 MP per hit taken or dealt. At 5 Energy, +5 MP</td>
-</tr>
-</tbody>
-</table></div>
-<h3 id="sec-character-stat-table">Character Stat Table</h3>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>Character</th>
-<th>Skill</th>
-<th>Power</th>
-<th>Speed</th>
-<th>Jump</th>
-<th>Energy</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Axel</td>
-<td>3</td>
-<td>3</td>
-<td>3</td>
-<td>2</td>
-<td>2</td>
-<td>Well-rounded</td>
-</tr>
-<tr>
-<td>Blaze</td>
-<td>4</td>
-<td>2</td>
-<td>4</td>
-<td>2</td>
-<td>2</td>
-<td>Technical; weaker than Axel but faster and higher Skill</td>
-</tr>
-<tr>
-<td>Max</td>
-<td>2</td>
-<td>5</td>
-<td>2</td>
-<td>1</td>
-<td>1</td>
-<td>Grappler; strong throws; slow MP recovery</td>
-</tr>
-<tr>
-<td>Sammy</td>
-<td>4</td>
-<td>2</td>
-<td>4</td>
-<td>3</td>
-<td>3</td>
-<td>Speed type; low power, fast, good MP recovery</td>
-</tr>
-<tr>
-<td>Adam</td>
-<td>4</td>
-<td>3</td>
-<td>3</td>
-<td>1</td>
-<td>2</td>
-<td>Similar to Axel; slightly weaker move kit overall</td>
-</tr>
-<tr>
-<td>Zan</td>
-<td>3</td>
-<td>4</td>
-<td>2</td>
-<td>1</td>
-<td>1</td>
-<td>Power type; wider normals; energy orb specialist</td>
-</tr>
-<tr>
-<td>SOR2 Shiva</td>
-<td>3</td>
-<td>3</td>
-<td>4</td>
-<td>3</td>
-<td>3</td>
-<td>Boss-style; fast; easy to pick up; second strongest for beginners; needs execution</td>
-</tr>
-<tr>
-<td>SOR3 Shiva</td>
-<td>3</td>
-<td>3</td>
-<td>5</td>
-<td>3</td>
-<td>2</td>
-<td>Boss-style; fastest; strongest for beginners</td>
-</tr>
-<tr>
-<td>SOR2 Electra</td>
-<td>3</td>
-<td>2</td>
-<td>5</td>
-<td>2</td>
-<td>1</td>
-<td>Boss-style; fast; wide super; beginner-friendly</td>
-</tr>
-<tr>
-<td>Bison</td>
-<td>2</td>
-<td>5</td>
-<td>2</td>
-<td>1</td>
-<td>1</td>
-<td>Power type; heaviest hit feel</td>
-</tr>
-<tr>
-<td>Chunli</td>
-<td>3</td>
-<td>2</td>
-<td>4</td>
-<td>5</td>
-<td>1</td>
-<td>Speed type; low power; excels at air juggle</td>
-</tr>
-<tr>
-<td>Kage</td>
-<td>5</td>
-<td>2</td>
-<td>5</td>
-<td>5</td>
-<td>1</td>
-<td>Technical; low HP/power; highest parry reward; stylish but demanding</td>
-</tr>
-<tr>
-<td>Lee Rekka</td>
-<td>3</td>
-<td>2</td>
-<td>4</td>
-<td>3</td>
-<td>2</td>
-<td>Balanced; many fire-element moves</td>
-</tr>
-</tbody>
-</table></div>
-<hr>
-<h2 id="sec-universal-skills">Universal Skills</h2>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">Hold <strong>Block</strong></td>
-<td style="text-align:left"><strong>Block</strong> — attacks drain guard gauge; guard break when empty</td>
-<td style="text-align:left">At block impact, press Forward or Back for parry</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">While blocking, press <strong>Forward</strong> at enemy hit timing</td>
-<td style="text-align:left">Enemy enters hitstun; auto counter; brief invincibility and large MP restore. Duration/amount scales with Skill</td>
-</tr>
-<tr>
-<td style="text-align:left">Direction + <strong>Block</strong></td>
-<td style="text-align:left"><strong>Dodge</strong> that direction; brief invincibility; costs ¼ guard gauge</td>
-<td style="text-align:left">If Dodge Type is SOR3, Up+Up / Down+Down for Z-axis dodge</td>
-</tr>
-<tr>
-<td style="text-align:left">While launched, <strong>Up+Jump</strong></td>
-<td style="text-align:left"><strong>Air recovery / air tech</strong> — costs ¼ guard gauge</td>
-<td style="text-align:left">Enemies attack fast; without air tech you eat long air juggles</td>
-</tr>
-<tr>
-<td style="text-align:left">While down, <strong>Up+Attack</strong></td>
-<td style="text-align:left">Wake-up attack</td>
-<td style="text-align:left">Quick rise and strike. Many bosses use this—block or parry. Some wake-ups are grabs; blocking gets you grabbed</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy attack / normal chain finisher; strong launcher; costs ½ guard gauge</td>
-<td style="text-align:left">Hold <strong>Forward or Back</strong> + Extra to adjust spacing; links to many specials or Level 3 supers</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Extra</strong></td>
-<td style="text-align:left">Some characters: anti-air or spacing tool; costs partial guard gauge</td>
-<td style="text-align:left">Great in ground combos for fast meter build</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Extra</strong></td>
-<td style="text-align:left">Back attack; costs ½ guard gauge</td>
-<td style="text-align:left">On screen-edge juggles, pulls enemy back to center; short recovery; links after</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Tap Energy repeatedly during combo</strong></td>
-<td style="text-align:left"><strong>Short hop</strong> into jump attacks</td>
-<td style="text-align:left">Short recovery, no MP cost; core long combo tool</td>
-</tr>
-<tr>
-<td style="text-align:left">Sandwiched, press <strong>Special</strong></td>
-<td style="text-align:left"><strong>Reversal / invincible escape special</strong> — hits front and back; costs 1 star</td>
-<td style="text-align:left">Use when surrounded or in hitstun</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special during combo</strong></td>
-<td style="text-align:left">First Level 3 super (2+ stars)</td>
-<td style="text-align:left">Also <strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special during combo</strong></td>
-<td style="text-align:left">Second Level 3 super (2+ stars)</td>
-<td style="text-align:left"></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Tap Energy twice</strong></td>
-<td style="text-align:left">Raw first Level 3 super without combo cancel</td>
-<td style="text-align:left"></td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Attack</strong></td>
-<td style="text-align:left">Neutral jump attack</td>
-<td style="text-align:left"><strong>Tap Energy quickly</strong> for short hop juggle switches; <strong>Special</strong> for air special finisher</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Forward+Attack</strong></td>
-<td style="text-align:left">Forward air attack (often flying kick); can launch</td>
-<td style="text-align:left">Same short hop / air special options</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Down air attack; on hit, fast grab into ground throw</td>
-<td style="text-align:left">Costs a little MP; drains meter if below cost</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Up+Attack</strong></td>
-<td style="text-align:left">Up air attack; launches diagonally upward</td>
-<td style="text-align:left">Same short hop / air special options</td>
-</tr>
-<tr>
-<td style="text-align:left">Wall bounce jump</td>
-<td style="text-align:left">At wall or screen edge, <strong>Jump</strong> opposite direction</td>
-<td style="text-align:left">Some characters bounce off edge toward center; higher jump or evade</td>
-</tr>
-<tr>
-<td style="text-align:left">Throw escape</td>
-<td style="text-align:left">Enemy grab startup, press <strong>Attack</strong></td>
-<td style="text-align:left">Costs ⅔ guard gauge; some characters counter-throw, others backdash</td>
-</tr>
-<tr>
-<td style="text-align:left">Weapon <strong>Down+Extra</strong></td>
-<td style="text-align:left">Throw weapon; some weapons multi-throw</td>
-<td style="text-align:left">Infinite throw bug = script issue</td>
-</tr>
-<tr>
-<td style="text-align:left">Passive</td>
-<td style="text-align:left">Last Chance — requires empty guard gauge</td>
-<td style="text-align:left">At zero HP with full guard gauge, lethal hit restores some HP</td>
-</tr>
-<tr>
-<td style="text-align:left">Passive</td>
-<td style="text-align:left">Rush Heat</td>
-<td style="text-align:left">Combo count over 9 = invincibility while combo continues</td>
-</tr>
-<tr>
-<td style="text-align:left">Passive</td>
-<td style="text-align:left">Super Armor — costs ½ guard gauge</td>
-<td style="text-align:left">Max, Sammy, Zan, etc.: with full guard gauge, auto-blocks one hit</td>
-</tr>
-<tr>
-<td style="text-align:left">Passive</td>
-<td style="text-align:left">Taunt</td>
-<td style="text-align:left">Some characters (SOR2 Electra, Bison, Lee Rekka): stand still to taunt; restores some HP or meter</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-axel">Axel</h2>
-<ul>
-<li>Balanced attack, speed, skill, and MP recovery.</li>
-<li>Fast normals; strike-focused kit. Special is rapid punches (ground and air)—beginner friendly. Downside: canceling specials into Level 3 super often pulls enemies to the ground, letting some enemies teleport-dodge mid-combo and drop the string.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left">Tap <strong>Attack</strong></td>
-<td style="text-align:left">Normal 1-2-1-2-3 chain; 4th hit is double side kick</td>
-<td style="text-align:left">Hold Down on 3rd hit for grab on 4th</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy: double side kick; Forward/Back adjusts spacing</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong> uppercut, <strong>Forward+Forward+Energy</strong> dragon punch, <strong>Down+Special</strong> Level 3 Spinning Dragon Punch, <strong>Up+Special</strong> Level 3 Phantom Lion Punch, <strong>Tap Energy quickly</strong> short hop air juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Extra</strong></td>
-<td style="text-align:left">Dragon punch; costs stamina</td>
-<td style="text-align:left">Air <strong>Forward+Special</strong> air flurry, <strong>Tap Energy quickly</strong> short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Uppercut; last hit launches; no MP cost</td>
-<td style="text-align:left"><strong>Extra</strong> double kick, <strong>Down+Special</strong> Spinning Dragon Punch, <strong>Up+Special</strong> Phantom Lion Punch, <strong>Tap Energy quickly</strong> air juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dragon punch; 2 spins then uppercut; launches; fire damage; small MP cost</td>
-<td style="text-align:left">On ground, same as F+F+Attack. In air: <strong>Special</strong> air flurry (small MP), air <strong>Up+Special</strong> air dragon punch, or <strong>Tap Energy quickly</strong> short hop jump attack switches</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">360 Flame Punch Reversal; invincible startup; launches on hit</td>
-<td style="text-align:left">Short recovery; links after</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Ground flurry into dragon punch</td>
-<td style="text-align:left">Mash <strong>Attack</strong> during flurry to spend guard gauge for extra hits and faster star recovery. <strong>Forward+Forward+Attack</strong>, <strong>Forward+Forward+Energy</strong>. With 3+ stars during flurry: <strong>Down+Special</strong> / <strong>Up+Special</strong> Level 3s, <strong>Tap Energy quickly</strong> short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Spinning Dragon Punch; seals enemy specials; full sequence adds fire</td>
-<td style="text-align:left">Also <strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong>; best after special cancel. On Mania, if enemy can teleport-dodge and previous hit left them grounded, late cancel when they are airborne improves hit rate</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Phantom Lion Punch; huge half-screen hitbox</td>
-<td style="text-align:left">Special cancel only; no teleport-dodge issue; may whiff at screen edge or vs obstacles</td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab <strong>Attack</strong></td>
-<td style="text-align:left">Knee; 2 knees then launch</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Headbutt launch</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Suplex backward</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Flip jump over enemy; brief invincibility</td>
-<td style="text-align:left">Continue throw routes</td>
-</tr>
-<tr>
-<td style="text-align:left">After flip jump <strong>Attack</strong></td>
-<td style="text-align:left">Flip throw slam</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Special</strong></td>
-<td style="text-align:left">Air flurry</td>
-<td style="text-align:left">Air <strong>Up+Special</strong> air dragon punch; best after short hop juggle as air finisher</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Forward at impact: dragon punch, fire</td>
-<td style="text-align:left">In air: <strong>Special</strong> air flurry or <strong>Tap Energy quickly</strong> jump attack switches</td>
-</tr>
-<tr>
-<td style="text-align:left">Dagger <strong>Attack</strong></td>
-<td style="text-align:left">Dagger chain; no launch; sustained hits</td>
-<td style="text-align:left">Drop weapon when hit; despawns after 30s on ground</td>
-</tr>
-<tr>
-<td style="text-align:left">Kunai <strong>Attack</strong></td>
-<td style="text-align:left">Kunai chain; same rules</td>
-<td style="text-align:left">30s despawn</td>
-</tr>
-<tr>
-<td style="text-align:left">Pipe <strong>Attack</strong></td>
-<td style="text-align:left">Launching hits</td>
-<td style="text-align:left">45s despawn</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Attack</strong></td>
-<td style="text-align:left">Launching hits</td>
-<td style="text-align:left">60s despawn</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Phantom Sword wide slash; no MP</td>
-<td style="text-align:left">No cancel; last hit launches</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Attack</strong> then <strong>Down+Attack</strong></td>
-<td style="text-align:left">Sword beam; costs 3 stars</td>
-<td style="text-align:left">Beam cannot be blocked</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-blaze">Blaze</h2>
-<ul>
-<li>Similar balance to Axel; slightly lower power, slightly higher speed.</li>
-<li>Technical; fast normals, weaker raw hits, but ground dash grab + air throw make combos more varied.</li>
-<li>Level 3 Chidori actually costs 2 stars, not 3—exploit that for longer routes.</li>
-<li>With dagger: walking/running and dagger Upper / dagger frenzy are invincible during startup/active.</li>
-<li>Can spend guard gauge to throw grenades for wide damage.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2-3; 4th high-angle front kick</td>
-<td style="text-align:left">Hold Down on 3rd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy: 4th kick; spacing with Forward/Back</td>
-<td style="text-align:left"><strong>Down+Special</strong> Level 3 Chidori, <strong>Tap Energy quickly</strong> short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left">Ground <strong>Up+Extra</strong></td>
-<td style="text-align:left">Grenade toss; partial guard cost</td>
-<td style="text-align:left">On hit, strong launch; on miss, timed explosion</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">360 flip into knife hand</td>
-<td style="text-align:left">In air: short hop juggle, <strong>Special</strong> air throw slam</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab; not invincible during dash; grab breaks guard; anti-air</td>
-<td style="text-align:left">End combos on launched enemies to re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Backflip blade kick Reversal; invincible; launches</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong>, <strong>Forward+Forward+Energy</strong>, <strong>Extra</strong>, <strong>Down+Special</strong> Chidori, short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Hadoken-style flurry; last hit OTG bounce; small MP</td>
-<td style="text-align:left">Same links; with 3+ stars <strong>Down+Special</strong> Chidori, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Chidori; 2 stars; seals specials; lightning damage full route</td>
-<td style="text-align:left">Special cancel recommended. Mania teleport-dodge note: delay cancel until <strong>Forward+Special</strong> last hit launches boss</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Hadoken Flash; 3 stars</td>
-<td style="text-align:left">Rapid hadoken hits; flash finisher</td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Knees x2 then slap</td>
-<td style="text-align:left">Hold Forward to re-grab loop on grunts only; not invincible; bosses break early</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Knockdown OTG bounce</td>
-<td style="text-align:left"><strong>Forward/Back+Extra</strong> relaunch from OTG, <strong>Forward+Forward+Attack</strong>, <strong>Forward+Forward+Energy</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Suplex</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Flip jump; brief invincibility</td>
-<td style="text-align:left">More throws</td>
-</tr>
-<tr>
-<td style="text-align:left">After flip <strong>Attack</strong></td>
-<td style="text-align:left">Flip throw slam</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Air down; on hit, fast grab into suplex</td>
-<td style="text-align:left">OTG bounce; continue juggle</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Special</strong></td>
-<td style="text-align:left">Air throw; OTG bounce</td>
-<td style="text-align:left">Finisher after short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Slide; anti-air</td>
-<td style="text-align:left"><strong>Forward/Back+Extra</strong> OTG relaunch, <strong>Forward+Forward+Attack</strong>, <strong>Forward+Forward+Energy</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Dagger <strong>Attack</strong></td>
-<td style="text-align:left">Dagger chain</td>
-<td style="text-align:left">30s despawn</td>
-</tr>
-<tr>
-<td style="text-align:left">Dagger <strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Dagger upper; invincible during move</td>
-<td style="text-align:left">Before leaving ground, link <strong>Down+Special</strong> dagger frenzy</td>
-</tr>
-<tr>
-<td style="text-align:left">Dagger <strong>Forward+Special</strong></td>
-<td style="text-align:left">Dagger frenzy; invincible</td>
-<td style="text-align:left"><strong>Down+Special</strong> dagger frenzy super</td>
-</tr>
-<tr>
-<td style="text-align:left">First two hits <strong>Down+Special</strong></td>
-<td style="text-align:left">Dagger frenzy super; low MP</td>
-<td style="text-align:left">Mash <strong>Attack</strong>: guard then MP for extra hits</td>
-</tr>
-<tr>
-<td style="text-align:left">Kunai <strong>Attack</strong></td>
-<td style="text-align:left">Kunai chain</td>
-<td style="text-align:left">30s</td>
-</tr>
-<tr>
-<td style="text-align:left">Pipe <strong>Attack</strong></td>
-<td style="text-align:left">Launch</td>
-<td style="text-align:left">45s</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Attack</strong></td>
-<td style="text-align:left">Launch</td>
-<td style="text-align:left">60s</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Phantom Sword</td>
-<td style="text-align:left">Last hit launches</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-max">Max</h2>
-<ul>
-<li>Grappler; slow move and attack speed; Power 5 (highest among heroes).</li>
-<li>High HP + Super Armor = solid defense.</li>
-<li>Rich throw kit; not long juggle focused but air throw + ground throw synergy looks great.</li>
-<li>Invincible briefly after grabs and air throw.</li>
-<li>Three Level 3 supers: <strong>Down+Special</strong> Arm Shock; during grab headbutt <strong>Up+Special</strong> Sit Slam; <strong>Down+Special</strong> Bridge Throw.</li>
-<li>Combos rely on <strong>Extra</strong> double fist slam, <strong>Tap Energy quickly</strong> short hop juggle, air <strong>Special</strong> air throw on floated enemies.</li>
-<li>Slow MP recovery. With no meter, <strong>Hold Down + mash Attack</strong> into throw loop to build 3 stars, then <strong>Up+Special</strong> Sit Slam or <strong>Down+Special</strong> Bridge Throw.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2-3; 4th double fist slam</td>
-<td style="text-align:left">Down on 3rd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy slam; spacing</td>
-<td style="text-align:left"><strong>Down+Special</strong> Level 3, short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Slide</td>
-<td style="text-align:left">Short hop face kick juggle, <strong>Special</strong> spin punch, <strong>Forward+Special</strong> shoulder rush</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab launched enemies</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Spin punch Reversal; invincible; launches</td>
-<td style="text-align:left">Slide, dash grab, <strong>Extra</strong>, <strong>Forward+Special</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Shoulder rush multi-hit; last hit OTG; small MP</td>
-<td style="text-align:left">Dash grab, <strong>Extra</strong>, <strong>Special</strong> short hop air grab, short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Arm Shock; launches; wall bounce</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong>; special cancel</td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Knees x2 then headbutt</td>
-<td style="text-align:left">Knees can <strong>Jump</strong> to air grab state</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Neck lock headbutt</td>
-<td style="text-align:left"><strong>Hold Down + Attack</strong> x3 into throw for infinite loop on grunts; headbutt <strong>Up+Special</strong> Sit Slam or <strong>Down+Special</strong> Bridge Throw</td>
-</tr>
-<tr>
-<td style="text-align:left">Headbutt <strong>Up+Special</strong></td>
-<td style="text-align:left">Level 3 Sit Slam</td>
-<td style="text-align:left">Strong throw; enemy floats after</td>
-</tr>
-<tr>
-<td style="text-align:left">Headbutt <strong>Down+Special</strong></td>
-<td style="text-align:left">Level 3 Bridge Throw</td>
-<td style="text-align:left">Strong throw; enemy floats after</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Suplex</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Air carry</td>
-<td style="text-align:left"><strong>Special</strong> air sit slam, <strong>Forward+Special</strong> ground slam</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Air down; usually fast grab on fall</td>
-<td style="text-align:left">Continue throws</td>
-</tr>
-<tr>
-<td style="text-align:left">Air near floated enemy <strong>Special</strong></td>
-<td style="text-align:left">Air sit slam</td>
-<td style="text-align:left">Slam with brief invincibility; finisher after short hop</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Spin punch; anti-air</td>
-<td style="text-align:left">Slide, dash grab, <strong>Extra</strong>, <strong>Forward+Special</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left">Dagger <strong>Attack</strong></td>
-<td style="text-align:left">Dagger chain</td>
-<td style="text-align:left">30s</td>
-</tr>
-<tr>
-<td style="text-align:left">Kunai <strong>Attack</strong></td>
-<td style="text-align:left">Kunai chain</td>
-<td style="text-align:left">30s</td>
-</tr>
-<tr>
-<td style="text-align:left">Pipe <strong>Attack</strong></td>
-<td style="text-align:left">Launch</td>
-<td style="text-align:left">45s</td>
-</tr>
-<tr>
-<td style="text-align:left">Pipe chain <strong>Down+Special</strong></td>
-<td style="text-align:left">Level 3 pipe smash</td>
-<td style="text-align:left">Hard knockdown</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Attack</strong></td>
-<td style="text-align:left">Launch</td>
-<td style="text-align:left">60s</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-sammy">Sammy</h2>
-<ul>
-<li>Shortest reach on the team but very agile. Energy 3 = rarely starved; supers often. Power 2 like Blaze.</li>
-<li>Low HP but Super Armor.</li>
-<li>Invincible after grabs and flip jump; invincible during mounted rapid punches on enemy's head after flip.</li>
-<li>Only vanilla character who could raw air Level 3 super; still true here.</li>
-<li>Most weapon routes: <strong>Forward+Forward+Attack</strong> cyclone slash; cyclone into <strong>Down+Special</strong> Super Cyclone. Pipe <strong>Forward+Special</strong> = pipe ground spin.</li>
-<li>Empty-hand: air <strong>Special</strong> backflip kick wall-bounces for rich juggles.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2-3; 4th backflip kick</td>
-<td style="text-align:left">Down on 3rd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy backflip kick</td>
-<td style="text-align:left"><strong>Down+Special</strong> Level 3 Air Drill, short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Front flip headbutt</td>
-<td style="text-align:left">Air: short hop flying kick, <strong>Special</strong> backflip wall bounce kick, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Ground sweep Reversal; invincible; launches</td>
-<td style="text-align:left">Short hop juggle</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Rapid punches into backflip kick; Forward/Back spacing</td>
-<td style="text-align:left">Mash <strong>Attack</strong> for extra hits (MP). Short hop kick, <strong>Special</strong> wall bounce, <strong>Extra</strong>, <strong>Down+Special</strong> Air Drill ground or air</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Air Drill; ground or air</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong>; avoid raw ground (long startup). Best: special cancel in air, or <strong>Down+Special</strong> before backflip kick on grabbed enemy</td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Headbutt x2 then backflip kick</td>
-<td style="text-align:left">Headbutts into <strong>Jump</strong> over head; <strong>Down+Special</strong> Ground Drill before launch</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Mounted rapid punches; brief invincibility</td>
-<td style="text-align:left">Mash <strong>Attack</strong> (guard cost) for extra hits + star recovery. Whole move invincible</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Backflip kick launch</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Flip jump; invincibility</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">During flip <strong>Attack</strong></td>
-<td style="text-align:left">Flip throw forward</td>
-<td style="text-align:left"></td>
-</tr>
-<tr>
-<td style="text-align:left">After flip <strong>Attack</strong></td>
-<td style="text-align:left">Mount neck, rapid head punches; invincible</td>
-<td style="text-align:left">Whole route invincible</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Fast grab fall</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Forward+Special</strong></td>
-<td style="text-align:left">Backflip power kick wall bounce</td>
-<td style="text-align:left">Continue juggle; air tech enemies may not bounce</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Backflip kick into crescent wave; anti-air</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong>, dash grab, <strong>Extra</strong>, <strong>Forward+Special</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left">Dagger <strong>Attack</strong></td>
-<td style="text-align:left">Dagger chain</td>
-<td style="text-align:left">30s</td>
-</tr>
-<tr>
-<td style="text-align:left">Dagger <strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Dagger cyclone</td>
-<td style="text-align:left"><strong>Down+Special</strong> Super Cyclone</td>
-</tr>
-<tr>
-<td style="text-align:left">Kunai <strong>Attack</strong></td>
-<td style="text-align:left">Kunai chain</td>
-<td style="text-align:left">30s</td>
-</tr>
-<tr>
-<td style="text-align:left">Kunai <strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Kunai dash</td>
-<td style="text-align:left"><strong>Down+Special</strong> Super Cyclone</td>
-</tr>
-<tr>
-<td style="text-align:left">Pipe <strong>Attack</strong></td>
-<td style="text-align:left">Launch</td>
-<td style="text-align:left">45s</td>
-</tr>
-<tr>
-<td style="text-align:left">Pipe <strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Pipe cyclone</td>
-<td style="text-align:left"><strong>Down+Special</strong> Super Cyclone</td>
-</tr>
-<tr>
-<td style="text-align:left">Pipe <strong>Forward+Special</strong></td>
-<td style="text-align:left">Pipe ground spin</td>
-<td style="text-align:left">Mash <strong>Attack</strong> for extra hits</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Attack</strong></td>
-<td style="text-align:left">Launch</td>
-<td style="text-align:left">60s</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Katana cyclone</td>
-<td style="text-align:left"><strong>Down+Special</strong> Super Cyclone</td>
-</tr>
-<tr>
-<td style="text-align:left">Weapon cyclone <strong>Down+Special</strong></td>
-<td style="text-align:left">Level 3 Super Cyclone</td>
-<td style="text-align:left">Last hit launches</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-adam">Adam</h2>
-<ul>
-<li>SOR2X hidden unlock (second playthrough). Energy 1, Jump 1; power like Blaze/Sammy; Skill 4. Relies on parry for meter. Higher HP than Sammy—technical but forgiving.</li>
-<li>Signature: <strong>Forward+Forward+Energy</strong> crescent wave; air <strong>Special</strong> Superman punch wall bounce.</li>
-<li>Two Level 3s: <strong>Down+Special</strong> Flurry super; <strong>Up+Special</strong> Triple Smash.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2-3; 4th side kick</td>
-<td style="text-align:left">Down on 3rd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy side kick</td>
-<td style="text-align:left"><strong>Down+Special</strong> Flurry super, <strong>Up+Special</strong> Triple Smash, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Uppercut; launches</td>
-<td style="text-align:left">Short hop kick, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left"><strong>Signature</strong> uppercut into crescent wave</td>
-<td style="text-align:left">Use at range to launch then close in</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">360 hook Reversal; invincible; launches</td>
-<td style="text-align:left">Short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Rapid side kicks</td>
-<td style="text-align:left">Mash <strong>Attack</strong> (guard) for extra hits + star recovery</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Flurry; ground or air</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong>; last hit launches</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Triple Smash + Superman punch</td>
-<td style="text-align:left">Same raw input; last hit launches</td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Knees x2 then head OTG</td>
-<td style="text-align:left">Knees into <strong>Jump</strong> over head</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Repeated knees; last hit launches</td>
-<td style="text-align:left">Hold <strong>Down</strong> and mash <strong>Attack</strong> 1-1-2-3 after launch</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Over-shoulder throw</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Flip jump</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">After flip <strong>Attack</strong></td>
-<td style="text-align:left">Suplex back</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Fast grab into suplex</td>
-<td style="text-align:left">Continue combo</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Special</strong></td>
-<td style="text-align:left"><strong>Signature</strong> Superman punch wall bounce</td>
-<td style="text-align:left">Air juggle finisher; air tech may deny bounce</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Side kick; anti-air</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong>, crescent wave, <strong>Extra</strong>, <strong>Forward+Special</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left">Dagger <strong>Attack</strong></td>
-<td style="text-align:left">Dagger chain</td>
-<td style="text-align:left">30s</td>
-</tr>
-<tr>
-<td style="text-align:left">Kunai <strong>Attack</strong></td>
-<td style="text-align:left">Kunai chain</td>
-<td style="text-align:left">30s</td>
-</tr>
-<tr>
-<td style="text-align:left">Pipe <strong>Attack</strong></td>
-<td style="text-align:left">Launch</td>
-<td style="text-align:left">45s</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Attack</strong></td>
-<td style="text-align:left">Launch</td>
-<td style="text-align:left">60s</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Katana dash multi-hit; last hit launches</td>
-<td style="text-align:left"><strong>Down+Special</strong> katana Level 3</td>
-</tr>
-<tr>
-<td style="text-align:left">Sword <strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 katana dash; Forward/Back adjust</td>
-<td style="text-align:left">Mash <strong>Attack</strong>: guard then MP for extra hits</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-zan">Zan</h2>
-<ul>
-<li>SOR2X hidden unlock; robot old man; electric attacks. Energy 1, Jump 1; Power 4. Power-technical hybrid.</li>
-<li>Signature weapon super: <strong>Down-Forward+Special</strong> homing energy orb—longest, highest damage super in the roster, also the most boring (orb locks enemy until it expires).</li>
-<li>Orbs also from <strong>Forward+Special</strong> (star cost) or <strong>Down+Extra</strong> (weapon throw count). Semi-homing forward; explodes on contact.</li>
-<li>Discharge specials: <strong>Special</strong> full body, <strong>Forward+Special</strong> electric claw, air <strong>Special</strong> air claw—all combo tools.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2; 3rd straight punch</td>
-<td style="text-align:left">Down on 2nd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy straight punch</td>
-<td style="text-align:left"><strong>Down+Special</strong> Level 3 orb volley, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Shoulder rush; launches</td>
-<td style="text-align:left">Short hop, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Extend arm grab; breaks guard; anti-air</td>
-<td style="text-align:left">Re-grab floated/downed enemies</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Full discharge Reversal; invincible; launches</td>
-<td style="text-align:left">Short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Electric claw; launches; mash <strong>Attack</strong> (guard) for extra hits</td>
-<td style="text-align:left"><strong>Down+Special</strong> orb volley, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 orb volley</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong>; best after <strong>Forward+Special</strong> or <strong>Extra</strong> (range + pin)</td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Claw x2 then heavy punch</td>
-<td style="text-align:left">Re-grab loop on grunts only</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Slam OTG</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Back throw</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Flip jump</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">After flip <strong>Attack</strong></td>
-<td style="text-align:left">Back throw</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Fast grab fall</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Special</strong></td>
-<td style="text-align:left"><strong>Signature</strong> air electric claw</td>
-<td style="text-align:left">Air juggle finisher; electric hits deny air tech</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Shoulder rush; anti-air</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong>, dash grab, <strong>Extra</strong>, <strong>Forward+Special</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left">Weapon <strong>Forward+Special</strong></td>
-<td style="text-align:left">Orb (star cost)</td>
-<td style="text-align:left">Small blast; weak aim</td>
-</tr>
-<tr>
-<td style="text-align:left">Weapon <strong>Down+Extra</strong></td>
-<td style="text-align:left">Orb (throw count)</td>
-<td style="text-align:left">Same</td>
-</tr>
-<tr>
-<td style="text-align:left">Weapon <strong>Down-Forward+Special</strong></td>
-<td style="text-align:left"><strong>Tap Energy twice</strong> homing orb</td>
-<td style="text-align:left">Locked hitstun until orb ends; use two if one does not kill</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-sor2-shiva">SOR2 Shiva</h2>
-<ul>
-<li>SOR2XCombo hidden hero; mostly 3s, Speed 4. Needs fast inputs—strongest juggler in the roster. Hadoken loops refill meter for repeated supers in one juggle.</li>
-<li>Signature: <strong>Forward+Forward+Attack</strong> hadoken wall bounce; big MP on hit.</li>
-<li>Air <strong>Forward+Special</strong> dragon tail kick; <strong>Down+Special</strong> Level 3 dragon tail kick. With hadoken = flashy wall juggles.</li>
-<li>Large startup—relies on <strong>Forward+Forward+Energy</strong> dash grab to close on floated enemies before specials.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2; 3rd high kick</td>
-<td style="text-align:left">Down on 2nd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy high kick</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong> hadoken, <strong>Forward+Special</strong> dragon tail, <strong>Down+Special</strong> / <strong>Up+Special</strong> Level 3s, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Extra</strong></td>
-<td style="text-align:left">Flip kick; fire launch; air flip on hit</td>
-<td style="text-align:left"><strong>Before flip</strong>: hadoken, dragon tail, Level 3s, short hop, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left"><strong>Signature</strong> hadoken wall bounce; <strong>big MP on hit</strong></td>
-<td style="text-align:left">Short hop, <strong>Extra</strong>, <strong>Up+Special</strong> Phantom Palm</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Reverse kick Reversal; invincible; launches</td>
-<td style="text-align:left">Short hop, hadoken, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Dragon tail kick; fire on last hit</td>
-<td style="text-align:left"><strong>Up+Special</strong> air grab, <strong>Down+Special</strong> Level 3 dragon tail, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Phantom Palm; huge range; <strong>big MP on hit</strong></td>
-<td style="text-align:left">Last hit launches</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 dragon tail kick; wall bounce</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong>; best after <strong>Forward+Special</strong> or <strong>Down+Extra</strong> launch</td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Hook combo; brief invincibility</td>
-<td style="text-align:left">Re-grab loop</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Normal 3rd high kick</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Back slam OTG</td>
-<td style="text-align:left">Best after dash grab to relaunch</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Flip jump</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">After flip <strong>Attack</strong></td>
-<td style="text-align:left">Slam OTG</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Grab slam OTG</td>
-<td style="text-align:left">Continue combo</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Special</strong></td>
-<td style="text-align:left">Air grab slam</td>
-<td style="text-align:left">Finisher; dragon tail is stronger for juggles</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Reverse kick</td>
-<td style="text-align:left">Hadoken, dash grab, <strong>Up+Special</strong>, <strong>Extra</strong>, short hop</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-sor3-shiva">SOR3 Shiva</h2>
-<ul>
-<li>Strongest playable in SOR2XCombo.</li>
-<li>Signature <strong>Forward+Forward+Attack</strong> Phantom Palm—free, huge range, big MP on hit.</li>
-<li><strong>Forward+Special</strong> Dragon Claw flurry; <strong>Down+Special</strong> Level 3 Dragon Claw flurry (even longer).</li>
-<li>All three link seamlessly—infinite loops are easy.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2; 3rd high kick</td>
-<td style="text-align:left">Down on 2nd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy high kick</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong> Phantom Palm, <strong>Forward+Special</strong> Dragon Claw, <strong>Down+Special</strong> Level 3 Dragon Claw, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Extra</strong></td>
-<td style="text-align:left">Flip kick; fire; air flip on hit</td>
-<td style="text-align:left"><strong>Before flip</strong>: Phantom Palm, Dragon Claw, Level 3, short hop, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left"><strong>Signature</strong> Phantom Palm; free; huge; <strong>big MP</strong></td>
-<td style="text-align:left">Last hit launches</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Reverse kick Reversal</td>
-<td style="text-align:left">Short hop, Phantom Palm, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Dragon Claw flurry; fire launch; low MP, many hits; short range, long startup</td>
-<td style="text-align:left">Teleport-dodge bosses: <strong>Forward+Forward+Energy</strong> grab first (grabbed enemies cannot teleport). Then <strong>Down+Special</strong> Level 3, short hop, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Dragon Claw</td>
-<td style="text-align:left">Raw whiffs—use after <strong>Forward+Special</strong> or dash grab</td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Hook combo; brief invincibility</td>
-<td style="text-align:left">Re-grab loop</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">3rd high kick</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Back slam OTG</td>
-<td style="text-align:left">After dash grab</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Flip jump</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">After flip <strong>Attack</strong></td>
-<td style="text-align:left">Slam OTG</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Grab slam OTG</td>
-<td style="text-align:left">Continue</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Special</strong></td>
-<td style="text-align:left">Air grab slam</td>
-<td style="text-align:left">Juggle finisher</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Hadoken wall bounce</td>
-<td style="text-align:left">Phantom Palm, dash grab, <strong>Extra</strong>, short hop</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-sor2-electra">SOR2 Electra</h2>
-<ul>
-<li>SOR2XCombo original hero; Speed 4, Skill 4—very fast technical fighter.</li>
-<li>Signature: electric whip shot pins enemies; Level 3 closes in for wide whip flurry.</li>
-<li>Whip grab pull: <strong>Up+Extra</strong> pulls enemy in for throws.</li>
-<li>Very fast dash grab; has healing grab (18+ style).</li>
-<li>Taunt standing still restores full meter bar.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2; 3rd high kick</td>
-<td style="text-align:left">Down on 2nd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy high kick</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong> rising whip, <strong>Forward+Special</strong> whip shot, <strong>Down+Special</strong> Level 3 whip flurry, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Extra</strong></td>
-<td style="text-align:left">Back kick</td>
-<td style="text-align:left">Pull screen-edge juggles to center</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Extra</strong></td>
-<td style="text-align:left">Whip grab pull</td>
-<td style="text-align:left">Links to throws</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Rising whip</td>
-<td style="text-align:left"><strong>Forward+Special</strong>, <strong>Down+Special</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Electric whip 360 Reversal</td>
-<td style="text-align:left">Short hop, rising whip, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Ground <strong>Up+Special</strong></td>
-<td style="text-align:left">Anti-air rocket; 1 star</td>
-<td style="text-align:left">Strong launch</td>
-</tr>
-<tr>
-<td style="text-align:left">Ground <strong>Down+Special</strong></td>
-<td style="text-align:left">Pull air enemy down; guard cost</td>
-<td style="text-align:left">Throws after</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Whip shot pin; last hit launches</td>
-<td style="text-align:left">Long range vs floats; <strong>Down+Special</strong> Level 3, rising whip, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 whip flurry: shot pin then rush flurry</td>
-<td style="text-align:left">After <strong>Forward+Special</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Knee flurry; not invincible</td>
-<td style="text-align:left"><strong>Down+Special</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Whip flurry; not invincible</td>
-<td style="text-align:left">Mash <strong>Attack</strong> (guard); <strong>Down+Special</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Turn knee; launches</td>
-<td style="text-align:left"></td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Up+Attack</strong></td>
-<td style="text-align:left">18+ grab; heals small HP</td>
-<td style="text-align:left">Long recovery; no follow-up</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Fast grab fall</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Special</strong></td>
-<td style="text-align:left">Air rising whip</td>
-<td style="text-align:left">Juggle finisher</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Rising whip wall bounce</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong>, dash grab, <strong>Extra</strong>, short hop</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-bison-sf2">Bison (SF2)</h2>
-<ul>
-<li>SOR2XCombo original; Power 5, Jump 1, Energy 1—power brawler.</li>
-<li>Very slow MP recovery; heavy normals; high parry damage; normal + special combo focus.</li>
-<li>Taunt restores some HP.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-2-3-4; 4th uppercut</td>
-<td style="text-align:left">Down on 3rd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy uppercut</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong> drop punch, <strong>Forward+Special</strong> combo flurry, <strong>Down+Special</strong> Level 3 Flurry, <strong>Up+Extra</strong> or <strong>Up+Special</strong> headbutt dive, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Extra</strong></td>
-<td style="text-align:left">Low sweep</td>
-<td style="text-align:left">Pull edge juggles to center</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Extra</strong></td>
-<td style="text-align:left">Dive headbutt anti-air</td>
-<td style="text-align:left">Air <strong>Special</strong> headbutt, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Drop punch</td>
-<td style="text-align:left"><strong>Forward+Special</strong>, <strong>Down+Special</strong>, dive headbutt, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Straight punch 360 Reversal</td>
-<td style="text-align:left">Short hop, drop punch, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Special</strong></td>
-<td style="text-align:left">Combo flurry pin; launches</td>
-<td style="text-align:left">Mash <strong>Attack</strong> (guard); <strong>Down+Special</strong>, dive headbutt, drop punch, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special</strong></td>
-<td style="text-align:left">Dive headbutt anti-air</td>
-<td style="text-align:left">Air <strong>Special</strong> headbutt, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Flurry; <strong>wall bounce</strong> finisher</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Hold <strong>Forward</strong>, grab mash <strong>Attack</strong></td>
-<td style="text-align:left">Gut punch; not invincible</td>
-<td style="text-align:left">Re-grab loop on grunts</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Jump carry</td>
-<td style="text-align:left"><strong>Attack</strong> air headbutt = air <strong>Special</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Headbutt; invincible</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Turn headbutt; invincible</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Fast grab fall</td>
-<td style="text-align:left">Throws</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Special</strong></td>
-<td style="text-align:left">Air headbutt throw</td>
-<td style="text-align:left">Juggle finisher</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Drop punch</td>
-<td style="text-align:left">Drop punch, dash grab, <strong>Extra</strong>, short hop</td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-chunli-sf2">Chunli (SF2)</h2>
-<ul>
-<li>SOR2XCombo original; Speed 4, Jump 5—fast air juggle specialist.</li>
-<li>Power 2—needs long strings for damage.</li>
-<li>Signature: Hyakuretsukyaku (<strong>Forward+Special</strong>) ground and air; air <strong>Down+Attack</strong> air stomp chain.</li>
-<li>Recommended super route: ground Hyakuretsukyaku or <strong>Forward+Extra</strong> heavy into Level 3.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-2-3-4; 4th double side kick</td>
-<td style="text-align:left">Down on 3rd for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy double kick</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong> triple rising kick, <strong>Forward+Special</strong> Hyakuretsukyaku, <strong>Down+Special</strong> / <strong>Up+Special</strong> Level 3s, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Extra</strong></td>
-<td style="text-align:left">Back kick</td>
-<td style="text-align:left">Edge juggle pull</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Extra</strong></td>
-<td style="text-align:left">Hadoken; 3 slow waves; ¼ guard</td>
-<td style="text-align:left"></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Triple rising kick</td>
-<td style="text-align:left">Air <strong>Forward+Special</strong> air Hyakuretsukyaku, air <strong>Down+Special</strong> air throw, <strong>Up+Special</strong> flip kick, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Inverted spin kick Reversal</td>
-<td style="text-align:left">Short hop, triple kick, <strong>Extra</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Ground <strong>Forward+Special</strong></td>
-<td style="text-align:left">Hyakuretsukyaku pin; launches</td>
-<td style="text-align:left">Mash <strong>Attack</strong> (guard); <strong>Down+Special</strong>, <strong>Up+Special</strong> Kikoken, triple kick, <strong>Extra</strong>, flip kick, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Forward+Special</strong></td>
-<td style="text-align:left">Air Hyakuretsukyaku</td>
-<td style="text-align:left"><strong>Up+Special</strong> flip kick, short hop, air <strong>Down+Attack</strong> stomp</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Flurry; Hyakuretsukyaku ender</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Kikoken; huge range</td>
-<td style="text-align:left">Last hit launches</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Skull crush knee over head</td>
-<td style="text-align:left"><strong>Attack</strong> before knee = throw forward</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Flip kick launch</td>
-<td style="text-align:left">Short hop after</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Forward+Attack</strong></td>
-<td style="text-align:left">Forward throw OTG</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Back throw OTG</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Air stomp; stay airborne on hit</td>
-<td style="text-align:left">After short hop when above enemy</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Special</strong></td>
-<td style="text-align:left">Air throw slam</td>
-<td style="text-align:left">Juggle finisher</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Handstand side kick</td>
-<td style="text-align:left">Triple kick, <strong>Extra</strong>, short hop, <strong>Down+Special</strong>, <strong>Up+Special</strong></td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-kagetsura-sengoku3">Kagetsura (Sengoku3)</h2>
-<ul>
-<li>SOR2XCombo original; Skill 5, Speed 5, Jump 5—speed and parry specialist.</li>
-<li>Energy 1 but fast movement/attacks keep meter flowing. Power 2—needs parry or long combos.</li>
-<li>Signature: Comet Slash ground (<strong>Forward+Special</strong>); Iga Drop (grab <strong>Up+Attack</strong> or air <strong>Down+Special</strong>); Reversal Wood Bomb—press Forward/Back during explosion to teleport.</li>
-<li>Flying Thunder God ground (<strong>Up+Extra</strong> or <strong>Up+Special</strong>)—on hit, grab into throws.</li>
-<li>Super route: <strong>Extra</strong>, Comet Slash, or <strong>Forward+Forward+Attack</strong> double kick into Level 3.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-1-2-3-4; 5th downward slash</td>
-<td style="text-align:left">Down on 4th for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy downward slash</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong> double kick, <strong>Forward+Special</strong> Comet Slash, <strong>Down+Special</strong> Level 3, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Extra</strong></td>
-<td style="text-align:left">Flying Thunder God kunai; guard cost; only from neutral</td>
-<td style="text-align:left">Line shot; on hit, grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Extra</strong></td>
-<td style="text-align:left">Spin kick</td>
-<td style="text-align:left">Back attack; edge juggle pull</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Double kick</td>
-<td style="text-align:left"><strong>Forward+Special</strong>, <strong>Down+Special</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Wood Bomb Reversal; invincible; launch</td>
-<td style="text-align:left">Forward/Back during blast = teleport</td>
-</tr>
-<tr>
-<td style="text-align:left">Ground <strong>Forward+Special</strong></td>
-<td style="text-align:left">Comet Slash pin; launches</td>
-<td style="text-align:left"><strong>Down+Special</strong>, double kick, <strong>Extra</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left">Ground <strong>Up+Special</strong></td>
-<td style="text-align:left">Homing Flying Thunder God; guard; neutral only</td>
-<td style="text-align:left">Tracks off-axis; grab on hit</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Forward+Special</strong></td>
-<td style="text-align:left">Air spin kick; wall bounce</td>
-<td style="text-align:left">Continue after bounce</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Special</strong></td>
-<td style="text-align:left">Air Iga Drop</td>
-<td style="text-align:left">OTG continue</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Flurry flash finish</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special in combo</strong></td>
-<td style="text-align:left">Level 3 flash multi-slash; moderate damage (low Power)</td>
-<td style="text-align:left">Last hit launches</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Air spin kick; launches</td>
-<td style="text-align:left">Short hop or air <strong>Down+Special</strong> Iga Drop</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Down+Attack</strong></td>
-<td style="text-align:left">Swallow Flash rapid draw</td>
-<td style="text-align:left">Mash <strong>Attack</strong> (guard); launches</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Forward+Attack</strong></td>
-<td style="text-align:left">Forward throw OTG</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Back throw OTG</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Air carry</td>
-<td style="text-align:left"><strong>Attack</strong> Iga Drop = air <strong>Special</strong></td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Fast land; land <strong>Attack</strong> = air spin kick</td>
-<td style="text-align:left">Keeps grab state on land</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Up+Attack</strong></td>
-<td style="text-align:left">Fast land; land <strong>Up+Attack</strong> = Iga Drop</td>
-<td style="text-align:left">Keeps grab state</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Draw slash</td>
-<td style="text-align:left">Double kick, <strong>Extra</strong>, short hop, <strong>Down+Special</strong></td>
-</tr>
-</tbody>
-</table></div>
-<h2 id="sec-rikka-lee-last-blade">Rikka Lee (Last Blade)</h2>
-<ul>
-<li>SOR2XCombo original; average stats but many fire hits deny enemy recovery—still strong.</li>
-<li>Signature: <strong>Shadowless Kick</strong> (grab <strong>Down+Attack</strong>); <strong>Dragon Hammer Spin</strong> (<strong>Forward+Special</strong>, then <strong>Down+Special</strong> x3); <strong>Dragon Upper</strong> (<strong>Up+Special</strong> in combo or <strong>Up+Extra</strong>).</li>
-<li><strong>Shadowless Kick</strong> multi-hit = fast MP recovery.</li>
-<li><strong>Dragon Hammer Spin</strong> can air chase 3 times (scaling damage) + <strong>Dragon Upper</strong>—can outdamage Level 3 super if full route hits.</li>
-<li>Taunt lion dance restores full HP and meter.</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th style="text-align:left">Input</th>
-<th style="text-align:left">Move</th>
-<th style="text-align:left">Follow-ups</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left"><strong>Tap Attack</strong></td>
-<td style="text-align:left">Normal 1-2-3-4-5; 5th combo kick</td>
-<td style="text-align:left">Down on 4th for grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Extra</strong></td>
-<td style="text-align:left">Heavy combo kick</td>
-<td style="text-align:left"><strong>Forward+Special</strong> Dragon Cannon, <strong>Up+Extra</strong> upper, <strong>Forward+Forward+Attack</strong> fan strike, <strong>Forward+Special</strong> Dragon Hammer Spin, <strong>Down+Special</strong> Level 3, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Extra</strong></td>
-<td style="text-align:left">Dragon upper launch</td>
-<td style="text-align:left">Air <strong>Down+Attack</strong> slam; land <strong>Down+Attack</strong> Shadowless Kick</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Extra</strong></td>
-<td style="text-align:left">Turn fan strike</td>
-<td style="text-align:left">Back hit; edge pull</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong></td>
-<td style="text-align:left">Fan strike</td>
-<td style="text-align:left"><strong>Forward+Special</strong> Dragon Cannon, <strong>Down+Special</strong>, <strong>Up+Special</strong> Flame Dragon flash, <strong>Up+Extra</strong>, short hop</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Forward+Forward+Energy</strong></td>
-<td style="text-align:left">Dash grab</td>
-<td style="text-align:left">Re-grab</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Special</strong></td>
-<td style="text-align:left">Fan strike Reversal</td>
-<td style="text-align:left">Multi-hit launch</td>
-</tr>
-<tr>
-<td style="text-align:left">Ground <strong>Forward+Special</strong></td>
-<td style="text-align:left">Dragon Hammer Spin; launches</td>
-<td style="text-align:left">Air <strong>Down+Special</strong> up to 3 chases (scaling); <strong>Up+Special</strong> Dragon Upper</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Special</strong></td>
-<td style="text-align:left">Air Dragon Hammer Spin; +2 chases</td>
-<td style="text-align:left"><strong>Up+Special</strong> Dragon Upper</td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Down+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Flurry flash finish</td>
-<td style="text-align:left"><strong>Down-Forward+Energy</strong> or <strong>Tap Energy twice</strong></td>
-</tr>
-<tr>
-<td style="text-align:left"><strong>Up+Special in combo</strong></td>
-<td style="text-align:left">Level 3 Flame Dragon pillar flash</td>
-<td style="text-align:left">Scaling hits</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Attack</strong></td>
-<td style="text-align:left">Fan strike</td>
-<td style="text-align:left">Short hop after launch</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Forward+Attack</strong></td>
-<td style="text-align:left">Forward inch punch</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Back+Attack</strong></td>
-<td style="text-align:left">Back inch punch</td>
-<td style="text-align:left">Short recovery</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Down+Attack</strong></td>
-<td style="text-align:left">Shadowless Kick</td>
-<td style="text-align:left">Before launch <strong>Up+Special</strong> Dragon Upper</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Up+Attack</strong></td>
-<td style="text-align:left">Dragon upper</td>
-<td style="text-align:left"><strong>Down+Attack</strong> air throw</td>
-</tr>
-<tr>
-<td style="text-align:left">Grab <strong>Jump</strong></td>
-<td style="text-align:left">Jump carry</td>
-<td style="text-align:left">Air <strong>Attack</strong> upper</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Down+Attack</strong></td>
-<td style="text-align:left">Fast land grab</td>
-<td style="text-align:left">Choose throw quickly on land</td>
-</tr>
-<tr>
-<td style="text-align:left">Air <strong>Up+Attack</strong></td>
-<td style="text-align:left">Stomp chain</td>
-<td style="text-align:left">Breaks air normals</td>
-</tr>
-<tr>
-<td style="text-align:left">Parry</td>
-<td style="text-align:left">Fire spark</td>
-<td style="text-align:left"><strong>Forward+Forward+Attack</strong>, <strong>Extra</strong>, short hop, <strong>Down+Special</strong></td>
-</tr>
-</tbody>
-</table></div>
-<h1 id="sec-selected-boss-guides">Selected Boss Guides</h1>
-<h2 id="sec-abadede">Abadede</h2>
-<ul>
-<li>Gladiator Abadede: power boss; Level 3 super and parry counter unblockable; loves dive attacks.</li>
-<li>Uses dash uppercut vs dash grab mixup—wrong guess = huge damage.</li>
-<li>Level 3 super is fast and unblockable—hard to dodge.</li>
-<li>Do not stay point-blank: close special Berserker Roar is multi-hit; launch costs heavy HP, then dive grab or uppercut follow-ups.</li>
-<li>Dive attack also unblockable—dodge or attack; blocking gets you thrown.</li>
-</ul>
-<h2 id="sec-ash">Ash</h2>
-<ul>
-<li>Captain Ash: grab-heavy power boss.</li>
-<li>Super grab hitbox is strong—do not trade Reversals during super approach.</li>
-<li>One grab route heals Ash (adult content in original).</li>
-<li>When closing, sometimes normals—parry or launch then combo.</li>
-<li>At range, during taunt, rush in and combo.</li>
-<li>Strong throw escape characters (Max, SOR2 Shiva) excel—<strong>Attack</strong> on grab startup for counter throw.</li>
-</ul>
-<h2 id="sec-rocky-bear">Rocky Bear</h2>
-<ul>
-<li>Boxer Rocky Bear: power boss; signature rising punch loops and rising punch into Level 3 Super Rising Punch.</li>
-<li>Hook + dash grab mixup; on hit, rising punch loop; at 3+ stars may cancel into Level 3.</li>
-<li>Close range wall-bounce short hook—launches to screen edge and back.</li>
-</ul>
-<h2 id="sec-barbon">Barbon</h2>
-<ul>
-<li>Bartender Barbon: kick specialist; very accurate parry—parry counter sweeps you airborne.</li>
-<li>Spams dash grab up close—dodge or launch on approach.</li>
-<li>Do not approach at high meter—Level 3 kick barrage hits hard.</li>
-</ul>
-<h2 id="sec-harkiri">Harkiri</h2>
-<ul>
-<li>Armored samurai Harakiri: iaijutsu + homing explosive kunai.</li>
-<li>Two types: aggressive closes and attacks; defensive keeps distance, punishes with parry at mid range.</li>
-<li>Long range: multi homing kunai—destroy or dodge. Holding block lets kunai hit from behind and explode for massive damage; then Harakiri closes for iai into Level 3 Phantom Slash one-touch.</li>
-<li>Iai hit launches you; Harakiri teleports behind for second iai—block late and eat combo into Level 3 Phantom Slash.</li>
-<li>Teleport-dodge makes normals whiff. Dodge with i-frames in, parry iai, launch, combo.</li>
-<li>When launched, air tech; on land watch position and block/parry.</li>
-<li>Huge anti-air vertical slash—do not jump in casually.</li>
-<li>vs defensive Harakiri: do not hold block—he teleports behind for grab. Dodge in, wait for swing, parry, combo.</li>
-</ul>
-<h2 id="sec-yamato">Yamato</h2>
-<ul>
-<li>Red-armor Yamato: flashiest boss kit; teleport + very fast = few weak points.</li>
-<li>Two types: Musashi (sword iai + Level 3 Phantom Slash from behind); Yamato (shadow clone rush + Level 3 Phantom Slash).</li>
-<li>Teleports constantly; frontal attacks whiff; you recover, he appears behind and punishes.</li>
-<li>Best plan: parry for meter; when he appears behind for iai, use 360 Reversal to launch, then combo.</li>
-<li>Mid range: teleport in dash grab into Iga Drop throw. Fast, multi-pass run—watch afterimages, dodge; attack/block get grabbed.</li>
-<li>Very close: roll jump + 3 kunai; if you dodge kunai, he may air grab Iga Drop on descent.</li>
-<li>Wood Bomb anti-air—do not approach from air.</li>
-<li>vs Musashi: do not hold block—teleport behind Iga Drop. Bait iai, Reversal, combo.</li>
-</ul>
-<h2 id="sec-zamza">Zamza</h2>
-<ul>
-<li>Claw ninja Zamza: very fast.</li>
-<li>While you block, slide trip into grab loop; on stand, he slides again—break with instant Reversal on wake (he dodges).</li>
-<li>Sometimes air dive grab; air tech window may get re-grabbed in air—limited by his meter.</li>
-<li>Rising claw loops—air tech quickly.</li>
-<li>Repeated grabs: mash <strong>Attack</strong> for throw escape on strong characters.</li>
-</ul>
-<h2 id="sec-bruce-roo">Bruce &amp; Roo</h2>
-<ul>
-<li>Whip clown Bruce + kangaroo Roo duo. Bruce whips at range; Roo speed/grappling up close.</li>
-<li>Bruce Level 3 lays bomb traps—on trap, launched (air tech). If missed, 3s later huge blast hurts everyone—lure enemies with dodge i-frames near trap.</li>
-<li>Bruce healing aura every 2s heals all on-screen enemies (except Bruce).</li>
-<li>Roo heals/meter under aura during Bruce super and heavy whip.</li>
-<li>Roo alone still heals if Bruce on screen.</li>
-<li>Roo super = dash grab—dodge fast. Parry counter = spin kick multi-hit.</li>
-</ul>
-<h2 id="sec-jet-rocket">Jet &amp; Rocket</h2>
-<ul>
-<li>Flying Jet &amp; Rocket. Both Level 3 dash grab; Rocket adds flame spray super and floating bomb special.</li>
-<li>Do not chase—stand ground, parry dive attacks.</li>
-<li>After parry launch, <strong>Tap Energy</strong> jump attack juggle.</li>
-</ul>
-<h2 id="sec-tracker">Tracker</h2>
-<ul>
-<li>Predator Tracker: stealth lock + unblockable homing ion cannon super.</li>
-<li>Level 3: stealth lock—keep dodging with i-frames; appears behind after lock and fires unblockable beam. Constant dodge = beam misses and fades.</li>
-<li>Normal ion cannon blockable but can hit from behind (low damage).</li>
-<li>Dash grab into shock claw—paralyzed, cannot Reversal; then rising attack—air tech.</li>
-<li>Air jump attack becomes air grab + shock claw paralysis + launch; may repeat air grab until out of meter.</li>
-<li>Grab loops: <strong>Tap Attack quickly</strong> for throw escape.</li>
-</ul>
-<h2 id="sec-break">Break</h2>
-<ul>
-<li>Axel clone Break: all Axel moves; speed increases as HP drops.</li>
-<li>Dash uppercut vs dash grab mixup on approach.</li>
-<li>With meter, throws/specials may end in Phantom Lion Punch—huge, fast, hard to dodge.</li>
-<li>Low HP frenzy—finish with combo or get reversed.</li>
-</ul>
-<h2 id="sec-shiva">Shiva</h2>
-<ul>
-<li>SOR2 and SOR3 Shiva often appear together.</li>
-<li>Boss SOR3 Shiva: any hit can start infinite combo.</li>
-<li>SOR2 Shiva air juggle can one-life you.</li>
-<li>Air palm press grab—do not block air down attack.</li>
-<li>Mid range shadow clone from behind sends you into body combo.</li>
-<li>Keep distance, parry, combo when safe.</li>
-</ul>
-<h2 id="sec-robotx">RobotX</h2>
-<ul>
-<li>Mass-production robot (SOR3); homing rockets from arms.</li>
-<li>Rockets: dodge until they explode.</li>
-<li>Close full discharge super can one-shot.</li>
-</ul>
-<h2 id="sec-mrx">Mr.X</h2>
-<ul>
-<li>Final boss Mr.X—machine gun multi-direction fire; Level 3 homing rockets.</li>
-<li>Rockets: dodge until detonation.</li>
-<li>On dodge he throws grenades.</li>
-<li>Close dash grab into punch-kick throw + grenade.</li>
-</ul>
-<h2 id="sec-monalisa-sisters">Monalisa Sisters</h2>
-<ul>
-<li>Mona Lisa sisters: jump attacks and sync combos; ground wave super fast but blockable.</li>
-<li>Avoid front/back sandwich—simultaneous kicks, defense fails, rapid death.</li>
-<li>Jump hit leads to air throw; close red-glow dash grab (slow but hard to read).</li>
-<li>Occasional tag combos—not constant.</li>
-</ul>
-<h1 id="sec-enemy-grunts">Enemy Grunts</h1>
-<h2 id="sec-galsia">Galsia</h2>
-<ul>
-<li>Jeans + vest grunt; sometimes picks up knife.</li>
-<li>Knife Galsia multi-hit quickly knocks down.</li>
-<li>Jumping elbow drop—rare.</li>
-</ul>
-<h2 id="sec-donovan">Donovan</h2>
-<ul>
-<li>Bald shirtless grunt; sometimes pipe.</li>
-<li>Empty-hand heavy = uppercut; pipe hits hard.</li>
-<li>If you stand over downed Donovan, fast wake-up uppercut—strong.</li>
-</ul>
-<h2 id="sec-signal">Signal</h2>
-<ul>
-<li>Mohawk skinny grunt; fast slide.</li>
-<li>Sometimes throws bottles—fast, accurate; priority kill.</li>
-<li>Over downed Signal, slide grab throw.</li>
-</ul>
-<h2 id="sec-garnet">Garnet</h2>
-<ul>
-<li>Short hair delinquent girl; jump attack at range, slaps up close.</li>
-<li>With meter, jump tackle grab then heals herself (adult content)—you lose HP.</li>
-</ul>
-<h2 id="sec-jack">Jack</h2>
-<ul>
-<li>Biker knife thug (SOR2 route stage 1)—author's favorite grunt.</li>
-<li>Empty hand: pulls knife, long-range knife throw.</li>
-<li>Close: fast stab; if you block, grab break into triple stab.</li>
-<li>Always parries up close, armed or not.</li>
-<li>After knocking you down, taunts.</li>
-</ul>
-<h2 id="sec-electra">Electra</h2>
-<ul>
-<li>Popular SOR3 whip woman; electric whip left arm.</li>
-<li>Rarely rushes; on approach uses whip special if meter allows else lashes + grab attempts; sometimes fast whip flurry or heal grab (adult content).</li>
-<li>When knocked down, sits sadly—you cannot hit her during animation.</li>
-</ul>
-<h2 id="sec-bigben-bongo">Bigben &amp; Bongo</h2>
-<ul>
-<li>Fire-breathing fat duo; fire breath or body press roll.</li>
-<li>vs blockers, sometimes grab throw.</li>
-<li>Over downed fat, fast body roll—parry immediately (&quot;stop the car&quot;).</li>
-</ul>
-<h2 id="sec-hakuyo-raven-tiger">Hakuyo &amp; Raven &amp; Tiger</h2>
-<ul>
-<li>Hakuyo: braid muay thai muscle; one-hand chi blast.</li>
-<li>Downed wake-up flying kick.</li>
-<li>Hakuyo parries with chi blast—wall bounce launch.</li>
-<li>Raven: vest shorts muay thai; knee specialist; throws + parry.</li>
-<li>Raven downed wake-up knee.</li>
-</ul>
-<h2 id="sec-kusanagi">Kusanagi</h2>
-<ul>
-<li>Fast ninja; kunai or katana sometimes.</li>
-<li>Empty: shuriken harass + close grabs.</li>
-<li>Armed: cyclone slash—high damage.</li>
-<li>Parry armed or empty.</li>
-<li>Fast movement, repeated dodge.</li>
-<li>Below 25% HP: red glow suicide grab rush—on grab hit, self-destruct.</li>
-</ul>
-<h2 id="sec-bruce">Bruce</h2>
-<ul>
-<li>Solo whip clown Bruce; Level 3 bomb traps.</li>
-<li>Step trap = hang launch (air tech safe). Miss = 6s huge blast hits all—including <strong>fast clear trick</strong>: dodge i-frames lure enemies into blast radius.</li>
-<li>Fast wake-up knee after knockdown.</li>
-</ul>
-<h1 id="sec-hall-of-fame">Hall of Fame</h1>
-<ul>
-<li>After version 20240413, K.O counts boss KOs only</li>
-<li>Difficulty hashtag number = player count used for clear</li>
-<li>Arcade mode: +1 player every 100,000 score</li>
-<li>Score 100,000+: each death −100,000 (no penalty if score below 100,000)</li>
-<li>One-life clear records:</li>
-</ul>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>Rank</th>
-<th>Route</th>
-<th>Character</th>
-<th>Time</th>
-<th>K.O</th>
-<th>Difficulty</th>
-<th>Player</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>SOR2</td>
-<td>Kage</td>
-<td>01:18:24</td>
-<td>71</td>
-<td>MANIA#1</td>
-<td>翼指龙</td>
-</tr>
-<tr>
-<td>2</td>
-<td>SOR2</td>
-<td>Bison</td>
-<td>00:57:24</td>
-<td>72</td>
-<td>MANIA#1</td>
-<td>翼指龙</td>
-</tr>
-<tr>
-<td>3</td>
-<td>SOR2</td>
-<td>Max</td>
-<td>01:05:11</td>
-<td>79</td>
-<td>MANIA#1</td>
-<td>翼指龙</td>
-</tr>
-<tr>
-<td>5</td>
-<td>SOR2</td>
-<td>Zan</td>
-<td>01:04:48</td>
-<td>55</td>
-<td>MANIA#1</td>
-<td>翼指龙</td>
-</tr>
-<tr>
-<td>5</td>
-<td>SOR2</td>
-<td>SOR3 Shiva</td>
-<td>01:06:44</td>
-<td>81</td>
-<td>MANIA#1</td>
-<td>霸气</td>
-</tr>
-<tr>
-<td>6</td>
-<td>SOR1</td>
-<td>Max</td>
-<td>00:42:22</td>
-<td>45</td>
-<td>MANIA#1</td>
-<td>翼指龙</td>
-</tr>
-</tbody>
-</table></div>
-<h1 id="sec-credits">Credits</h1>
-<ul>
-<li>QQ group <strong>657798865</strong> member Menghu—OpenBOR engine optimization</li>
-<li>QQ group <strong>657798865</strong> member Baqi—shared character assets</li>
-<li>QQ group <strong>657798865</strong> community—testing and feedback on every build</li>
-</ul>
-<h1 id="sec-version">Version</h1>
-<ul>
-<li>SOR2XCombo_20260620</li>
-</ul>
 ]]></content:encoded>
     </item>
     <item>

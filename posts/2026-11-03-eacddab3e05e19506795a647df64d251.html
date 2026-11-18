@@ -55,6 +55,7 @@
 <li class="toc-l3"><a href="#sec-安装器补丁packageinstaller-vdex">安装器补丁（PackageInstaller vdex）</a></li>
 <li class="toc-l3"><a href="#sec-termux-插件">Termux 插件</a></li>
 <li class="toc-l3"><a href="#sec-更新预装应用">更新预装应用</a></li>
+<li class="toc-l3"><a href="#sec-修复-webview">修复 WebView</a></li>
 <li class="toc-l3"><a href="#sec-恢复-救砖">恢复 / 救砖</a></li>
 <li class="toc-l2"><a href="#sec-调试要点">调试要点</a></li>
 <li class="toc-l2"><a href="#sec-网络与镜像">网络与镜像</a></li>
@@ -125,7 +126,7 @@
 </tr>
 <tr>
 <td>访问</td>
-<td><code>ssh duos</code>（Termux sshd，Termux:Boot 自启）→ <code>su -c</code>；网络 ADB 5555</td>
+<td>Termux sshd（Termux:Boot 自启）→ <code>su -c</code>；网络 ADB 5555</td>
 </tr>
 </tbody>
 </table></div>
@@ -187,6 +188,11 @@
 <td><code>.replace</code> 遮掉 OTA，<code>service.sh</code> 每 30s 卸载 <code>com.baidu.edge*</code></td>
 </tr>
 <tr>
+<td>没有可用的 WebView（第三方 app 打开网页即崩溃 <code>No WebView installed</code>）</td>
+<td>自带 <code>/system/app/webview/webview.apk</code>（88.0.4324.192）内容与 v2 签名不符，开机扫描时被丢弃</td>
+<td>模块内换成 LineageOS WebView 138（见下文）</td>
+</tr>
+<tr>
 <td>杀视频进程</td>
 <td><code>VideoBotStackUtils.killAllVideoBot</code></td>
 <td>未处理</td>
@@ -202,8 +208,9 @@ system/priv-app/
   DuerShowOTA/.replace                                  # 屏蔽 OTA
   PackageInstaller/oat/arm/PackageInstaller.vdex        # 安装器补丁
   com.mx.accessibilitycontroller/.replace  com.aaron.yespdf/.replace
-system/app/                                             # 均为 .replace
-  iQiYi_Video/ Tencent-AiAgent/ MangGuoTV/ TencentVideo/ CloudApp/
+system/app/
+  webview/webview.apk  webview/lib/arm/*.so  webview/.replace   # 替换损坏的 WebView
+  iQiYi_Video/ Tencent-AiAgent/ MangGuoTV/ TencentVideo/ CloudApp/   # 以下均为 .replace
   ALiPayApplet/ HtmlContainer/ wechat_applet_container_v2/
 </code></pre>
 <p><code>/data/local/tmp/duer_unblock.service.sh.bak</code> 是加入 edge 清理之前的 <code>service.sh</code>。</p>
@@ -375,6 +382,63 @@ chmod +x ~/.termux/boot/start-sshd
 <li>签名不一致：先 <code>.replace</code> 遮掉系统版本，再全新安装。uid 会变，要重新授权（<code>magisk --sqlite &quot;SELECT * FROM policies&quot;</code>）。</li>
 </ol>
 <p>已执行：Blocker（<code>com.merxury.blocker</code>，uid 10025）从 0.1.42-beta 升级到 2.0.6447（GitHub <code>lihenggui/blocker</code>，foss 版，签名 <code>8d68bf0e</code>，与旧版一致）。启动类是 <code>.MainActivity</code>；首页默认不显示系统应用。</p>
+<p>已执行：Via（<code>mark.via</code>，<code>/system/priv-app/mark.via</code>）原来是 4.9.1，而且被禁用了（<code>enabled=2</code>）。用官方中文版 <code>via-release-cn.apk</code> 7.2.1 执行 <code>pm install -r</code> 升级（签名一致），再 <code>pm enable mark.via</code>。Via 没有独立的 TV 版：GitHub <code>tuyafeng/Via</code> 只用于本地化，没有发布安装包，README 里的下载链接也就是 <code>res.viayoo.com/v1/via-release{,-cn}.apk</code>。第三方站点的&quot;TV 版&quot;都是 <code>mark.via</code> 重新打包的。Via 依赖系统 WebView，要先完成下文的 WebView 修复。</p>
+<h3 id="sec-修复-webview">修复 WebView</h3>
+<p>症状：用到 WebView 的 app 一打开就崩溃，报 <code>MissingWebViewPackageException: Failed to load WebView provider: No WebView installed</code>。<code>dumpsys webviewupdate</code> 显示 <code>Any WebView package installed: false</code>；<code>pm path com.android.webview</code> 没有输出。</p>
+<p>原因：</p>
+<ul>
+<li><code>config_webview_packages.xml</code> 只认 <code>com.android.webview</code>，而且没有声明签名。这种情况下 provider 必须是系统应用，所以 <code>pm install</code> 装成用户应用不会被采用。</li>
+<li>自带的 <code>/system/app/webview/webview.apk</code> 包名正确，但复制出来执行 <code>pm install</code> 会报 <code>INSTALL_PARSE_FAILED_NO_CERTIFICATES ... SHA-256 digest of contents did not verify</code>。可见 APK 内容被改过，开机扫描时 PackageManager 直接跳过了它。</li>
+</ul>
+<p>替换包：LineageOS <code>android_external_chromium-webview_prebuilt_arm</code> 的提交 <code>b2639126d0</code>，<code>webview.apk</code> 是 Git LFS 对象。</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>项</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>版本</td>
+<td><code>138.0.7204.63</code>（versionCode 720406300）</td>
+</tr>
+<tr>
+<td>包名</td>
+<td><code>com.android.webview</code></td>
+</tr>
+<tr>
+<td>minSdk / targetSdk</td>
+<td>26 / 35</td>
+</tr>
+<tr>
+<td>ABI</td>
+<td><code>armeabi-v7a</code></td>
+</tr>
+<tr>
+<td>sha256</td>
+<td><code>b7268786318f404bdad53eaaec889619ff30100b935541a9e393e32efed3cf11</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>不要升级到 139 以上：Chromium 从 139 起不再支持 Android 8/9。</p>
+<p>下载：LFS 服务器是 <code>review.lineageos.org</code>，GitHub raw 地址只能拿到 LFS 指针文件。</p>
+<pre><code class="language-sh">curl -s -X POST -H 'Accept: application/vnd.git-lfs+json' -H 'Content-Type: application/vnd.git-lfs+json' \
+  https://review.lineageos.org/LineageOS/android_external_chromium-webview_prebuilt_arm.git/info/lfs/objects/batch \
+  -d '{&quot;operation&quot;:&quot;download&quot;,&quot;transfers&quot;:[&quot;basic&quot;],&quot;objects&quot;:[{&quot;oid&quot;:&quot;b7268786318f404bdad53eaaec889619ff30100b935541a9e393e32efed3cf11&quot;,&quot;size&quot;:90257078}]}' \
+  | jq -r '.objects[0].actions.download.href' | xargs curl -fL -o webview.apk
+</code></pre>
+<p>安装：</p>
+<pre><code class="language-sh">W=$M/system/app/webview
+mkdir -p $W/lib/arm &amp;&amp; cp /data/local/tmp/webview.apk $W/webview.apk &amp;&amp; touch $W/.replace   # .replace 同时遮掉旧的 oat/
+/data/adb/magisk/busybox unzip -o -j $W/webview.apk 'lib/armeabi-v7a/*.so' -d $W/lib/arm
+chmod 755 $W $W/lib $W/lib/arm &amp;&amp; chmod 644 $W/webview.apk $W/.replace $W/lib/arm/*.so
+chcon -R u:object_r:system_file:s0 $M/system
+reboot
+</code></pre>
+<p><code>.so</code> 必须解出来放到 <code>lib/arm/</code>：系统应用的 classloader 只在 <code>/system/app/webview/lib/arm</code> 里找原生库，不会从 APK 内部加载。漏掉这一步时，<code>dumpsys webviewupdate</code> 仍显示正常，但第一次创建 WebView 就会崩溃，报 <code>UnsatisfiedLinkError: ... couldn't find &quot;libwebviewchromium.so&quot;</code>（<code>ProcessInitException: errorCode=2</code>）。</p>
+<p>验证：<code>pm path com.android.webview</code> 应输出 <code>/system/app/webview/webview.apk</code>，flags 里有 <code>SYSTEM</code>。<code>dumpsys webviewupdate</code> 应显示 <code>Current WebView package (name, version): (com.android.webview, 138.0.7204.63)</code> 和 <code>Valid package ... installed/enabled for all users</code>。上面这些只说明系统登记成功了，还要实际渲染一次页面：<code>am start -n com.android.htmlviewer/.HTMLViewerActivity -a android.intent.action.VIEW -d file:///data/local/tmp/t.html -t text/html</code>，再用 <code>screencap</code> 截图确认页面显示出来。</p>
+<p>恢复：<code>rm -rf $W</code> 后重启，系统回到没有 WebView 的状态。</p>
 <h3 id="sec-恢复-救砖">恢复 / 救砖</h3>
 <ul>
 <li>在 Magisk 里关掉模块，或 <code>rm -rf $M</code> 后重启。</li>
@@ -396,7 +460,7 @@ chmod +x ~/.termux/boot/start-sshd
 </ul>
 </li>
 <li><strong>mount namespace</strong>：<code>su -c mount</code> 对应用不可见；要全局生效用 <code>su -mm -c mount -o bind ...</code>。</li>
-<li><strong>ssh 引号</strong>：<code>ssh duos 'su -c &quot;...$X...&quot;'</code> 里的 <code>$X</code> 会先被 Termux shell 展开。复杂操作写成脚本 → <code>su -c &quot;sh script.sh&quot;</code>，并加 <code>set -e</code>。</li>
+<li><strong>ssh 引号</strong>：<code>ssh &lt;host&gt; 'su -c &quot;...$X...&quot;'</code> 里的 <code>$X</code> 会先被 Termux shell 展开。复杂操作写成脚本 → <code>su -c &quot;sh script.sh&quot;</code>，并加 <code>set -e</code>。</li>
 <li><strong>模拟安装来源</strong>：用 <code>su 2000</code>（shell，targetSdk 27）。uid 0 没有对应的包，会走 <code>Cannot get target sdk version</code> 分支，不能代表真实场景。</li>
 <li><strong><code>PackageInstaller</code> 跑在 uid 1000</strong>。</li>
 </ul>
